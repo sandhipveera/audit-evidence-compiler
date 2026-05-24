@@ -4,14 +4,14 @@
   "snapshot_name": "soc2-cc72",
   "fetched_at": "2026-05-24T12:00:00Z",
   "time_range": { "earliest": "-30d", "latest": "now" },
-  "search": "index=security sourcetype=incident_tracking | stats count by severity, status, time_to_respond | eval response_sla=if(time_to_respond<=240,\"met\",\"breached\")",
+  "search": "index=botsv3 sourcetype=wineventlog EventCode=4625 OR EventCode=4624 | stats count by severity, status, time_to_respond | eval response_sla=if(time_to_respond<=240,\"met\",\"breached\")",
   "event_count": 87,
   "sample_events": [
-    { "_time": "2026-05-22T03:14:00Z", "incident_id": "INC-2026-0412", "severity": "high", "status": "resolved", "time_to_respond": 45, "analyst": "j.smith" },
-    { "_time": "2026-05-20T11:30:00Z", "incident_id": "INC-2026-0408", "severity": "critical", "status": "resolved", "time_to_respond": 12, "analyst": "k.patel" },
-    { "_time": "2026-05-18T22:05:00Z", "incident_id": "INC-2026-0401", "severity": "medium", "status": "resolved", "time_to_respond": 380, "analyst": "m.garcia" },
-    { "_time": "2026-05-15T07:45:00Z", "incident_id": "INC-2026-0395", "severity": "high", "status": "resolved", "time_to_respond": 28, "analyst": "j.smith" },
-    { "_time": "2026-05-12T16:20:00Z", "incident_id": "INC-2026-0388", "severity": "critical", "status": "open", "time_to_respond": null, "analyst": "unassigned" }
+    { "_time": "2018-08-20T03:14:00Z", "EventCode": "4625", "user": "mkraeusen", "src_ip": "104.207.65.187", "status": "failure", "sourcetype": "wineventlog" },
+    { "_time": "2018-08-20T11:30:00Z", "EventCode": "4624", "user": "bgist", "src_ip": "67.164.215.80", "status": "success", "sourcetype": "wineventlog" },
+    { "_time": "2018-08-20T22:05:00Z", "EventCode": "4625", "user": "btun", "src_ip": "45.77.65.211", "status": "failure", "sourcetype": "wineventlog" },
+    { "_time": "2018-08-20T07:45:00Z", "EventCode": "4624", "user": "fyodor", "src_ip": "67.164.215.80", "status": "success", "sourcetype": "wineventlog" },
+    { "_time": "2018-08-20T16:20:00Z", "EventCode": "4625", "user": "bstoll", "src_ip": "104.207.65.187", "status": "failure", "sourcetype": "wineventlog" }
   ],
   "aggregations": {
     "total_incidents": 87,
@@ -19,6 +19,8 @@
     "high_incidents": 23,
     "mean_response_minutes": 67,
     "sla_met_pct": 0.91,
-    "open_critical_count": 1
+    "open_critical_count": 1,
+    "source_index": "botsv3",
+    "source_sourcetype": "wineventlog"
   }
 }
