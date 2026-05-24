@@ -165,6 +165,104 @@ class TestSearch:
             assert call_data["search"].startswith("|")
 
 
+class TestListIndexes:
+    @patch("aec.splunk.client.requests.get")
+    def test_list_indexes_filters_internal(self, mock_get, client: SplunkClient):
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {
+                "entry": [
+                    {"name": "botsv3"},
+                    {"name": "main"},
+                    {"name": "_internal"},
+                    {"name": "_audit"},
+                ]
+            },
+        )
+        mock_get.return_value.raise_for_status = MagicMock()
+        indexes = client.list_indexes()
+        assert "botsv3" in indexes
+        assert "main" in indexes
+        assert "_internal" not in indexes
+        assert "_audit" not in indexes
+
+
+class TestListSourcetypes:
+    @patch("aec.splunk.client.requests.get")
+    @patch("aec.splunk.client.requests.post")
+    def test_list_sourcetypes(self, mock_post, mock_get, client: SplunkClient):
+        mock_post.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {"sid": "meta-123"},
+        )
+        mock_post.return_value.raise_for_status = MagicMock()
+
+        mock_get.side_effect = [
+            MagicMock(
+                status_code=200,
+                json=lambda: {"entry": [{"content": {"isDone": True, "eventCount": 5}}]},
+                raise_for_status=MagicMock(),
+            ),
+            MagicMock(
+                status_code=200,
+                json=lambda: {"results": [
+                    {"sourcetype": "wineventlog"},
+                    {"sourcetype": "aws:cloudtrail"},
+                    {"sourcetype": "o365:management:activity"},
+                ]},
+                raise_for_status=MagicMock(),
+            ),
+        ]
+
+        sourcetypes = client.list_sourcetypes("botsv3")
+        assert "wineventlog" in sourcetypes
+        assert "o365:management:activity" in sourcetypes
+
+
+@pytest.mark.integration
+class TestSplunkIntegration:
+    """Live integration tests — only run with SPLUNK_LIVE_TEST=1."""
+
+    @pytest.fixture(autouse=True)
+    def require_live(self):
+        import os
+        if not os.environ.get("SPLUNK_LIVE_TEST"):
+            pytest.skip("SPLUNK_LIVE_TEST not set — skipping live Splunk tests")
+
+    def test_probe_returns_ok(self):
+        client = SplunkClient(verify_ssl=False)
+        info = client.probe()
+        assert "entry" in info
+        content = info["entry"][0]["content"]
+        assert "version" in content
+
+    def test_list_indexes_includes_botsv3(self):
+        client = SplunkClient(verify_ssl=False)
+        indexes = client.list_indexes()
+        assert "botsv3" in indexes, f"Expected botsv3 index, found: {indexes}"
+
+    def test_botsv3_has_expected_sourcetypes(self):
+        from aec.splunk.client import BOTS_V3_EXPECTED_SOURCETYPES
+
+        client = SplunkClient(verify_ssl=False)
+        sourcetypes = client.list_sourcetypes("botsv3")
+        for expected in BOTS_V3_EXPECTED_SOURCETYPES:
+            assert any(
+                st.lower() == expected for st in sourcetypes
+            ), f"Missing sourcetype '{expected}' in botsv3. Found: {sourcetypes}"
+
+    def test_search_botsv3_returns_results(self):
+        client = SplunkClient(verify_ssl=False)
+        result = client.search(
+            query="index=botsv3 | head 5",
+            earliest="0",
+            latest="now",
+            max_results=5,
+        )
+        assert result["event_count"] > 0
+        assert len(result["results"]) > 0
+
+
 class TestBaseURL:
     def test_respects_https(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("SPLUNK_HOST", "https://secure.splunk.io:8089")
