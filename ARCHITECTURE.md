@@ -1,6 +1,15 @@
 # Architecture
 
-## Pipeline (6 nodes + 1 guard, 1 graph)
+## The two technical differentiators
+
+This isn't "LLM + Splunk MCP." Two design choices set it apart:
+
+1. **Three-Agent Panel Debate** — every evidence finding is judged by an *Auditor* persona (reads the control literally), an *Engineer* persona (reads the SPL technically), and an *Adversary* persona (tries to disprove the PASS verdict). Consensus rule: lowest verdict wins. The full debate transcript ships in `audit_trail.jsonl` — which means the report doesn't just state a verdict, it shows the argument that produced it.
+2. **Merkle-chained Evidence Trail** — every snapshot in `audit_trail.jsonl` includes the SHA-256 hash of the previous snapshot. The final xlsx carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` recomputes the chain and detects any post-hoc edit to either artifact.
+
+Together: the agent shows its work, and the work can't be silently rewritten.
+
+## Pipeline (8 nodes + 2 guards, 1 graph)
 
 See [`architecture.mmd`](architecture.mmd) for the rendered diagram.
 
@@ -20,16 +29,25 @@ operator prompt
 4. Splunk Executor (via Splunk MCP Server → Splunk Enterprise / BOTS v3)
       │
       ▼
-5. Evidence Normalizer → writes EvidenceSnapshot to audit_trail.jsonl
+5. Evidence Normalizer → EvidenceSnapshot
       │
       ▼
-6. Evidence Formatter  → passed-evidence row OR gap finding (severity-scored)
+6. Panel Debate        → 3 personas (Auditor / Engineer / Adversary) in parallel
+      │                  Adversary may emit counter-searches → loop back to (4) once
+      ▼
+7. Consensus           → lowest-of-three verdict + transcript
+      │
+      ▼
+8. Evidence Formatter  → passed-evidence row OR gap finding (severity-scored)
       │
       ▼
 [Review Gate]          → auto (skip) or interactive (LangGraph interrupt)
       │
       ▼
-gap_report.xlsx  +  audit_package.md  +  audit_trail.jsonl
+[Merkle Chain Sealer]  → hashes every snapshot, embeds root in xlsx Manifest sheet
+      │
+      ▼
+gap_report.xlsx  +  audit_package.md  +  audit_trail.jsonl  → all verifiable via `aec verify`
 ```
 
 ## Why these guards exist
@@ -37,6 +55,8 @@ gap_report.xlsx  +  audit_package.md  +  audit_trail.jsonl
 - **SPL Validator** — the LLM can hallucinate indexes that don't exist, omit time bounds (unbounded searches DoS the Splunk trial), or emit destructive commands (`| delete`, `| outputlookup`). The validator enforces an execution policy *before* any SPL hits the wire. Rejection routes to a gap finding with a clear reason. This is what makes the agent audit-defensible.
 - **Evidence Normalizer** — captures full provenance (control_id, exact SPL run, sourcetypes touched, row count, timestamp, LLM model + prompt id) into `audit_trail.jsonl`. Without this the agent's output isn't credible to an auditor.
 - **Review Gate** — LangGraph `interrupt()` pauses for human approve/edit/reject. Off by default for demo speed; flip on with `--review=interactive` for the enterprise mode.
+- **Panel Debate (task 007)** — three parallel LLM calls with distinct system prompts. The Adversary persona is the only one allowed to propose new counter-searches (one round of recurrence). Consensus is mechanical (lowest verdict wins) — no LLM "tiebreaker" in the critical path, so the result is reproducible. Personas are stored as plain-markdown system prompts in `src/aec/agent/personas/` so you can edit them without touching code.
+- **Merkle Chain Sealer (task 008)** — pure SHA-256, no signing infra. Canonical JSON serialization (sorted keys, no whitespace, prev/this hash fields excluded from input). `aec verify` recomputes the chain and cross-checks the manifest root in the xlsx against the trail tip. Exit code 1 on any mismatch.
 
 ## Tech stack
 
