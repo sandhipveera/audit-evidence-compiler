@@ -65,6 +65,29 @@ aec ask --framework soc2 --control CC6.1 --output gap_report.xlsx
 
 Even if you don't use the agent, the [`src/aec/priors/catalog.json`](src/aec/priors/catalog.json) file is a standalone library mapping ~36 internal cybersecurity controls across **ISO 27001, NIST 800-53, NIST CSF, SOC 2, and COBIT**, each tagged with the Splunk evidence patterns required to prove compliance. Derived from real consulting engagements; sanitized for open distribution.
 
+## Why INSUFFICIENT outranks FAIL in consensus
+
+When the three personas disagree, the panel picks the **most conservative** verdict
+(lowest-of-three / max severity). Severity order:
+
+    PASS < PARTIAL < FAIL < INSUFFICIENT
+
+INSUFFICIENT means "the evidence doesn't let me determine pass/fail."
+FAIL means "I can determine, and it fails."
+
+We rank INSUFFICIENT higher than FAIL because:
+
+1. An audit submission with insufficient evidence requires gathering more data —
+   this is a stronger signal to the operator than a clear FAIL (which has a
+   known remediation).
+2. Asymmetric error cost: shipping a "PASS" when reality is INSUFFICIENT is
+   worse than shipping "FAIL" when reality is PASS. Both are wrong; the first
+   hides the gap.
+
+Operators who want INSUFFICIENT to NOT dominate can configure via
+`AEC_INSUFFICIENT_OVERRIDES_FAIL=false` (sets INSUFFICIENT severity equal to
+PARTIAL, so a clear FAIL wins).
+
 ## Demo
 
 3-minute video: [link forthcoming]
