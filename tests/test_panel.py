@@ -11,7 +11,6 @@ import pytest
 from aec.agent.models import Critique, PersonaSpec, VERDICT_SEVERITY, _build_severity_order
 from aec.agent.panel import (
     _compute_consensus,
-    _format_transcript_file,
     _parse_critique_json,
     _render_transcript,
     load_persona,
