@@ -55,3 +55,4 @@ test-results/
 playwright-report/
 tests/.auth/
 .playwright/
+node_modules/
