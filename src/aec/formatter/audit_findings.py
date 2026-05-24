@@ -8,13 +8,14 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+from collections.abc import Mapping
 from datetime import date, timedelta
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
 import openpyxl
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 TEMPLATE_RESOURCE = "aec.formatter.templates"
@@ -39,21 +40,110 @@ CLOSURE_DAYS: dict[str, int] = {
 
 
 class GapFinding(BaseModel):
-    finding_id: str
-    audit_type: str = "Internal"
-    framework: str = ""
-    audit_reference: str = ""
-    finding_description: str = ""
-    finding_category: str = ""
-    severity: str = "Medium"
-    root_cause: str = ""
-    affected_system: str = ""
-    risk_owner: str = ""
-    remediation_action: str = ""
-    remediation_owner: str = ""
-    current_status: str = "Open"
-    evidence_reference: str = ""
-    comments: str = ""
+    model_config = ConfigDict(populate_by_name=True)
+
+    finding_id: str = Field(validation_alias=AliasChoices("finding_id", "id", "Finding ID"))
+    audit_type: str = Field(
+        default="Internal",
+        validation_alias=AliasChoices("audit_type", "Audit Type", "Audit Type (Internal/External)"),
+    )
+    framework: str = Field(
+        default="",
+        validation_alias=AliasChoices("framework", "Framework", "Framework (ISO/NIST/SOC2)"),
+    )
+    audit_reference: str = Field(
+        default="",
+        validation_alias=AliasChoices("audit_reference", "control_id", "Audit Reference"),
+    )
+    finding_description: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "finding_description",
+            "description",
+            "Finding Description",
+        ),
+    )
+    finding_category: str = Field(
+        default="",
+        validation_alias=AliasChoices("finding_category", "category", "Finding Category"),
+    )
+    severity: str = Field(
+        default="Medium",
+        validation_alias=AliasChoices("severity", "Severity", "Severity (Low/Medium/High/Critical)"),
+    )
+    root_cause: str = Field(
+        default="",
+        validation_alias=AliasChoices("root_cause", "Root Cause"),
+    )
+    affected_system: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "affected_system",
+            "affected_system_process",
+            "Affected System",
+            "Affected System/Process",
+            "Affected System / Process",
+        ),
+    )
+    risk_owner: str = Field(default="", validation_alias=AliasChoices("risk_owner", "Risk Owner"))
+    remediation_action: str = Field(
+        default="",
+        validation_alias=AliasChoices("remediation_action", "Remediation Action"),
+    )
+    remediation_owner: str = Field(
+        default="",
+        validation_alias=AliasChoices("remediation_owner", "Remediation Owner"),
+    )
+    current_status: str = Field(
+        default="Open",
+        validation_alias=AliasChoices(
+            "current_status",
+            "status",
+            "Status",
+            "Current Status",
+            "Current Status (Open/In Progress/Closed)",
+        ),
+    )
+    evidence_reference: str = Field(
+        default="",
+        validation_alias=AliasChoices("evidence_reference", "evidence_ref", "Evidence Reference"),
+    )
+    comments: str = Field(default="", validation_alias=AliasChoices("comments", "Comments"))
+
+    @field_validator(
+        "audit_type",
+        "framework",
+        "audit_reference",
+        "finding_description",
+        "finding_category",
+        "root_cause",
+        "affected_system",
+        "risk_owner",
+        "remediation_action",
+        "remediation_owner",
+        "evidence_reference",
+        "comments",
+        mode="before",
+    )
+    @classmethod
+    def _optional_text(cls, value: Any) -> str:
+        return "" if value is None else str(value).strip()
+
+    @field_validator("severity", mode="before")
+    @classmethod
+    def _severity_label(cls, value: Any) -> str:
+        if value is None:
+            return "Medium"
+        label = str(value).strip()
+        return label or "Medium"
+
+    @field_validator("current_status", mode="before")
+    @classmethod
+    def _status_label(cls, value: Any) -> str:
+        if value is None:
+            return "Open"
+        label = str(value).strip()
+        return label or "Open"
 
     @property
     def severity_score(self) -> int:
@@ -63,6 +153,9 @@ class GapFinding(BaseModel):
         ref = reference_date or date.today()
         days = CLOSURE_DAYS.get(self.severity.lower(), 180)
         return ref + timedelta(days=days)
+
+
+EvidenceRow = GapFinding
 
 
 def _get_template_path() -> Path:
@@ -95,8 +188,16 @@ def _finding_to_row(finding: GapFinding, reference_date: date | None = None) -> 
     ]
 
 
+def _coerce_finding(finding: GapFinding | BaseModel | Mapping[str, Any]) -> GapFinding:
+    if isinstance(finding, GapFinding):
+        return finding
+    if isinstance(finding, BaseModel):
+        return GapFinding.model_validate(finding.model_dump())
+    return GapFinding.model_validate(finding)
+
+
 def write_findings(
-    findings: list[GapFinding],
+    findings: list[GapFinding | BaseModel | Mapping[str, Any]],
     output_path: Path,
     *,
     reference_date: date | None = None,
@@ -114,7 +215,7 @@ def write_findings(
     ws = wb[SHEET_NAME]
 
     for row_offset, finding in enumerate(findings):
-        row_values = _finding_to_row(finding, reference_date)
+        row_values = _finding_to_row(_coerce_finding(finding), reference_date)
         row_num = DATA_START_ROW + row_offset
         for col_offset, value in enumerate(row_values):
             if value is not None:
@@ -125,10 +226,15 @@ def write_findings(
 
 
 def load_findings_from_json(path: Path) -> list[GapFinding]:
-    """Load gap findings from a JSON file (list of objects)."""
+    """Load gap findings from a JSON file."""
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
-    if isinstance(raw, dict) and "findings" in raw:
-        raw = raw["findings"]
+    if isinstance(raw, dict):
+        for key in ("findings", "gap_findings", "evidence_rows"):
+            if key in raw:
+                raw = raw[key]
+                break
+    if not isinstance(raw, list):
+        raise ValueError("Expected evidence JSON to be a list or contain findings/evidence_rows")
     return [GapFinding.model_validate(item) for item in raw]
 
 

@@ -101,6 +101,10 @@ class TestGapFindingModel:
         assert _make_finding(severity="HIGH").severity_score == 3
         assert _make_finding(severity="low").severity_score == 1
 
+    def test_severity_score_strips_whitespace(self):
+        assert _make_finding(severity=" High ").severity_score == 3
+        assert _make_finding(severity="Critical\n").severity_score == 4
+
     def test_severity_score_unknown_defaults_to_2(self):
         assert _make_finding(severity="Unknown").severity_score == 2
 
@@ -253,6 +257,32 @@ class TestWriteFindings:
         ws = wb[SHEET_NAME]
         assert ws.cell(row=DATA_START_ROW, column=19).value == "trail.jsonl#snap-42"
 
+    def test_accepts_dict_evidence_rows_with_common_aliases(self, tmp_path: Path):
+        findings = [
+            {
+                "finding_id": "DICT-1",
+                "category": "Access Control",
+                "status": "In Progress",
+                "severity": " High ",
+                "description": "Admin access review missing",
+                "affected_system_process": "IAM",
+                "evidence_ref": "audit_trail.jsonl#dict-1",
+            }
+        ]
+
+        out = write_findings(findings, tmp_path / "report.xlsx", reference_date=REF_DATE)
+        wb = openpyxl.load_workbook(out)
+        ws = wb[SHEET_NAME]
+
+        assert ws.cell(row=DATA_START_ROW, column=2).value == "DICT-1"
+        assert ws.cell(row=DATA_START_ROW, column=6).value == "Admin access review missing"
+        assert ws.cell(row=DATA_START_ROW, column=7).value == "Access Control"
+        assert ws.cell(row=DATA_START_ROW, column=8).value == "High"
+        assert ws.cell(row=DATA_START_ROW, column=9).value == 3
+        assert ws.cell(row=DATA_START_ROW, column=11).value == "IAM"
+        assert ws.cell(row=DATA_START_ROW, column=16).value == "In Progress"
+        assert ws.cell(row=DATA_START_ROW, column=19).value == "audit_trail.jsonl#dict-1"
+
 
 class TestLoadFindingsFromJson:
     def test_load_list_format(self, tmp_path: Path):
@@ -274,6 +304,16 @@ class TestLoadFindingsFromJson:
         findings = load_findings_from_json(json_path)
         assert len(findings) == 1
         assert findings[0].severity_score == 4
+
+    def test_load_evidence_rows_wrapped_format(self, tmp_path: Path):
+        data = {"evidence_rows": [{"Finding ID": "F-1", "Severity": "Low", "Status": "Closed"}]}
+        json_path = tmp_path / "evidence.json"
+        json_path.write_text(__import__("json").dumps(data), encoding="utf-8")
+        findings = load_findings_from_json(json_path)
+        assert len(findings) == 1
+        assert findings[0].finding_id == "F-1"
+        assert findings[0].severity_score == 1
+        assert findings[0].current_status == "Closed"
 
     def test_defaults_applied(self, tmp_path: Path):
         data = [{"finding_id": "F-1"}]
