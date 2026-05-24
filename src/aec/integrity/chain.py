@@ -63,10 +63,20 @@ def read_trail(path: Path) -> list[dict[str, Any]]:
     """Read audit_trail.jsonl and return the list of snapshot dicts."""
     snapshots = []
     with open(path, encoding="utf-8") as f:
-        for line in f:
+        for line_number, line in enumerate(f, start=1):
             line = line.strip()
             if line:
-                snapshots.append(json.loads(line))
+                try:
+                    snapshot = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Invalid JSON in {path} line {line_number}: {exc.msg}"
+                    ) from exc
+                if not isinstance(snapshot, dict):
+                    raise ValueError(
+                        f"Invalid snapshot in {path} line {line_number}: expected object"
+                    )
+                snapshots.append(snapshot)
     return snapshots
 
 

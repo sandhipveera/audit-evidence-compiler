@@ -36,10 +36,10 @@ def catalog():
 @app.command()
 def verify(
     xlsx: Path = typer.Argument(..., help="Path to gap_report.xlsx"),
-    trail: Path = typer.Option(None, "--trail", help="Path to audit_trail.jsonl"),
+    trail: Path | None = typer.Option(None, "--trail", help="Path to audit_trail.jsonl"),
 ):
     """Verify the integrity of a gap report and its evidence chain."""
-    from aec.integrity.manifest import verify_report
+    from aec.integrity.manifest import read_manifest, verify_report
 
     if trail is None:
         trail = xlsx.parent / "audit_trail.jsonl"
@@ -57,8 +57,16 @@ def verify(
         console.print(f"{prefix} {msg}")
 
     if ok:
+        manifest = read_manifest(xlsx)
+        created_at = manifest.get("created_at") if manifest else None
         console.print()
-        console.print("[bold green]Report is verifiable. Nothing has been modified.[/]")
+        if created_at:
+            console.print(
+                f"[bold green]Report is verifiable. Nothing has been modified since "
+                f"{created_at}.[/]"
+            )
+        else:
+            console.print("[bold green]Report is verifiable. Nothing has been modified.[/]")
         raise SystemExit(0)
     else:
         console.print()

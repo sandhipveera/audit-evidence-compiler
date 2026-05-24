@@ -15,7 +15,13 @@ from aec.integrity.chain import (
     verify_chain,
     write_trail,
 )
-from aec.integrity.manifest import read_manifest, verify_report, write_manifest_sheet
+from aec.integrity.manifest import (
+    compute_manifest_hash,
+    compute_workbook_hash,
+    read_manifest,
+    verify_report,
+    write_manifest_sheet,
+)
 
 
 def _make_snapshot(control_id: str = "CC6.1.c", row_count: int = 247) -> dict:
@@ -216,6 +222,9 @@ class TestManifestSheet:
         assert manifest is not None
         assert manifest["chain_root"] == "sha256:deadbeef"
         assert manifest["chain_length"] == "12"
+        assert manifest["workbook_hash"].startswith("sha256:")
+        assert manifest["manifest_hash"].startswith("sha256:")
+        assert manifest["manifest_hash"] == compute_manifest_hash(xlsx)
         assert "aec_version" in manifest
 
     def test_overwrite_manifest(self, tmp_path: Path):
@@ -225,6 +234,14 @@ class TestManifestSheet:
         manifest = read_manifest(xlsx)
         assert manifest["chain_root"] == "sha256:second"
         assert manifest["chain_length"] == "10"
+
+    def test_workbook_hash_ignores_manifest_sheet(self, tmp_path: Path):
+        xlsx = self._make_xlsx(tmp_path)
+        write_manifest_sheet(xlsx, "sha256:first", 5)
+        first_hash = compute_workbook_hash(xlsx)
+        write_manifest_sheet(xlsx, "sha256:second", 10)
+        second_hash = compute_workbook_hash(xlsx)
+        assert first_hash == second_hash
 
     def test_no_manifest_returns_none(self, tmp_path: Path):
         xlsx = self._make_xlsx(tmp_path)
@@ -291,6 +308,48 @@ class TestVerifyReport:
         assert not ok
         assert any("mismatch" in m.upper() or "MISMATCH" in m for m in messages)
 
+    def test_tampered_xlsx_data_cell_fails(self, tmp_path: Path):
+        import openpyxl
+
+        def tamper(trail_path, xlsx_path, chain):
+            wb = openpyxl.load_workbook(xlsx_path)
+            ws = wb["Findings"]
+            ws["C3"] = 9999
+            wb.save(xlsx_path)
+
+        xlsx, trail = self._setup(tmp_path, tamper_fn=tamper)
+        ok, messages = verify_report(xlsx, trail)
+        assert not ok
+        assert any("workbook hash mismatch" in m.lower() for m in messages)
+
+    def test_tampered_xlsx_empty_cell_fails(self, tmp_path: Path):
+        import openpyxl
+
+        def tamper(trail_path, xlsx_path, chain):
+            wb = openpyxl.load_workbook(xlsx_path)
+            ws = wb["Findings"]
+            ws["E20"] = "post-collection note"
+            wb.save(xlsx_path)
+
+        xlsx, trail = self._setup(tmp_path, tamper_fn=tamper)
+        ok, messages = verify_report(xlsx, trail)
+        assert not ok
+        assert any("workbook hash mismatch" in m.lower() for m in messages)
+
+    def test_tampered_manifest_description_cell_fails(self, tmp_path: Path):
+        import openpyxl
+
+        def tamper(trail_path, xlsx_path, chain):
+            wb = openpyxl.load_workbook(xlsx_path)
+            ws = wb["Manifest"]
+            ws["C4"] = "edited after collection"
+            wb.save(xlsx_path)
+
+        xlsx, trail = self._setup(tmp_path, tamper_fn=tamper)
+        ok, messages = verify_report(xlsx, trail)
+        assert not ok
+        assert any("manifest hash mismatch" in m.lower() for m in messages)
+
     def test_missing_trail_fails(self, tmp_path: Path):
         import openpyxl
 
@@ -299,6 +358,15 @@ class TestVerifyReport:
         wb.save(xlsx_path)
         ok, messages = verify_report(xlsx_path, tmp_path / "nonexistent.jsonl")
         assert not ok
+
+    def test_missing_xlsx_fails(self, tmp_path: Path):
+        chain = _make_chain(3)
+        trail_path = tmp_path / "audit_trail.jsonl"
+        write_trail(trail_path, chain)
+
+        ok, messages = verify_report(tmp_path / "missing.xlsx", trail_path)
+        assert not ok
+        assert any("XLSX not found" in m for m in messages)
 
     def test_missing_manifest_fails(self, tmp_path: Path):
         import openpyxl
@@ -323,6 +391,36 @@ class TestVerifyReport:
         ok, messages = verify_report(xlsx, trail)
         assert not ok
         assert any("length mismatch" in m.lower() for m in messages)
+
+    def test_invalid_chain_length_fails_without_crashing(self, tmp_path: Path):
+        import openpyxl
+
+        def tamper(trail_path, xlsx_path, chain):
+            wb = openpyxl.load_workbook(xlsx_path)
+            ws = wb["Manifest"]
+            for row in range(4, ws.max_row + 1):
+                if ws.cell(row=row, column=1).value == "chain_length":
+                    ws.cell(row=row, column=2).value = "not-a-number"
+                    break
+            wb.save(xlsx_path)
+
+        xlsx, trail = self._setup(tmp_path, tamper_fn=tamper)
+        ok, messages = verify_report(xlsx, trail)
+        assert not ok
+        assert any("invalid chain length" in m.lower() for m in messages)
+
+    def test_invalid_json_trail_fails_without_crashing(self, tmp_path: Path):
+        import openpyxl
+
+        xlsx_path = tmp_path / "gap_report.xlsx"
+        wb = openpyxl.Workbook()
+        wb.save(xlsx_path)
+        trail_path = tmp_path / "audit_trail.jsonl"
+        trail_path.write_text('{"snapshot_id": "ok"}\n{bad json}\n', encoding="utf-8")
+
+        ok, messages = verify_report(xlsx_path, trail_path)
+        assert not ok
+        assert any("Invalid JSON" in m for m in messages)
 
     def test_large_chain_performance(self, tmp_path: Path):
         """100-snapshot chain should verify in under 2 seconds."""
