@@ -7,7 +7,7 @@ import shutil
 
 from aec.agent.transports import CompletionResult, Transport
 
-DEFAULT_MODEL = "gpt-5"
+DEFAULT_MODEL = "gpt-5.5"
 
 
 def _content_to_text(content: object) -> str:
@@ -108,8 +108,18 @@ class OpenAICLITransport(Transport):
             raise RuntimeError(
                 f"codex CLI exited {proc.returncode}: {stderr.decode('utf-8', errors='replace')}"
             )
+        raw_output = stdout.decode("utf-8")
+        for line in raw_output.splitlines():
+            try:
+                evt = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if evt.get("type") in ("error", "turn.failed"):
+                raise RuntimeError(
+                    f"Codex CLI error: {evt.get('message') or evt.get('error', {}).get('message')}"
+                )
         return CompletionResult(
-            text=_extract_codex_text(stdout.decode("utf-8")),
+            text=_extract_codex_text(raw_output),
             model=requested_model,
             transport_name=self.name,
         )

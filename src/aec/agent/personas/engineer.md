@@ -1,7 +1,8 @@
 ---
 persona: engineer
 transports:
-  - openai-cli
+  - openai-cli:
+      model: gpt-5.5
   - openai-api:
       model: gpt-5.5
 temperature: 0.4
