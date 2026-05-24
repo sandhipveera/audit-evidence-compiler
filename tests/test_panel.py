@@ -326,6 +326,48 @@ class TestRunPanel:
         personas_present = {c.persona for c in result.critiques}
         assert "engineer" not in personas_present
 
+    async def test_single_vendor_fallback_when_two_personas_fail(
+        self,
+        persona_dir: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setenv("AEC_PANEL_SINGLE_VENDOR_FALLBACK", "true")
+        call_counts = {"auditor": 0, "engineer": 0, "adversary": 0}
+
+        async def two_fail_then_claude(persona: PersonaSpec, prompt: str):
+            call_counts[persona.persona] += 1
+
+            if call_counts[persona.persona] == 1 and persona.persona != "auditor":
+                raise RuntimeError("vendor unavailable")
+
+            assert persona.transports[0].name == "anthropic-cli"
+            text = _critique_json("PASS", 0.9, f"{persona.persona} via Claude")
+            return (
+                CompletionResult(
+                    text=text,
+                    model="claude-sonnet-4-6",
+                    transport_name="anthropic-cli",
+                ),
+                False,
+            )
+
+        with patch("aec.agent.panel.llm_router.complete", side_effect=two_fail_then_claude):
+            result = await run_panel(
+                snapshot=FIXTURE_SNAPSHOT,
+                control_text=FIXTURE_CONTROL_TEXT,
+                spl_executed=FIXTURE_SPL,
+                persona_dir=persona_dir,
+            )
+
+        assert result.degraded
+        assert result.mode == "single-vendor"
+        assert result.final_verdict == "PASS"
+        assert len(result.critiques) == 3
+        assert {c.persona for c in result.critiques} == {"auditor", "engineer", "adversary"}
+        assert {c.transport for c in result.critiques} == {"anthropic-cli"}
+        assert all(c.fallback_used for c in result.critiques)
+        assert call_counts == {"auditor": 2, "engineer": 2, "adversary": 2}
+
     async def test_transport_fallback_recorded(self, persona_dir: Path):
         async def fallback_scenario(persona: PersonaSpec, prompt: str):
             text = _critique_json("PASS", 0.9, f"{persona.persona} ok")

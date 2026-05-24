@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import time
 from importlib.resources import files
 from pathlib import Path
@@ -24,6 +25,10 @@ log = logging.getLogger(__name__)
 
 PERSONA_DIR = files("aec.agent") / "personas"
 PERSONA_NAMES = ("auditor", "engineer", "adversary")
+SINGLE_VENDOR_FALLBACK_CHAIN = (
+    TransportSpec(name="anthropic-cli"),
+    TransportSpec(name="anthropic-api", config={"model": "claude-sonnet-4-6"}),
+)
 
 
 def load_persona(name: str, persona_dir: Path | None = None) -> PersonaSpec:
@@ -88,6 +93,7 @@ def _parse_critique_json(raw_text: str) -> dict[str, Any]:
 async def _run_persona(
     persona: PersonaSpec,
     user_prompt: str,
+    force_fallback_used: bool = False,
 ) -> Critique:
     """Run a single persona and return a Critique."""
     start = time.monotonic()
@@ -106,7 +112,7 @@ async def _run_persona(
         concerns=parsed.get("concerns", []),
         recommended_additional_searches=parsed.get("recommended_additional_searches", []),
         latency_ms=elapsed_ms,
-        fallback_used=fallback_used,
+        fallback_used=force_fallback_used or fallback_used,
     )
 
 
@@ -138,6 +144,34 @@ def _render_transcript(critiques: list[Critique], final_verdict: str) -> str:
     return "\n".join(lines)
 
 
+def _single_vendor_fallback_enabled() -> bool:
+    return os.environ.get("AEC_PANEL_SINGLE_VENDOR_FALLBACK", "true").lower() not in {
+        "0",
+        "false",
+        "no",
+    }
+
+
+def _as_single_vendor_persona(persona: PersonaSpec) -> PersonaSpec:
+    """Keep the persona prompt, but force the transport chain to Claude."""
+    return PersonaSpec(
+        persona=persona.persona,
+        transports=list(SINGLE_VENDOR_FALLBACK_CHAIN),
+        temperature=persona.temperature,
+        system_prompt=persona.system_prompt,
+    )
+
+
+def _mode_for(critiques: list[Critique], single_vendor_fallback: bool = False) -> str:
+    if single_vendor_fallback:
+        return "single-vendor"
+    if len(critiques) >= 2 and len({c.transport.split("-")[0] for c in critiques}) >= 2:
+        return "multi-vendor"
+    if critiques:
+        return "single-vendor"
+    return "failed"
+
+
 async def run_panel(
     snapshot: dict[str, Any],
     control_text: str,
@@ -150,7 +184,7 @@ async def run_panel(
     Falls back gracefully:
       - 3 personas → multi-vendor (ideal)
       - 2 personas → degraded multi-vendor
-      - 1 persona  → degraded single-vendor
+      - 1 persona  → rerun all three prompts through Claude single-vendor mode
       - 0 personas → raises RuntimeError
     """
     personas: list[PersonaSpec] = []
@@ -165,11 +199,11 @@ async def run_panel(
 
     user_prompt = _build_user_prompt(snapshot, control_text, spl_executed)
 
-    async def _invoke(persona: PersonaSpec) -> Critique | None:
+    async def _invoke(persona: PersonaSpec, force_fallback_used: bool = False) -> Critique | None:
         if view:
             view.update(persona.persona, "running...")
         try:
-            critique = await _run_persona(persona, user_prompt)
+            critique = await _run_persona(persona, user_prompt, force_fallback_used)
             if view:
                 view.update(persona.persona, critique.rationale, critique.verdict)
             return critique
@@ -185,14 +219,29 @@ async def run_panel(
     if not critiques:
         raise RuntimeError("All personas failed — no critiques produced")
 
+    used_single_vendor_fallback = False
+    if len(critiques) == 1 and _single_vendor_fallback_enabled():
+        log.warning(
+            "Only one persona succeeded; rerunning all personas in single-vendor fallback mode"
+        )
+        if view:
+            for persona in personas:
+                view.update(persona.persona, "single-vendor fallback...")
+
+        fallback_results = await asyncio.gather(
+            *[
+                _invoke(_as_single_vendor_persona(persona), force_fallback_used=True)
+                for persona in personas
+            ]
+        )
+        fallback_critiques = [c for c in fallback_results if c is not None]
+        if fallback_critiques:
+            critiques = fallback_critiques
+            used_single_vendor_fallback = True
+
     final_verdict = _compute_consensus(critiques)
-    degraded = len(critiques) < 3
-    mode = (
-        "multi-vendor"
-        if len(critiques) >= 2 and len({c.transport.split("-")[0] for c in critiques}) >= 2
-        else "single-vendor" if len(critiques) >= 1
-        else "failed"
-    )
+    degraded = len(critiques) < 3 or used_single_vendor_fallback
+    mode = _mode_for(critiques, used_single_vendor_fallback)
     transcript = _render_transcript(critiques, final_verdict)
 
     panel_result = PanelResult(
