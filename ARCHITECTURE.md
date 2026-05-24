@@ -4,7 +4,7 @@
 
 This isn't "LLM + Splunk MCP." Two design choices set it apart:
 
-1. **Three-Agent Panel Debate** — every evidence finding is judged by an *Auditor* persona (reads the control literally), an *Engineer* persona (reads the SPL technically), and an *Adversary* persona (tries to disprove the PASS verdict). Consensus rule: lowest verdict wins. The full debate transcript ships in `audit_trail.jsonl` — which means the report doesn't just state a verdict, it shows the argument that produced it.
+1. **Three-Agent Panel Debate — Claude × GPT × Gemini.** Every finding is judged by three personas, *each running on a different model from a different vendor*: Auditor (Claude Sonnet 4, reads the control literally), Engineer (GPT-5, reads the SPL technically), Adversary (Gemini 2.5 Pro, tries to disprove the PASS verdict). This is deliberate — disagreement between independently-trained models is meaningful signal; disagreement between same-model-different-prompts is performative. Consensus rule: lowest verdict wins. The full debate transcript ships in `audit_trail.jsonl`. Graceful fallback to single-vendor mode when keys are missing.
 2. **Merkle-chained Evidence Trail** — every snapshot in `audit_trail.jsonl` includes the SHA-256 hash of the previous snapshot. The final xlsx carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` recomputes the chain and detects any post-hoc edit to either artifact.
 
 Together: the agent shows its work, and the work can't be silently rewritten.

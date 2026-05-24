@@ -20,7 +20,7 @@ vCISO consultants spend 40+ hours per SOC 2 audit cycle hand-pulling evidence fr
 
 Two things you won't find in a single-LLM "ask Splunk a question" agent:
 
-1. **A three-agent panel debates every finding.** Auditor persona reads the control language. Engineer persona reads the SPL. Adversary persona tries to disprove the PASS verdict and proposes counter-searches. Consensus rule: lowest verdict wins — a single dissenting critic forces PARTIAL or FAIL. The full debate transcript ships with the report.
+1. **A three-agent panel — Claude, GPT, and Gemini — debates every finding.** Anthropic's Claude plays the Auditor (reads the control language literally). OpenAI's GPT plays the Engineer (reads the SPL for soundness). Google's Gemini plays the Adversary (tries to disprove the PASS verdict and proposes counter-searches). Three independently-trained models from three vendors. Consensus rule: lowest verdict wins — a single dissenting critic forces PARTIAL or FAIL. The full debate transcript ships with the report.
 2. **The audit trail is tamper-evident.** Every snapshot in `audit_trail.jsonl` is SHA-256-chained to the previous one. The xlsx carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` detects any post-hoc edit in under 2 seconds.
 
 The agent shows its work, and the work can't be silently rewritten.

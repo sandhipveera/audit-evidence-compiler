@@ -9,10 +9,10 @@ flowchart TD
 
         EN --> PANEL
 
-        subgraph PANEL[6. Three-Agent Panel Debate]
+        subgraph PANEL[6. Three-Agent Panel Debate · 3 vendors in parallel]
             direction LR
-            AUD[Auditor<br/>control language] -.parallel.- ENG[Engineer<br/>SPL soundness]
-            ENG -.parallel.- ADV[Adversary<br/>counter-evidence]
+            AUD[Auditor<br/>Claude Sonnet 4<br/>control language] -.parallel.- ENG[Engineer<br/>GPT-5<br/>SPL soundness]
+            ENG -.parallel.- ADV[Adversary<br/>Gemini 2.5 Pro<br/>counter-evidence]
         end
 
         PANEL --> CON[7. Consensus<br/>lowest-of-three rule]
@@ -41,10 +41,9 @@ flowchart TD
     LOG -.verify.-> VER[aec verify<br/>recompute chain]
     OUT -.verify.-> VER
 
-    LLM[Claude Sonnet 4] <-.control reasoning.-> CM
-    LLM <-.SPL synthesis.-> SG
-    LLM <-.3 personas.-> PANEL
-    LLM <-.synthesis.-> CON
+    LLM_PIPE[Claude Sonnet 4<br/>pipeline reasoning] <-.control reasoning.-> CM
+    LLM_PIPE <-.SPL synthesis.-> SG
+    LLM_PIPE <-.formatter narrative.-> FM
 
     classDef accent fill:#fde68a,stroke:#92400e,stroke-width:2px;
     classDef data fill:#dbeafe,stroke:#1e40af;
