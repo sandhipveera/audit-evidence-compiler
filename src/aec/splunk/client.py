@@ -176,9 +176,48 @@ class SplunkClient:
         }
 
 
+    def list_indexes(self) -> list[str]:
+        """Return names of all non-internal indexes."""
+        resp = requests.get(
+            self._url("/services/data/indexes"),
+            headers=self._headers,
+            params={"output_mode": "json", "count": 0},
+            verify=self.verify_ssl,
+            timeout=DEFAULT_TIMEOUT,
+        )
+        _raise_for_splunk_status(resp, "List indexes")
+        entries = resp.json().get("entry", [])
+        return [
+            e["name"]
+            for e in entries
+            if not e["name"].startswith("_")
+        ]
+
+    def list_sourcetypes(self, index: str) -> list[str]:
+        """Return sourcetypes present in a given index."""
+        result = self.search(
+            query=f"| metadata type=sourcetypes index={index}",
+            earliest="0",
+            latest="now",
+            max_results=200,
+            timeout=60,
+        )
+        return [r.get("sourcetype", "") for r in result.get("results", [])]
+
+
+BOTS_V3_EXPECTED_SOURCETYPES = [
+    "wineventlog",
+    "aws:cloudtrail",
+    "o365:management:activity",
+    "iis",
+    "stream:dns",
+]
+
+
 def main() -> None:
     """CLI probe: python -m aec.splunk.client --probe"""
     import argparse
+    import json as _json
 
     parser = argparse.ArgumentParser(description="Splunk client probe")
     parser.add_argument("--probe", action="store_true", help="Test connectivity")
@@ -186,12 +225,32 @@ def main() -> None:
 
     if args.probe:
         try:
-            client = SplunkClient()
+            client = SplunkClient(verify_ssl=False)
             info = client.probe()
-            server_name = info.get("entry", [{}])[0].get("content", {}).get("serverName", "unknown")
-            print(f"OK — connected to {server_name} at {client.host}")
+            entry = info.get("entry", [{}])[0].get("content", {})
+            version = entry.get("version", "unknown")
+            server_name = entry.get("serverName", "unknown")
+
+            indexes = client.list_indexes()
+
+            bots_sourcetypes: list[str] = []
+            if "botsv3" in indexes:
+                bots_sourcetypes = client.list_sourcetypes("botsv3")
+
+            result = {
+                "ok": True,
+                "version": version,
+                "server": server_name,
+                "indexes": indexes,
+                "botsv3_sourcetypes": bots_sourcetypes,
+                "botsv3_ready": all(
+                    any(st.lower() == expected for st in bots_sourcetypes)
+                    for expected in BOTS_V3_EXPECTED_SOURCETYPES
+                ) if bots_sourcetypes else False,
+            }
+            print(_json.dumps(result, indent=2))
         except Exception as e:
-            print(f"FAIL — {e}")
+            print(_json.dumps({"ok": False, "error": str(e)}, indent=2))
             raise SystemExit(1)
 
 
