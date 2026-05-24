@@ -1,6 +1,7 @@
 """Pydantic models for panel debate state."""
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -31,12 +32,19 @@ class Critique(BaseModel):
     fallback_used: bool = False
 
 
-VERDICT_SEVERITY: dict[str, int] = {
-    "PASS": 0,
-    "PARTIAL": 1,
-    "FAIL": 2,
-    "INSUFFICIENT": 3,
-}
+def _build_severity_order() -> dict[str, int]:
+    insufficient_overrides_fail = os.getenv(
+        "AEC_INSUFFICIENT_OVERRIDES_FAIL", "true"
+    ).lower() != "false"
+    return {
+        "PASS": 0,
+        "PARTIAL": 1,
+        "FAIL": 2,
+        "INSUFFICIENT": 3 if insufficient_overrides_fail else 1,
+    }
+
+
+VERDICT_SEVERITY: dict[str, int] = _build_severity_order()
 
 
 class PanelResult(BaseModel):
