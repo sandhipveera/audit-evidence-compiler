@@ -3,37 +3,54 @@ flowchart TD
 
     subgraph Agent[LangGraph Evidence Agent]
         CM[1. Control Mapper<br/>request → framework controls] --> SG[2. SPL Generator<br/>draft evidence queries]
-        SG --> SV[3. SPL Validator<br/>allowlist · time bounds · index scope]
+        SG --> SV[3. SPL Validator<br/>policy guard]
         SV --> SE[4. Splunk Executor<br/>via MCP]
-        SE --> EN[5. Evidence Normalizer<br/>raw rows → evidence snapshot]
-        EN --> FM[6. Evidence Formatter<br/>pass/fail · gap finding · remediation]
+        SE --> EN[5. Evidence Normalizer<br/>raw rows → EvidenceSnapshot]
+
+        EN --> PANEL
+
+        subgraph PANEL[6. Three-Agent Panel Debate]
+            direction LR
+            AUD[Auditor<br/>control language] -.parallel.- ENG[Engineer<br/>SPL soundness]
+            ENG -.parallel.- ADV[Adversary<br/>counter-evidence]
+        end
+
+        PANEL --> CON[7. Consensus<br/>lowest-of-three rule]
+        CON --> FM[8. Evidence Formatter<br/>verdict · gap · remediation]
     end
 
     CAT[(Control Evidence Catalog<br/>SOC 2 / NIST / ISO mappings)] -.lookup.-> CM
     HINT[(SPL Hints<br/>by control category)] -.lookup.-> SG
-    POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds · result caps)] -.validate.-> SV
+    POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds)] -.validate.-> SV
 
     SE <-->|MCP tool calls| MCP[Splunk MCP Server]
     MCP <-->|REST API| SPL[(Splunk Enterprise<br/>demo: BOTS v3)]
-
     SPL --- AUTH[(Authentication logs)]
     SPL --- CLOUD[(Cloud / IAM logs)]
     SPL --- EDR[(Endpoint / EDR logs)]
     SPL --- NET[(Network logs)]
 
-    FM --> REVIEW{Human Review Gate<br/>auto / approve / edit}
-    REVIEW -->|approve| OUT([gap_report.xlsx<br/>Audit Findings format])
-    REVIEW -->|approve| MD([audit_package.md])
-    EN --> RAW[(Evidence Snapshot<br/>query · rows · sources · timestamp)]
-    RAW --> LOG([audit_trail.jsonl<br/>full provenance])
+    ADV -.recommended counter-search.-> SE
+
+    FM --> REVIEW{Human Review Gate<br/>auto / interactive}
+    REVIEW -->|approve| MERKLE[Merkle Chain Sealer<br/>SHA-256 chained]
+    MERKLE --> OUT([gap_report.xlsx<br/>+ Manifest sheet w/ root hash])
+    MERKLE --> LOG([audit_trail.jsonl<br/>panel transcripts + prev_hash])
+    MERKLE --> MD([audit_package.md])
+
+    LOG -.verify.-> VER[aec verify<br/>recompute chain]
+    OUT -.verify.-> VER
 
     LLM[Claude Sonnet 4] <-.control reasoning.-> CM
     LLM <-.SPL synthesis.-> SG
-    LLM <-.remediation drafting.-> FM
+    LLM <-.3 personas.-> PANEL
+    LLM <-.synthesis.-> CON
 
     classDef accent fill:#fde68a,stroke:#92400e,stroke-width:2px;
     classDef data fill:#dbeafe,stroke:#1e40af;
     classDef guard fill:#dcfce7,stroke:#166534,stroke-width:2px;
+    classDef panel fill:#fce7f3,stroke:#9d174d,stroke-width:2px;
     class MCP,SPL accent
-    class CAT,HINT,POLICY,RAW,OUT,LOG,MD data
-    class SV,REVIEW guard
+    class CAT,HINT,POLICY,OUT,LOG,MD accent
+    class SV,REVIEW,MERKLE,VER guard
+    class AUD,ENG,ADV,CON panel

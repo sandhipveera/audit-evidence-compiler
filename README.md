@@ -16,6 +16,15 @@ $ aec ask --framework soc2 --control CC6.1 --output gap_report.xlsx
 
 vCISO consultants spend 40+ hours per SOC 2 audit cycle hand-pulling evidence from Splunk and reformatting it into auditor-acceptable artifacts. This agent does it in one prompt.
 
+## What makes this different
+
+Two things you won't find in a single-LLM "ask Splunk a question" agent:
+
+1. **A three-agent panel debates every finding.** Auditor persona reads the control language. Engineer persona reads the SPL. Adversary persona tries to disprove the PASS verdict and proposes counter-searches. Consensus rule: lowest verdict wins — a single dissenting critic forces PARTIAL or FAIL. The full debate transcript ships with the report.
+2. **The audit trail is tamper-evident.** Every snapshot in `audit_trail.jsonl` is SHA-256-chained to the previous one. The xlsx carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` detects any post-hoc edit in under 2 seconds.
+
+The agent shows its work, and the work can't be silently rewritten.
+
 ## What it does
 
 1. **Control mapping layer** — translates `"SOC 2 CC6.1"` or `"NIST CSF PR.AC-1"` into the specific internal controls and evidence types required, using a curated prior built from 89 production vCISO templates.
@@ -23,8 +32,10 @@ vCISO consultants spend 40+ hours per SOC 2 audit cycle hand-pulling evidence fr
 3. **SPL validator** — blocks unbounded searches, unknown indexes, and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes a gap finding with a clear reason.
 4. **Splunk executor** — runs validated SPL via the [Splunk MCP Server](https://github.com/splunk/mcp-server-for-splunk).
 5. **Evidence normalizer** — wraps every result with full provenance (control, SPL, sourcetypes, timestamp, model metadata) into `audit_trail.jsonl`.
-6. **Evidence formatter** — drops results into the same Audit Findings Remediation Tracker xlsx format that real audit committees already use; gap findings get severity, root cause, and LLM-drafted remediation.
-7. **Review gate (optional)** — LangGraph interrupt for human approve/edit/reject before the xlsx is written; off by default for demo, on for enterprise use.
+6. **Panel debate** — three personas (Auditor, Engineer, Adversary) critique the evidence in parallel; lowest-of-three verdict wins; transcript persists.
+7. **Evidence formatter** — drops results into the same Audit Findings Remediation Tracker xlsx format that real audit committees already use; gap findings get severity, root cause, and LLM-drafted remediation.
+8. **Review gate (optional)** — LangGraph interrupt for human approve/edit/reject before the xlsx is written.
+9. **Merkle chain sealer** — SHA-256-chains every snapshot, embeds the chain root in the xlsx Manifest sheet. `aec verify` proves nothing has been edited post-collection.
 
 ## Architecture
 
