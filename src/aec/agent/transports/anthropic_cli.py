@@ -23,17 +23,18 @@ class AnthropicCLITransport(Transport):
         model: str,
         temperature: float,
     ) -> CompletionResult:
-        prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+        requested_model = model or DEFAULT_MODEL
         proc = await asyncio.create_subprocess_exec(
             "claude",
             "--print",
             "--output-format", "json",
-            "--model", model or DEFAULT_MODEL,
+            "--model", requested_model,
+            "--system-prompt", system_prompt,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate(prompt.encode("utf-8"))
+        stdout, stderr = await proc.communicate(user_prompt.encode("utf-8"))
         if proc.returncode != 0:
             raise RuntimeError(
                 f"claude CLI exited {proc.returncode}: {stderr.decode('utf-8', errors='replace')}"
@@ -46,6 +47,6 @@ class AnthropicCLITransport(Transport):
             text = output
         return CompletionResult(
             text=text,
-            model=model or DEFAULT_MODEL,
+            model=requested_model,
             transport_name=self.name,
         )

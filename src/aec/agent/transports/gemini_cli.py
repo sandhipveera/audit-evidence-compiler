@@ -24,10 +24,11 @@ class GeminiCLITransport(Transport):
         temperature: float,
     ) -> CompletionResult:
         prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+        requested_model = model or DEFAULT_MODEL
         proc = await asyncio.create_subprocess_exec(
             "gemini",
-            "--prompt", "-",
-            "--output", "json",
+            "--model", requested_model,
+            "--output-format", "json",
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -40,11 +41,13 @@ class GeminiCLITransport(Transport):
         output = stdout.decode("utf-8").strip()
         try:
             parsed = json.loads(output)
+            if parsed.get("error"):
+                raise RuntimeError(f"gemini CLI error: {parsed['error']}")
             text = parsed.get("response", parsed.get("result", output))
         except json.JSONDecodeError:
             text = output
         return CompletionResult(
             text=text,
-            model=model or DEFAULT_MODEL,
+            model=requested_model,
             transport_name=self.name,
         )
