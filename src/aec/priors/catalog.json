@@ -1,0 +1,1156 @@
+{
+  "version": "0.1.0",
+  "source": "AccessQuint vCISO Core-Biz Templates (sanitized)",
+  "license": "Apache-2.0",
+  "frameworks": [
+    "ISO 27001",
+    "NIST 800-53",
+    "NIST CSF",
+    "SOC 2",
+    "COBIT"
+  ],
+  "control_categories": [
+    "Access Control",
+    "Logging & Monitoring",
+    "Incident Response",
+    "Data Protection",
+    "Risk Management",
+    "Vendor Risk",
+    "Policy"
+  ],
+  "spl_hints": {
+    "Access Control": {
+      "splunk_indicators": [
+        "login_failed",
+        "privilege_grant",
+        "user_created",
+        "mfa_used"
+      ],
+      "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+      "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+    },
+    "Logging & Monitoring": {
+      "splunk_indicators": [
+        "index health",
+        "ingestion lag",
+        "data sources reporting"
+      ],
+      "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+      "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+    },
+    "Incident Response": {
+      "splunk_indicators": [
+        "notable events",
+        "incident_id",
+        "MTTD",
+        "MTTC"
+      ],
+      "spl_skeleton": "index=notable earliest=-90d | stats count earliest(_time) latest(_time) by incident_id severity",
+      "evidence_question": "Are incidents detected, triaged, contained within SLA, and post-mortemed?"
+    },
+    "Data Protection": {
+      "splunk_indicators": [
+        "encryption_status",
+        "dlp_event",
+        "data_exfil"
+      ],
+      "spl_skeleton": "index=* sourcetype=dlp OR sourcetype=*encryption* earliest=-90d | stats count by host action",
+      "evidence_question": "Is sensitive data encrypted in transit/at rest, and is data exfiltration detected?"
+    },
+    "Risk Management": {
+      "splunk_indicators": [
+        "risk_score",
+        "asset_criticality",
+        "vuln_severity"
+      ],
+      "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+      "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+    },
+    "Vendor Risk": {
+      "splunk_indicators": [
+        "third_party_access",
+        "vendor_login"
+      ],
+      "spl_skeleton": "index=* (tag=authentication user IN (*vendor*, *contractor*)) earliest=-90d | stats count by user src_ip",
+      "evidence_question": "Is third-party access scoped, logged, and reviewed?"
+    },
+    "Policy": {
+      "splunk_indicators": [
+        "policy_acknowledged",
+        "training_completed"
+      ],
+      "spl_skeleton": "| inputlookup policy_attestations.csv | stats count by user policy_id status",
+      "evidence_question": "Are policies acknowledged by users and exceptions tracked?"
+    }
+  },
+  "controls": [
+    {
+      "internal_id": "CTRL-001",
+      "name": "Patch Management",
+      "category": "Preventive",
+      "control_family": "Patch Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-002",
+      "name": "Asset Inventory",
+      "category": "Preventive",
+      "control_family": "Asset Inventory",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-003",
+      "name": "Access Control Policy",
+      "category": "Preventive",
+      "control_family": "Access Control Policy",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "login_failed",
+          "privilege_grant",
+          "user_created",
+          "mfa_used"
+        ],
+        "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+        "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+      },
+      "splunk_hint_category": "Access Control"
+    },
+    {
+      "internal_id": "CTRL-004",
+      "name": "Patch Management",
+      "category": "Preventive",
+      "control_family": "Patch Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-005",
+      "name": "Encryption",
+      "category": "Preventive",
+      "control_family": "Encryption",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "encryption_status",
+          "dlp_event",
+          "data_exfil"
+        ],
+        "spl_skeleton": "index=* sourcetype=dlp OR sourcetype=*encryption* earliest=-90d | stats count by host action",
+        "evidence_question": "Is sensitive data encrypted in transit/at rest, and is data exfiltration detected?"
+      },
+      "splunk_hint_category": "Data Protection"
+    },
+    {
+      "internal_id": "CTRL-006",
+      "name": "Encryption",
+      "category": "Preventive",
+      "control_family": "Encryption",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "encryption_status",
+          "dlp_event",
+          "data_exfil"
+        ],
+        "spl_skeleton": "index=* sourcetype=dlp OR sourcetype=*encryption* earliest=-90d | stats count by host action",
+        "evidence_question": "Is sensitive data encrypted in transit/at rest, and is data exfiltration detected?"
+      },
+      "splunk_hint_category": "Data Protection"
+    },
+    {
+      "internal_id": "CTRL-007",
+      "name": "Asset Inventory",
+      "category": "Preventive",
+      "control_family": "Asset Inventory",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-008",
+      "name": "Patch Management",
+      "category": "Preventive",
+      "control_family": "Patch Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-009",
+      "name": "Encryption",
+      "category": "Preventive",
+      "control_family": "Encryption",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "encryption_status",
+          "dlp_event",
+          "data_exfil"
+        ],
+        "spl_skeleton": "index=* sourcetype=dlp OR sourcetype=*encryption* earliest=-90d | stats count by host action",
+        "evidence_question": "Is sensitive data encrypted in transit/at rest, and is data exfiltration detected?"
+      },
+      "splunk_hint_category": "Data Protection"
+    },
+    {
+      "internal_id": "CTRL-010",
+      "name": "Asset Inventory",
+      "category": "Preventive",
+      "control_family": "Asset Inventory",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-011",
+      "name": "Patch Management",
+      "category": "Preventive",
+      "control_family": "Patch Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-012",
+      "name": "Patch Management",
+      "category": "Preventive",
+      "control_family": "Patch Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "risk_score",
+          "asset_criticality",
+          "vuln_severity"
+        ],
+        "spl_skeleton": "| inputlookup asset_inventory | join host [search index=vuln earliest=-30d] | stats max(severity) by host criticality",
+        "evidence_question": "Are risks identified, scored, and tracked through to remediation?"
+      },
+      "splunk_hint_category": "Risk Management"
+    },
+    {
+      "internal_id": "CTRL-013",
+      "name": "Logging & Monitoring",
+      "category": "Detective",
+      "control_family": "Logging & Monitoring",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "index health",
+          "ingestion lag",
+          "data sources reporting"
+        ],
+        "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+        "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+      },
+      "splunk_hint_category": "Logging & Monitoring"
+    },
+    {
+      "internal_id": "CTRL-014",
+      "name": "Logging & Monitoring",
+      "category": "Detective",
+      "control_family": "Logging & Monitoring",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "index health",
+          "ingestion lag",
+          "data sources reporting"
+        ],
+        "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+        "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+      },
+      "splunk_hint_category": "Logging & Monitoring"
+    },
+    {
+      "internal_id": "CTRL-015",
+      "name": "Logging & Monitoring",
+      "category": "Detective",
+      "control_family": "Logging & Monitoring",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "index health",
+          "ingestion lag",
+          "data sources reporting"
+        ],
+        "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+        "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+      },
+      "splunk_hint_category": "Logging & Monitoring"
+    },
+    {
+      "internal_id": "CTRL-016",
+      "name": "Logging & Monitoring",
+      "category": "Detective",
+      "control_family": "Logging & Monitoring",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "index health",
+          "ingestion lag",
+          "data sources reporting"
+        ],
+        "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+        "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+      },
+      "splunk_hint_category": "Logging & Monitoring"
+    },
+    {
+      "internal_id": "CTRL-017",
+      "name": "Vendor Risk Management",
+      "category": "Detective",
+      "control_family": "Vendor Risk Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "third_party_access",
+          "vendor_login"
+        ],
+        "spl_skeleton": "index=* (tag=authentication user IN (*vendor*, *contractor*)) earliest=-90d | stats count by user src_ip",
+        "evidence_question": "Is third-party access scoped, logged, and reviewed?"
+      },
+      "splunk_hint_category": "Vendor Risk"
+    },
+    {
+      "internal_id": "CTRL-018",
+      "name": "Logging & Monitoring",
+      "category": "Detective",
+      "control_family": "Logging & Monitoring",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "index health",
+          "ingestion lag",
+          "data sources reporting"
+        ],
+        "spl_skeleton": "| metadata type=sourcetypes index=* | eval lag_min=(now()-recentTime)/60 | where lag_min > 60",
+        "evidence_question": "Are security-relevant log sources ingested continuously and monitored for failure?"
+      },
+      "splunk_hint_category": "Logging & Monitoring"
+    },
+    {
+      "internal_id": "CTRL-019",
+      "name": "Vendor Risk Management",
+      "category": "Detective",
+      "control_family": "Vendor Risk Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "third_party_access",
+          "vendor_login"
+        ],
+        "spl_skeleton": "index=* (tag=authentication user IN (*vendor*, *contractor*)) earliest=-90d | stats count by user src_ip",
+        "evidence_question": "Is third-party access scoped, logged, and reviewed?"
+      },
+      "splunk_hint_category": "Vendor Risk"
+    },
+    {
+      "internal_id": "CTRL-020",
+      "name": "User Access Review",
+      "category": "Detective",
+      "control_family": "User Access Review",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "login_failed",
+          "privilege_grant",
+          "user_created",
+          "mfa_used"
+        ],
+        "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+        "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+      },
+      "splunk_hint_category": "Access Control"
+    },
+    {
+      "internal_id": "CTRL-021",
+      "name": "User Access Review",
+      "category": "Detective",
+      "control_family": "User Access Review",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "login_failed",
+          "privilege_grant",
+          "user_created",
+          "mfa_used"
+        ],
+        "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+        "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+      },
+      "splunk_hint_category": "Access Control"
+    },
+    {
+      "internal_id": "CTRL-022",
+      "name": "Vendor Risk Management",
+      "category": "Detective",
+      "control_family": "Vendor Risk Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "third_party_access",
+          "vendor_login"
+        ],
+        "spl_skeleton": "index=* (tag=authentication user IN (*vendor*, *contractor*)) earliest=-90d | stats count by user src_ip",
+        "evidence_question": "Is third-party access scoped, logged, and reviewed?"
+      },
+      "splunk_hint_category": "Vendor Risk"
+    },
+    {
+      "internal_id": "CTRL-023",
+      "name": "User Access Review",
+      "category": "Detective",
+      "control_family": "User Access Review",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "login_failed",
+          "privilege_grant",
+          "user_created",
+          "mfa_used"
+        ],
+        "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+        "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+      },
+      "splunk_hint_category": "Access Control"
+    },
+    {
+      "internal_id": "CTRL-024",
+      "name": "User Access Review",
+      "category": "Detective",
+      "control_family": "User Access Review",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {
+        "splunk_indicators": [
+          "login_failed",
+          "privilege_grant",
+          "user_created",
+          "mfa_used"
+        ],
+        "spl_skeleton": "index=* (action=login OR action=privilege_grant OR action=user_created) earliest=-90d | stats count by user action",
+        "evidence_question": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+      },
+      "splunk_hint_category": "Access Control"
+    },
+    {
+      "internal_id": "CTRL-025",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-026",
+      "name": "Change Management",
+      "category": "Corrective",
+      "control_family": "Change Management",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-027",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-028",
+      "name": "Change Management",
+      "category": "Corrective",
+      "control_family": "Change Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-029",
+      "name": "Data Backup",
+      "category": "Corrective",
+      "control_family": "Data Backup",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-030",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-031",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-032",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-033",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": false,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-034",
+      "name": "Data Backup",
+      "category": "Corrective",
+      "control_family": "Data Backup",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": true,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-035",
+      "name": "Change Management",
+      "category": "Corrective",
+      "control_family": "Change Management",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": false,
+        "COBIT": true
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    },
+    {
+      "internal_id": "CTRL-036",
+      "name": "Incident Response",
+      "category": "Corrective",
+      "control_family": "Incident Response",
+      "frameworks": {
+        "ISO 27001": true,
+        "NIST 800-53": false,
+        "SOC 2": true,
+        "COBIT": false
+      },
+      "splunk_hint": {},
+      "splunk_hint_category": null
+    }
+  ],
+  "framework_index": {
+    "ISO 27001": [
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-003",
+        "internal_id": "ICTRL-003",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-004",
+        "internal_id": "ICTRL-004",
+        "category": "Incident Response",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-006",
+        "internal_id": "ICTRL-006",
+        "category": "Risk Management",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-009",
+        "internal_id": "ICTRL-009",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-010",
+        "internal_id": "ICTRL-010",
+        "category": "Incident Response",
+        "mapped": false,
+        "strength": "Moderate",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-013",
+        "internal_id": "ICTRL-013",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-014",
+        "internal_id": "ICTRL-014",
+        "category": "Incident Response",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-018",
+        "internal_id": "ICTRL-018",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "ISO 27001",
+        "framework_control_id": "FCTRL-029",
+        "internal_id": "ICTRL-029",
+        "category": "Incident Response",
+        "mapped": true,
+        "strength": "Strong",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      }
+    ],
+    "NIST 800-53": [],
+    "NIST CSF": [
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-002",
+        "internal_id": "ICTRL-002",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-005",
+        "internal_id": "ICTRL-005",
+        "category": "Risk Management",
+        "mapped": true,
+        "strength": "Moderate",
+        "implementation_status": "Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-016",
+        "internal_id": "ICTRL-016",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-017",
+        "internal_id": "ICTRL-017",
+        "category": "Data Protection",
+        "mapped": false,
+        "strength": "Moderate",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-019",
+        "internal_id": "ICTRL-019",
+        "category": "Access Control",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-020",
+        "internal_id": "ICTRL-020",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Strong",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-024",
+        "internal_id": "ICTRL-024",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-025",
+        "internal_id": "ICTRL-025",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-027",
+        "internal_id": "ICTRL-027",
+        "category": "Access Control",
+        "mapped": false,
+        "strength": "Moderate",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-031",
+        "internal_id": "ICTRL-031",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-033",
+        "internal_id": "ICTRL-033",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "NIST CSF",
+        "framework_control_id": "FCTRL-034",
+        "internal_id": "ICTRL-034",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Medium"
+      }
+    ],
+    "SOC 2": [
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-001",
+        "internal_id": "ICTRL-001",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-007",
+        "internal_id": "ICTRL-007",
+        "category": "Access Control",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-008",
+        "internal_id": "ICTRL-008",
+        "category": "Incident Response",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-011",
+        "internal_id": "ICTRL-011",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-012",
+        "internal_id": "ICTRL-012",
+        "category": "Incident Response",
+        "mapped": true,
+        "strength": "Moderate",
+        "implementation_status": "Not Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-015",
+        "internal_id": "ICTRL-015",
+        "category": "Incident Response",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-021",
+        "internal_id": "ICTRL-021",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-022",
+        "internal_id": "ICTRL-022",
+        "category": "Access Control",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-023",
+        "internal_id": "ICTRL-023",
+        "category": "Incident Response",
+        "mapped": false,
+        "strength": "Moderate",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Low"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-026",
+        "internal_id": "ICTRL-026",
+        "category": "Data Protection",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "Critical"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-028",
+        "internal_id": "ICTRL-028",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Weak",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-030",
+        "internal_id": "ICTRL-030",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Medium"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-032",
+        "internal_id": "ICTRL-032",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-035",
+        "internal_id": "ICTRL-035",
+        "category": "Data Protection",
+        "mapped": true,
+        "strength": "Weak",
+        "implementation_status": "Implemented",
+        "compliance_impact": "High"
+      },
+      {
+        "framework": "SOC 2",
+        "framework_control_id": "FCTRL-036",
+        "internal_id": "ICTRL-036",
+        "category": "Risk Management",
+        "mapped": false,
+        "strength": "Strong",
+        "implementation_status": "Partially Implemented",
+        "compliance_impact": "Low"
+      }
+    ],
+    "COBIT": []
+  }
+}

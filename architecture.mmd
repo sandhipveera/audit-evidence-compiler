@@ -1,0 +1,28 @@
+flowchart TD
+    O([Operator prompt:<br/>'SOC 2 CC6.1 evidence']) --> CM
+
+    subgraph Agent[LangGraph Agent]
+        CM[1. Control Mapper] --> SG[2. SPL Generator]
+        SG --> SE[3. Splunk Executor<br/>via MCP]
+        SE --> FM[4. Evidence Formatter]
+        SE -.gap.-> RL[5. Remediation Linker]
+        RL --> FM
+    end
+
+    CAT[(catalog.json<br/>vCISO priors)] -.lookup.-> CM
+    HINT[(SPL hints<br/>by category)] -.lookup.-> SG
+
+    SE <-->|MCP tool calls| MCP[Splunk MCP Server]
+    MCP <-->|REST API| SPL[(Splunk Enterprise<br/>+ BOTS v3 data)]
+
+    FM --> OUT([gap_report.xlsx<br/>Audit Findings format])
+    FM --> LOG([audit_trail.jsonl])
+
+    LLM[Claude Sonnet 4] <-.reasoning.-> CM
+    LLM <-.SPL synthesis.-> SG
+    LLM <-.remediation.-> RL
+
+    classDef accent fill:#fde68a,stroke:#92400e,stroke-width:2px;
+    classDef data fill:#dbeafe,stroke:#1e40af;
+    class MCP,SPL accent
+    class CAT,HINT,OUT,LOG data
