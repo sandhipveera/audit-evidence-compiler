@@ -34,11 +34,13 @@ def _load_sample(name: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _load_live(control_id: str, window: str) -> dict:
+def _load_live(control_id: str, window: str) -> tuple[dict, object]:
     """Fetch live snapshot from Splunk."""
+    from aec.splunk.client import SplunkClient
     from aec.splunk.snapshot import fetch_snapshot
 
-    return fetch_snapshot(control_id, time_window=window)
+    client = SplunkClient()
+    return fetch_snapshot(control_id, time_window=window, client=client), client
 
 
 def _control_text_for(control_id: str) -> str:
@@ -130,6 +132,7 @@ def _write_audit_memo(
 
 async def _run(args: argparse.Namespace) -> None:
     start = time.monotonic()
+    splunk_client = None
 
     # Step 1: Load snapshot
     if args.sample:
@@ -141,7 +144,7 @@ async def _run(args: argparse.Namespace) -> None:
         )
     else:
         console.print(f"[bold cyan][1/4][/] Fetching live snapshot for {args.control}...")
-        snapshot = _load_live(args.control, args.window)
+        snapshot, splunk_client = _load_live(args.control, args.window)
         console.print(
             f"      Fetched {snapshot['event_count']} events "
             f"({snapshot['time_range']['earliest']} to {snapshot['time_range']['latest']})"
@@ -170,6 +173,8 @@ async def _run(args: argparse.Namespace) -> None:
             control_text=control_text,
             spl_executed=snapshot.get("search", ""),
             splunk_snapshot=snapshot,
+            splunk_client=splunk_client,
+            time_window=args.window,
             view=view,
         )
     finally:
@@ -193,19 +198,8 @@ async def _run(args: argparse.Namespace) -> None:
         f"{consensus_detail}"
     )
 
-    # Step 3b: Adversary follow-up searches (opt-in)
-    followup_results = []
-    if (
-        os.environ.get("AEC_RUN_ADVERSARY_SEARCHES", "false").lower() in {"1", "true", "yes"}
-        and adversary
-        and adversary.recommended_additional_searches
-    ):
-        from aec.splunk.spl_validator import run_spl
-
-        console.print("      Running adversary follow-up searches...")
-        for spl in adversary.recommended_additional_searches:
-            result = run_spl(spl, time_window=args.window if not args.sample else "30d")
-            followup_results.append({"query": spl, **result})
+    if panel_result.adversary_followups:
+        console.print("      Included adversary follow-up search results in transcript")
 
     # Step 4: Write artifacts
     out_dir = Path("out")
@@ -216,19 +210,6 @@ async def _run(args: argparse.Namespace) -> None:
 
     snapshot_name = snapshot.get("snapshot_name", "unknown")
     transcript_content = _format_transcript_file(panel_result, control_id, snapshot_name)
-
-    if followup_results:
-        transcript_content += "\n## Adversary follow-up searches\n\n"
-        for fr in followup_results:
-            status = "OK" if fr["ok"] else "ERROR"
-            transcript_content += f"### `{fr['query']}`\n"
-            transcript_content += f"- Status: {status}\n"
-            transcript_content += f"- Hit count: {fr['hit_count']}\n"
-            if fr.get("error"):
-                transcript_content += f"- Error: {fr['error']}\n"
-            if fr.get("sample"):
-                transcript_content += f"- Sample: {json.dumps(fr['sample'][:3], indent=2)}\n"
-            transcript_content += "\n"
 
     transcript_path = out_dir / f"transcript_{ts}.md"
     transcript_path.write_text(transcript_content, encoding="utf-8")
@@ -268,12 +249,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if not args.sample and not args.control:
-        parser.error("Provide --sample or --control")
-
     # Allow AEC_SAMPLE env var as shortcut
     if not args.sample and os.environ.get("AEC_SAMPLE"):
         args.sample = os.environ["AEC_SAMPLE"]
+
+    if not args.sample and not args.control:
+        parser.error("Provide --sample or --control")
 
     asyncio.run(_run(args))
 

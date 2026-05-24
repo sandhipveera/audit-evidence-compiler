@@ -61,6 +61,14 @@ class TestProbe:
         with pytest.raises(Exception, match="503"):
             client.probe()
 
+    @patch("aec.splunk.client.requests.get")
+    def test_probe_timeout_raises_search_error(self, mock_get, client: SplunkClient):
+        import requests
+
+        mock_get.side_effect = requests.Timeout("timed out")
+        with pytest.raises(SplunkSearchError, match="timed out"):
+            client.probe()
+
 
 class TestSearch:
     @patch("aec.splunk.client.requests.get")
@@ -94,6 +102,27 @@ class TestSearch:
     def test_search_401_raises(self, mock_post, client: SplunkClient):
         mock_post.return_value = MagicMock(status_code=401)
         with pytest.raises(SplunkAuthError):
+            client.search("index=main")
+
+    @patch("aec.splunk.client.requests.post")
+    def test_search_parse_error_preserves_splunk_message(self, mock_post, client: SplunkClient):
+        mock_post.return_value = MagicMock(
+            status_code=400,
+            json=lambda: {
+                "messages": [
+                    {"type": "ERROR", "text": "syntax error in line 3 of query"},
+                ],
+            },
+        )
+        with pytest.raises(SplunkSearchError, match="syntax error in line 3"):
+            client.search("index=main | stats count")
+
+    @patch("aec.splunk.client.requests.post")
+    def test_search_request_timeout(self, mock_post, client: SplunkClient):
+        import requests
+
+        mock_post.side_effect = requests.Timeout("timed out")
+        with pytest.raises(SplunkSearchError, match="timed out"):
             client.search("index=main")
 
     @patch("aec.splunk.client.requests.get")

@@ -23,6 +23,36 @@ class SplunkSearchError(Exception):
     pass
 
 
+def _extract_error_message(resp: requests.Response) -> str:
+    """Extract the useful Splunk error text from a REST response."""
+    try:
+        data = resp.json()
+    except ValueError:
+        text = getattr(resp, "text", "")
+        return text if isinstance(text, str) and text else resp.reason
+
+    messages = data.get("messages")
+    if isinstance(messages, list) and messages:
+        parts = []
+        for message in messages:
+            if isinstance(message, dict):
+                parts.append(str(message.get("text") or message.get("message") or message))
+            else:
+                parts.append(str(message))
+        return "; ".join(parts)
+    return str(data)
+
+
+def _raise_for_splunk_status(resp: requests.Response, context: str) -> None:
+    if resp.status_code == 401:
+        raise SplunkAuthError("Authentication failed — check SPLUNK_TOKEN")
+    if resp.status_code >= 400:
+        raise SplunkSearchError(
+            f"{context} failed ({resp.status_code}): {_extract_error_message(resp)}"
+        )
+    resp.raise_for_status()
+
+
 class SplunkClient:
     """Thin REST client for Splunk search via token auth.
 
@@ -58,16 +88,17 @@ class SplunkClient:
 
     def probe(self) -> dict[str, Any]:
         """Probe connectivity — returns server info or raises."""
-        resp = requests.get(
-            self._url("/services/server/info"),
-            headers=self._headers,
-            params={"output_mode": "json"},
-            verify=self.verify_ssl,
-            timeout=DEFAULT_TIMEOUT,
-        )
-        if resp.status_code == 401:
-            raise SplunkAuthError("Authentication failed — check SPLUNK_TOKEN")
-        resp.raise_for_status()
+        try:
+            resp = requests.get(
+                self._url("/services/server/info"),
+                headers=self._headers,
+                params={"output_mode": "json"},
+                verify=self.verify_ssl,
+                timeout=DEFAULT_TIMEOUT,
+            )
+        except requests.Timeout as exc:
+            raise SplunkSearchError("Probe timed out") from exc
+        _raise_for_splunk_status(resp, "Probe")
         return resp.json()
 
     def search(
@@ -85,34 +116,38 @@ class SplunkClient:
         if not query.strip().startswith("search") and not query.strip().startswith("|"):
             query = f"search {query}"
 
-        create_resp = requests.post(
-            self._url("/services/search/jobs"),
-            headers=self._headers,
-            data={
-                "search": query,
-                "earliest_time": earliest,
-                "latest_time": latest,
-                "output_mode": "json",
-            },
-            verify=self.verify_ssl,
-            timeout=DEFAULT_TIMEOUT,
-        )
-        if create_resp.status_code == 401:
-            raise SplunkAuthError("Authentication failed — check SPLUNK_TOKEN")
-        create_resp.raise_for_status()
+        try:
+            create_resp = requests.post(
+                self._url("/services/search/jobs"),
+                headers=self._headers,
+                data={
+                    "search": query,
+                    "earliest_time": earliest,
+                    "latest_time": latest,
+                    "output_mode": "json",
+                },
+                verify=self.verify_ssl,
+                timeout=DEFAULT_TIMEOUT,
+            )
+        except requests.Timeout as exc:
+            raise SplunkSearchError("Search creation timed out") from exc
+        _raise_for_splunk_status(create_resp, "Search creation")
 
         sid = create_resp.json()["sid"]
         deadline = time.monotonic() + timeout
 
         while time.monotonic() < deadline:
-            status_resp = requests.get(
-                self._url(f"/services/search/jobs/{sid}"),
-                headers=self._headers,
-                params={"output_mode": "json"},
-                verify=self.verify_ssl,
-                timeout=DEFAULT_TIMEOUT,
-            )
-            status_resp.raise_for_status()
+            try:
+                status_resp = requests.get(
+                    self._url(f"/services/search/jobs/{sid}"),
+                    headers=self._headers,
+                    params={"output_mode": "json"},
+                    verify=self.verify_ssl,
+                    timeout=DEFAULT_TIMEOUT,
+                )
+            except requests.Timeout as exc:
+                raise SplunkSearchError(f"Search {sid} status poll timed out") from exc
+            _raise_for_splunk_status(status_resp, "Search status poll")
             entry = status_resp.json()["entry"][0]["content"]
 
             if entry.get("isDone"):
@@ -121,14 +156,17 @@ class SplunkClient:
         else:
             raise SplunkSearchError(f"Search {sid} timed out after {timeout}s")
 
-        results_resp = requests.get(
-            self._url(f"/services/search/jobs/{sid}/results"),
-            headers=self._headers,
-            params={"output_mode": "json", "count": max_results},
-            verify=self.verify_ssl,
-            timeout=DEFAULT_TIMEOUT,
-        )
-        results_resp.raise_for_status()
+        try:
+            results_resp = requests.get(
+                self._url(f"/services/search/jobs/{sid}/results"),
+                headers=self._headers,
+                params={"output_mode": "json", "count": max_results},
+                verify=self.verify_ssl,
+                timeout=DEFAULT_TIMEOUT,
+            )
+        except requests.Timeout as exc:
+            raise SplunkSearchError(f"Search {sid} results fetch timed out") from exc
+        _raise_for_splunk_status(results_resp, "Search results fetch")
         data = results_resp.json()
 
         return {

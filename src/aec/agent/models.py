@@ -54,3 +54,5 @@ class PanelResult(BaseModel):
     transcript: str = ""
     degraded: bool = False
     mode: str = "multi-vendor"
+    splunk_snapshot: dict[str, Any] | None = None
+    adversary_followups: list[dict[str, Any]] = Field(default_factory=list)
