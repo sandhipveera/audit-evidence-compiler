@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -118,6 +118,8 @@ class TestPanelWithSplunkSnapshot:
             )
 
         assert result.final_verdict == "FAIL"
+        assert str(snapshot["event_count"]) in result.transcript
+        assert "src_ip" in result.transcript
         assert any("MFA" in c.rationale or "MFA" in " ".join(c.concerns) for c in result.critiques)
 
     async def test_without_splunk_snapshot_still_works(self, persona_dir: Path):
@@ -150,27 +152,28 @@ class TestAdversaryFollowUp:
             adversary_searches=["index=auth mfa_status=bypassed | stats count by user"],
         )
 
-        with (
-            patch("aec.agent.panel.llm_router.complete", side_effect=mock_fn),
-            patch("aec.splunk.spl_validator.SplunkClient") as MockClient,
-        ):
-            mock_instance = MockClient.return_value
-            mock_instance.search.return_value = {
-                "results": [{"user": "svc_deploy", "count": "12"}],
-                "event_count": 12,
-                "search_id": "sid-followup",
-            }
+        mock_client = MagicMock()
+        mock_client.search.return_value = {
+            "results": [{"user": "svc_deploy", "count": "12"}],
+            "event_count": 12,
+            "search_id": "sid-followup",
+        }
 
+        with patch("aec.agent.panel.llm_router.complete", side_effect=mock_fn):
             result = await run_panel(
                 snapshot=snapshot,
                 control_text="CC6.1",
                 spl_executed=snapshot["search"],
                 persona_dir=persona_dir,
                 splunk_snapshot=snapshot,
+                splunk_client=mock_client,
             )
 
         adversary = next(c for c in result.critiques if c.persona == "adversary")
         assert len(adversary.recommended_additional_searches) > 0
+        assert result.adversary_followups[0]["hit_count"] == 12
+        assert "Adversary follow-up searches" in result.transcript
+        assert "svc_deploy" in result.transcript
 
     async def test_no_followup_when_disabled(self, persona_dir: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("AEC_RUN_ADVERSARY_SEARCHES", "false")
@@ -189,6 +192,8 @@ class TestAdversaryFollowUp:
             )
 
         assert result.final_verdict == "FAIL"
+        assert result.adversary_followups == []
+        assert "Adversary follow-up searches" not in result.transcript
 
     async def test_no_followup_by_default(self, persona_dir: Path):
         snapshot = _load_sample("soc2-cc61")
@@ -206,3 +211,4 @@ class TestAdversaryFollowUp:
             )
 
         assert result.final_verdict == "FAIL"
+        assert result.adversary_followups == []

@@ -91,7 +91,7 @@ def fetch_snapshot(
         "control_id": control_id,
         "framework": _infer_framework(control_id),
         "snapshot_name": f"{_infer_framework(control_id).lower()}-{control_id.lower().replace('.', '')}",
-        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds") + "Z",
+        "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "time_range": {"earliest": earliest, "latest": "now"},
         "search": spl,
         "event_count": result["event_count"],
