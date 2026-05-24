@@ -1,0 +1,31 @@
+{
+  "name": "audit-evidence-compiler",
+  "version": "0.1.0",
+  "description": "Splunk Agentic Ops Hackathon 2026 — three-vendor AI panel for SOC 2 evidence collection",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "agents:run": "tsx --env-file=.yukticastle/.env .yukticastle/main.mts",
+    "agents:clean": "tsx .yukticastle/clean.mts",
+    "agents:doctor": "tsx .yukticastle/doctor.mts",
+    "agents:ping": "tsx --env-file=.yukticastle/.env .yukticastle/ping.mts",
+    "agents:lint": "tsx .yukticastle/lint.mts",
+    "agents:introspect": "tsx .yukticastle/introspect.mts",
+    "agents:report": "tsx .yukticastle/report.mts",
+    "agents:context": "tsx .yukticastle/context.mts",
+    "agents:ask": "tsx .yukticastle/ask.mts",
+    "agents:spec-critic": "tsx .yukticastle/spec-critic.mts",
+    "claude:login": "bash .yukticastle/claude-login.sh",
+    "codex:login": "bash .yukticastle/codex-login.sh",
+    "yukticastle:api-key:set": "bash .yukticastle/api-key.sh set",
+    "yukticastle:api-key:unset": "bash .yukticastle/api-key.sh unset",
+    "yukticastle:api-key:peek": "bash .yukticastle/api-key.sh peek",
+    "prisma:unlock": "bash .yukticastle/yc-unlock-prisma.sh"
+  },
+  "devDependencies": {
+    "@ai-hero/sandcastle": "^0.5.8",
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}
