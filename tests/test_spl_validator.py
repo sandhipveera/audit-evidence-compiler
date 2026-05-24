@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+from aec.splunk.client import SplunkSearchError
 from aec.splunk.spl_validator import _validate_spl_syntax, run_spl
 
 
@@ -103,6 +104,16 @@ class TestRunSplErrors:
         result = run_spl("index=auth | stats count by user")
         assert result["ok"] is False
         assert "connection refused" in result["error"]
+
+    @patch("aec.splunk.spl_validator.SplunkClient")
+    def test_splunk_parse_error_returns_error_message(self, MockClient):
+        mock_instance = MagicMock()
+        mock_instance.search.side_effect = SplunkSearchError("syntax error in line 3 of query")
+        MockClient.return_value = mock_instance
+
+        result = run_spl("index=auth | stats count by user")
+        assert result["ok"] is False
+        assert "syntax error in line 3" in result["error"]
 
 
 class TestRunSplWithProvidedClient:

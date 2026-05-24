@@ -26,9 +26,7 @@ panel-api = [
     "openai>=1.0.0",
     "google-generativeai>=0.8.0",
 ]
-splunk = [
-    "splunk-sdk>=2.0.0",
-]
+splunk = []
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",

@@ -7,7 +7,7 @@
 
 ```bash
 pip install -e .[splunk]
-aec_demo --sample soc2-cc61
+AEC_SAMPLE=soc2-cc61 aec_demo
 ```
 
 ```
@@ -61,9 +61,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for component detail.
 
 1. **Splunk snapshot** — connects to Splunk via REST API (bearer token auth), executes SPL, and captures evidence as a structured snapshot. Caches locally for deterministic reruns.
 2. **Control mapping layer** — translates `"SOC 2 CC6.1"` or `"NIST CSF PR.AC-1"` into the specific internal controls and evidence types required, using a curated prior built from 89 production vCISO templates.
-3. **SPL validator** — blocks unbounded searches, unknown indexes, and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes a gap finding with a clear reason.
+3. **SPL validator** — blocks empty or malformed follow-up searches and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes transcript evidence with a clear reason.
 4. **Panel debate** — three personas (Auditor, Engineer, Adversary) critique the evidence in parallel; lowest-of-three verdict wins; transcript persists.
-5. **Adversary follow-up** — the Adversary persona proposes counter-searches; when `AEC_RUN_ADVERSARY_SEARCHES=true`, these execute automatically and results appear in the transcript.
+5. **Adversary follow-up** — the Adversary persona proposes counter-searches; when `AEC_RUN_ADVERSARY_SEARCHES=true` and a live Splunk client is available, these execute automatically and results appear in the transcript.
 6. **Evidence formatter** — drops results into the same Audit Findings Remediation Tracker xlsx format that real audit committees already use; gap findings get severity, root cause, and LLM-drafted remediation.
 7. **Merkle chain sealer** — SHA-256-chains every snapshot, embeds the chain root in the xlsx Manifest sheet. `aec verify` proves nothing has been edited post-collection.
 
@@ -73,7 +73,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for component detail.
 # Basic (uses pre-canned samples, no live Splunk)
 pip install -e .
 
-# With Splunk SDK (for advanced SDK features, optional)
+# Stable Splunk install target; current transport uses requests.
 pip install -e .[splunk]
 ```
 
