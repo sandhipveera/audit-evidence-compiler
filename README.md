@@ -19,9 +19,12 @@ vCISO consultants spend 40+ hours per SOC 2 audit cycle hand-pulling evidence fr
 ## What it does
 
 1. **Control mapping layer** — translates `"SOC 2 CC6.1"` or `"NIST CSF PR.AC-1"` into the specific internal controls and evidence types required, using a curated prior built from 89 production vCISO templates.
-2. **SPL generation layer** — uses [Splunk MCP Server](https://github.com/splunk/mcp-server-for-splunk) as the agent's tool layer. The LLM generates SPL, the MCP server executes it.
-3. **Evidence formatter** — drops results into the same Audit Findings Remediation Tracker xlsx format that real audit committees already use.
-4. **Remediation linker** — for gaps, suggests concrete fixes (configuration changes, missing log sources, policy updates).
+2. **SPL generation layer** — LLM generates SPL targeted at the control's evidence question.
+3. **SPL validator** — blocks unbounded searches, unknown indexes, and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes a gap finding with a clear reason.
+4. **Splunk executor** — runs validated SPL via the [Splunk MCP Server](https://github.com/splunk/mcp-server-for-splunk).
+5. **Evidence normalizer** — wraps every result with full provenance (control, SPL, sourcetypes, timestamp, model metadata) into `audit_trail.jsonl`.
+6. **Evidence formatter** — drops results into the same Audit Findings Remediation Tracker xlsx format that real audit committees already use; gap findings get severity, root cause, and LLM-drafted remediation.
+7. **Review gate (optional)** — LangGraph interrupt for human approve/edit/reject before the xlsx is written; off by default for demo, on for enterprise use.
 
 ## Architecture
 
