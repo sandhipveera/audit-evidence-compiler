@@ -38,8 +38,9 @@ The agent shows its work, and the work can't be silently rewritten.
 
 ```mermaid
 graph LR
-    A[Splunk REST API] -->|token auth| B[Snapshot Fetcher]
-    B --> C[Local Cache / Sample Files]
+    A[Splunk Enterprise<br/>BOTS v3 dataset] -->|REST API + token auth| B[Snapshot Fetcher]
+    A2[Sample JSON files] -.->|fallback| B
+    B --> C[Local Cache]
     C --> D[Three-Persona Panel]
     D --> E[Auditor - Claude]
     D --> F[Engineer - GPT]
@@ -53,13 +54,13 @@ graph LR
     K -.->|follow-up results| I
 ```
 
-**Splunk transport: REST API with token auth today.** MCP integration is future work — see [docs/splunk-setup.md](docs/splunk-setup.md).
+**Splunk transport: REST API with token auth (live Splunk Enterprise + BOTS v3 is the default).** Falls back to sample files when `--sample` is used. MCP integration is future work — see [docs/splunk-setup.md](docs/splunk-setup.md).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for component detail.
 
 ## What it does
 
-1. **Splunk snapshot** — connects to Splunk via REST API (bearer token auth), executes SPL, and captures evidence as a structured snapshot. Caches locally for deterministic reruns.
+1. **Splunk snapshot** — connects to Splunk Enterprise via REST API (bearer token auth), executes SPL against BOTS v3 data, and captures evidence as a structured snapshot. Caches locally for deterministic reruns. Falls back to pre-canned sample files when `--sample` is used.
 2. **Control mapping layer** — translates `"SOC 2 CC6.1"` or `"NIST CSF PR.AC-1"` into the specific internal controls and evidence types required, using a curated prior built from 89 production vCISO templates.
 3. **SPL validator** — blocks empty or malformed follow-up searches and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes transcript evidence with a clear reason.
 4. **Panel debate** — three personas (Auditor, Engineer, Adversary) critique the evidence in parallel; lowest-of-three verdict wins; transcript persists.
@@ -91,21 +92,24 @@ aec_demo --sample soc2-cc61
 aec_demo --sample soc2-cc61 --no-llm
 ```
 
-## Bring your own Splunk
+## Live Splunk (BOTS v3)
 
 ```bash
-# Set credentials
-export SPLUNK_HOST="https://your-splunk:8089"
+# Set credentials (see docs/splunk-setup.md for full runbook)
+export SPLUNK_HOST="https://localhost:8089"
 export SPLUNK_TOKEN="your-bearer-token"
 
-# Test connectivity
+# Test connectivity — lists indexes and verifies BOTS v3 sourcetypes
 python -m aec.splunk.client --probe
 
-# Run against live Splunk
-aec_demo --control CC6.1 --window 30d
+# Run against live Splunk (auto-detects from env vars)
+aec_demo --control CC6.1
+
+# Or explicitly force live mode
+aec_demo --control CC6.1 --live
 ```
 
-See [docs/splunk-setup.md](docs/splunk-setup.md) for token provisioning, required permissions, and example SPL queries.
+See [docs/splunk-setup.md](docs/splunk-setup.md) for the full Splunk Enterprise + BOTS v3 install runbook.
 
 ## Sample snapshots
 
