@@ -39,8 +39,8 @@ def _load_live(control_id: str, window: str) -> tuple[dict, object]:
     from aec.splunk.client import SplunkClient
     from aec.splunk.snapshot import fetch_snapshot
 
-    client = SplunkClient()
-    return fetch_snapshot(control_id, time_window=window, client=client), client
+    client = SplunkClient(verify_ssl=False)
+    return fetch_snapshot(control_id, time_window=window, client=client, live=True), client
 
 
 def _control_text_for(control_id: str) -> str:
@@ -130,6 +130,10 @@ def _write_audit_memo(
     return memo_path
 
 
+def _has_splunk_env() -> bool:
+    return bool(os.environ.get("SPLUNK_HOST") and os.environ.get("SPLUNK_TOKEN"))
+
+
 async def _run(args: argparse.Namespace) -> None:
     start = time.monotonic()
     splunk_client = None
@@ -138,28 +142,44 @@ async def _run(args: argparse.Namespace) -> None:
     if args.sample:
         snapshot = _load_sample(args.sample)
         console.print(
-            f"[bold cyan][1/4][/] Loading snapshot: samples/{args.sample}.json "
+            f"[bold cyan][1/5][/] Loading snapshot: samples/{args.sample}.json "
             f"({snapshot['event_count']} events, "
             f"{snapshot['time_range']['earliest']} to {snapshot['time_range']['latest']})"
         )
-    else:
-        console.print(f"[bold cyan][1/4][/] Fetching live snapshot for {args.control}...")
+    elif _has_splunk_env() or args.live:
+        if not _has_splunk_env():
+            console.print("[red]--live requires SPLUNK_HOST and SPLUNK_TOKEN env vars.[/]")
+            console.print("Set them in .env or export them:")
+            console.print("  export SPLUNK_HOST=https://localhost:8089")
+            console.print("  export SPLUNK_TOKEN=your-token")
+            raise SystemExit(1)
+        console.print(
+            f"[bold cyan][1/5][/] Connecting to Splunk "
+            f"({os.environ.get('SPLUNK_HOST', '')})..."
+        )
         snapshot, splunk_client = _load_live(args.control, args.window)
         console.print(
-            f"      Fetched {snapshot['event_count']} events "
+            f"      [green]✓[/] Fetched {snapshot['event_count']} events "
             f"({snapshot['time_range']['earliest']} to {snapshot['time_range']['latest']})"
         )
+    else:
+        console.print("[red]No snapshot source available.[/]")
+        console.print("Either:")
+        console.print("  1. Use --sample <name> for pre-canned data")
+        console.print("  2. Set SPLUNK_HOST + SPLUNK_TOKEN for live queries")
+        console.print("  3. Use --live with env vars configured")
+        raise SystemExit(1)
 
     control_id = snapshot["control_id"]
     control_text = _control_text_for(control_id)
 
     if args.no_llm:
-        console.print("[yellow][2/4] Skipping panel (--no-llm)[/]")
+        console.print("[yellow][2/5] Skipping panel (--no-llm)[/]")
         console.print(Panel(json.dumps(snapshot, indent=2), title="Snapshot", border_style="cyan"))
         return
 
     # Step 2: Run panel
-    console.print("[bold cyan][2/4][/] Running panel debate (3 personas, parallel)...")
+    console.print("[bold cyan][2/5][/] Running panel debate (3 personas, parallel)...")
 
     from aec.agent.panel import run_panel
     from aec.agent.panel_view import PanelView
@@ -193,7 +213,7 @@ async def _run(args: argparse.Namespace) -> None:
         consensus_detail = f" — adversary surfaced: {adversary.concerns[0]}"
 
     console.print(
-        f"[bold cyan][3/4][/] Consensus: "
+        f"[bold cyan][3/5][/] Consensus: "
         f"[bold {verdict_style}]{panel_result.final_verdict}[/]"
         f"{consensus_detail}"
     )
@@ -217,10 +237,10 @@ async def _run(args: argparse.Namespace) -> None:
     elapsed = time.monotonic() - start
     memo_path = _write_audit_memo(snapshot, panel_result, out_dir, ts, elapsed)
 
-    console.print(f"[bold cyan][4/4][/] Wrote {transcript_path}")
+    console.print(f"[bold cyan][4/5][/] Wrote {transcript_path}")
     console.print(f"      Wrote {memo_path}")
 
-    # Step 5: Evidence chain + xlsx + manifest
+    # Step 5: Evidence chain + xlsx + manifest (Merkle seal)
     from aec.agent.snapshot_adapter import extract_gap_findings, panel_result_to_snapshots
     from aec.formatter.audit_findings import write_findings
     from aec.integrity.chain import chain_snapshots, write_trail
@@ -260,7 +280,7 @@ async def _run(args: argparse.Namespace) -> None:
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     write_manifest_sheet(xlsx_path, chain_root, chain_length, created_at=created_at)
 
-    console.print(f"      Wrote {trail_path}")
+    console.print(f"[bold cyan][5/5][/] Wrote {trail_path}")
     console.print(
         f"\n[bold green]Wrote {xlsx_path} "
         f"({chain_length} evidence snapshots, Merkle-sealed)[/]"
@@ -290,6 +310,11 @@ def main() -> None:
     parser.add_argument(
         "--sample",
         help="Use pre-canned snapshot (e.g., soc2-cc61). Bypasses live Splunk.",
+    )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Force live Splunk mode (requires SPLUNK_HOST + SPLUNK_TOKEN)",
     )
     parser.add_argument(
         "--no-llm",
