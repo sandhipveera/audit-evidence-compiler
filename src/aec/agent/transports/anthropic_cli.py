@@ -42,10 +42,18 @@ class AnthropicCLITransport(Transport):
         output = stdout.decode("utf-8").strip()
         try:
             parsed = json.loads(output)
-            if parsed.get("is_error") or "Not logged in" in parsed.get("result", ""):
-             raise RuntimeError(f"Claude CLI auth/runtime error: {parsed.get('result')}")
+            if parsed.get("is_error"):
+                raise RuntimeError(
+                    f"Claude CLI runtime error (exit 0 but is_error=true): "
+                    f"{parsed.get('result', 'unknown')}"
+                )
+            result_text = parsed.get("result", "")
+            if "Not logged in" in result_text or "Please run /login" in result_text:
+                raise RuntimeError(
+                    f"Claude OAuth expired or missing. Run: claude /login. "
+                    f"CLI said: {result_text}"
+                )
             text = parsed.get("result", output)
-
         except json.JSONDecodeError:
             text = output
         return CompletionResult(
