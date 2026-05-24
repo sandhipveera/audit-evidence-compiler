@@ -259,9 +259,56 @@ async def run_panel(
     return panel_result
 
 
+def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name: str) -> str:
+    """Format a PanelResult into the structured transcript markdown for disk."""
+    from datetime import datetime, timezone
+
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    persona_status = ", ".join(
+        f"{c.persona}={'ok' if not c.fallback_used else 'fallback'}"
+        for c in result.critiques
+    )
+    lines = [
+        f"# Panel Debate — {control_id} on {snapshot_name}",
+        f"Generated: {ts}",
+        f"Consensus: {result.final_verdict}",
+        f"Personas: {persona_status}",
+        "",
+    ]
+    for c in result.critiques:
+        lines.append(f"## {c.persona.capitalize()}")
+        lines.append(f"- Model: {c.model}")
+        lines.append(f"- Transport: {c.transport}")
+        lines.append(f"- Verdict: {c.verdict}")
+        lines.append(f"- Reasoning: {c.rationale}")
+        lines.append("- Gaps identified:")
+        if c.concerns:
+            for concern in c.concerns:
+                lines.append(f"  - {concern}")
+        else:
+            lines.append("  - (none)")
+        lines.append("- Recommended additional searches:")
+        if c.recommended_additional_searches:
+            for spl in c.recommended_additional_searches:
+                lines.append(f"  - {spl}")
+        else:
+            lines.append("  - (none)")
+        lines.append("")
+
+    lines.append("## Consensus")
+    lines.append(
+        f"Most conservative verdict from the three personas: {result.final_verdict}"
+    )
+    lines.append(
+        f"Rationale: {result.consensus_method} — the highest-severity verdict dominates."
+    )
+    return "\n".join(lines) + "\n"
+
+
 async def main() -> None:
     """CLI entry point for standalone panel testing."""
     import argparse
+    from datetime import datetime, timezone
 
     parser = argparse.ArgumentParser(description="Run three-agent panel debate")
     parser.add_argument("--snapshot", required=True, help="Path to snapshot JSON file")
@@ -293,6 +340,16 @@ async def main() -> None:
             view.stop()
 
     print(result.model_dump_json(indent=2))
+
+    # Persist transcript to disk
+    out_dir = Path("out")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+    snapshot_name = snapshot.get("snapshot_id", "unknown")
+    transcript_path = out_dir / f"transcript_{ts}.md"
+    transcript_content = _format_transcript_file(result, args.control, snapshot_name)
+    transcript_path.write_text(transcript_content, encoding="utf-8")
+    print(f"Wrote transcript to {transcript_path}")
 
 
 if __name__ == "__main__":

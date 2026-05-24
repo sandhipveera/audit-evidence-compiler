@@ -8,12 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
-from aec.agent.models import Critique, PersonaSpec, VERDICT_SEVERITY
+from aec.agent.models import Critique, PersonaSpec, VERDICT_SEVERITY, _build_severity_order
 from aec.agent.panel import (
     _compute_consensus,
     _parse_critique_json,
     _render_transcript,
     load_persona,
+    main,
     run_panel,
 )
 from aec.agent.transports import CompletionResult
@@ -417,3 +418,46 @@ class TestRunPanel:
         assert "Panel Debate Transcript" in result.transcript
         assert "AUDITOR" in result.transcript
         assert "Consensus: **FAIL**" in result.transcript
+
+
+@pytest.mark.asyncio
+class TestMainPersistsTranscript:
+    async def test_main_persists_transcript(
+        self, persona_dir: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ):
+        monkeypatch.chdir(tmp_path)
+
+        snapshot_file = tmp_path / "snapshot.json"
+        snapshot_file.write_text(json.dumps(FIXTURE_SNAPSHOT))
+
+        mock_fn = _mock_router_for_verdicts("PASS", "PARTIAL", "FAIL")
+
+        with (
+            patch("aec.agent.panel.llm_router.complete", side_effect=mock_fn),
+            patch("aec.agent.panel.load_persona", side_effect=lambda name, d=None: load_persona(name, persona_dir)),
+            patch("sys.argv", ["panel", "--snapshot", str(snapshot_file), "--control", "CC6.1", "--no-tui"]),
+        ):
+            await main()
+
+        out_dir = tmp_path / "out"
+        assert out_dir.exists()
+        transcripts = list(out_dir.glob("transcript_*.md"))
+        assert len(transcripts) == 1
+
+        content = transcripts[0].read_text()
+        assert "FAIL" in content
+        assert "Auditor" in content
+        assert "Panel Debate" in content
+
+
+class TestInsufficientOverrideEnvVar:
+    def test_default_insufficient_outranks_fail(self):
+        severity = _build_severity_order()
+        assert severity["INSUFFICIENT"] == 3
+        assert severity["FAIL"] == 2
+
+    def test_override_insufficient_equals_partial(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("AEC_INSUFFICIENT_OVERRIDES_FAIL", "false")
+        severity = _build_severity_order()
+        assert severity["INSUFFICIENT"] == 1
+        assert severity["FAIL"] == 2
