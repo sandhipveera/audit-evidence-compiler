@@ -26,7 +26,7 @@ class AnthropicAPITransport(Transport):
         client = anthropic.AsyncAnthropic()
         response = await client.messages.create(
             model=model or DEFAULT_MODEL,
-            max_tokens=1024,
+            max_tokens=4096,
             temperature=temperature,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],

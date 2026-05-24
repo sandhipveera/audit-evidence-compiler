@@ -27,7 +27,7 @@ class OpenAIAPITransport(Transport):
         response = await client.chat.completions.create(
             model=model or DEFAULT_MODEL,
             temperature=temperature,
-            max_tokens=1024,
+            max_tokens=4096,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},

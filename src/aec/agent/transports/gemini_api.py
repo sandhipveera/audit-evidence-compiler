@@ -30,7 +30,7 @@ class GeminiAPITransport(Transport):
         )
         response = await gen_model.generate_content_async(
             user_prompt,
-            generation_config={"temperature": temperature, "max_output_tokens": 1024},
+            generation_config={"temperature": temperature, "max_output_tokens": 4096},
         )
         return CompletionResult(
             text=response.text,
