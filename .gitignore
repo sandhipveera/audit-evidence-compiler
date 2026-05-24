@@ -56,3 +56,4 @@ playwright-report/
 tests/.auth/
 .playwright/
 node_modules/
+scripts/
