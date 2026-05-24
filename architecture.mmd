@@ -1,28 +1,39 @@
 flowchart TD
     O([Operator prompt:<br/>'SOC 2 CC6.1 evidence']) --> CM
 
-    subgraph Agent[LangGraph Agent]
-        CM[1. Control Mapper] --> SG[2. SPL Generator]
-        SG --> SE[3. Splunk Executor<br/>via MCP]
-        SE --> FM[4. Evidence Formatter]
-        SE -.gap.-> RL[5. Remediation Linker]
-        RL --> FM
+    subgraph Agent[LangGraph Evidence Agent]
+        CM[1. Control Mapper<br/>request → framework controls] --> SG[2. SPL Generator<br/>draft evidence queries]
+        SG --> SV[3. SPL Validator<br/>allowlist · time bounds · index scope]
+        SV --> SE[4. Splunk Executor<br/>via MCP]
+        SE --> EN[5. Evidence Normalizer<br/>raw rows → evidence snapshot]
+        EN --> FM[6. Evidence Formatter<br/>pass/fail · gap finding · remediation]
     end
 
-    CAT[(catalog.json<br/>vCISO priors)] -.lookup.-> CM
-    HINT[(SPL hints<br/>by category)] -.lookup.-> SG
+    CAT[(Control Evidence Catalog<br/>SOC 2 / NIST / ISO mappings)] -.lookup.-> CM
+    HINT[(SPL Hints<br/>by control category)] -.lookup.-> SG
+    POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds · result caps)] -.validate.-> SV
 
     SE <-->|MCP tool calls| MCP[Splunk MCP Server]
-    MCP <-->|REST API| SPL[(Splunk Enterprise<br/>+ BOTS v3 data)]
+    MCP <-->|REST API| SPL[(Splunk Enterprise<br/>demo: BOTS v3)]
 
-    FM --> OUT([gap_report.xlsx<br/>Audit Findings format])
-    FM --> LOG([audit_trail.jsonl])
+    SPL --- AUTH[(Authentication logs)]
+    SPL --- CLOUD[(Cloud / IAM logs)]
+    SPL --- EDR[(Endpoint / EDR logs)]
+    SPL --- NET[(Network logs)]
 
-    LLM[Claude Sonnet 4] <-.reasoning.-> CM
+    FM --> REVIEW{Human Review Gate<br/>auto / approve / edit}
+    REVIEW -->|approve| OUT([gap_report.xlsx<br/>Audit Findings format])
+    REVIEW -->|approve| MD([audit_package.md])
+    EN --> RAW[(Evidence Snapshot<br/>query · rows · sources · timestamp)]
+    RAW --> LOG([audit_trail.jsonl<br/>full provenance])
+
+    LLM[Claude Sonnet 4] <-.control reasoning.-> CM
     LLM <-.SPL synthesis.-> SG
-    LLM <-.remediation.-> RL
+    LLM <-.remediation drafting.-> FM
 
     classDef accent fill:#fde68a,stroke:#92400e,stroke-width:2px;
     classDef data fill:#dbeafe,stroke:#1e40af;
+    classDef guard fill:#dcfce7,stroke:#166534,stroke-width:2px;
     class MCP,SPL accent
-    class CAT,HINT,OUT,LOG data
+    class CAT,HINT,POLICY,RAW,OUT,LOG,MD data
+    class SV,REVIEW guard

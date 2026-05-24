@@ -11,10 +11,20 @@
 ## Graph
 
 ```
-START → control_mapper → spl_generator → splunk_executor → evidence_formatter → END
+START → control_mapper → spl_generator → spl_validator → splunk_executor
                                               │
-                                              └─(gap)─→ remediation_linker → evidence_formatter
+                                              └─(reject)─→ evidence_formatter (as gap)
+                                                                ▲
+splunk_executor → evidence_normalizer → evidence_formatter → review_gate → END
+                                                                │
+                                                  (auto mode skips review_gate)
 ```
+
+**SPL Validator** is task 006 — runs after generation, before execution, enforces the execution policy (allowed indexes, time bounds, forbidden commands). Rejection short-circuits to a gap finding.
+
+**Review Gate** uses LangGraph's `interrupt()`. Two modes via `--review` flag: `auto` (skip), `interactive` (pause for terminal approve/edit/reject). Demo runs auto; the README + ARCHITECTURE call out interactive as the "enterprise mode."
+
+**Evidence Normalizer** converts raw Splunk rows into an `EvidenceSnapshot` with full provenance (control_id, spl_executed, sourcetypes_hit, row_count, execution_ts, llm_metadata). Snapshot is what gets written to `audit_trail.jsonl`. This is the provenance backbone — without it the agent's output isn't audit-defensible.
 
 State shape (`pydantic.BaseModel`):
 ```python
@@ -32,8 +42,11 @@ class AgentState(BaseModel):
 
 1. **`control_mapper`** — loads `catalog.json`, uses Claude to resolve operator's control_query (e.g., "CC6.1") to N internal controls. Prompt template in `src/aec/agent/prompts.py`. Returns `matched_controls`.
 2. **`spl_generator`** — for each matched control, prompts Claude with the control's `splunk_hint.spl_skeleton` + `evidence_question` and asks it to refine into a runnable SPL targeting BOTS v3 sourcetypes. Returns `spl_queries`.
-3. **`splunk_executor`** — calls `splunk_client.execute_spl()` for each query. Returns `raw_results`.
-4. **`evidence_formatter`** — converts raw results into `EvidenceRow` (passed) or `GapFinding` (no results + severity-scored). Returns `evidence_rows`.
+3. **`spl_validator`** — task 006. Runs each query through `validate(spl, policy)`. Rejections route to formatter as gap findings (skipping execution).
+4. **`splunk_executor`** — calls `splunk_client.execute_spl()` for each validated query. Returns `raw_results`.
+5. **`evidence_normalizer`** — wraps each result with provenance metadata into an `EvidenceSnapshot`; writes to `audit_trail.jsonl`.
+6. **`evidence_formatter`** — converts snapshots into `EvidenceRow` (passed) or `GapFinding` (no results / validation reject / execution error; severity-scored).
+7. **`review_gate`** — LangGraph interrupt; auto-bypassed unless `--review=interactive`.
 
 ## Files to create
 
