@@ -1,0 +1,24 @@
+{
+  "control_id": "A.9.2.1",
+  "framework": "ISO27001",
+  "snapshot_name": "iso27001-a921",
+  "fetched_at": "2026-05-24T12:00:00Z",
+  "time_range": { "earliest": "-30d", "latest": "now" },
+  "search": "index=iam sourcetype=user_provisioning | stats count by action, approver, department | eval approved=if(isnotnull(approver),\"yes\",\"no\")",
+  "event_count": 312,
+  "sample_events": [
+    { "_time": "2026-05-23T10:00:00Z", "action": "user_created", "user": "n.jones", "department": "engineering", "approver": "m.director", "role_assigned": "developer" },
+    { "_time": "2026-05-22T14:30:00Z", "action": "access_granted", "user": "p.kim", "department": "finance", "approver": null, "role_assigned": "admin", "system": "erp_prod" },
+    { "_time": "2026-05-21T09:15:00Z", "action": "user_created", "user": "r.singh", "department": "sales", "approver": "s.vp_sales", "role_assigned": "standard" },
+    { "_time": "2026-05-20T16:45:00Z", "action": "privilege_escalation", "user": "t.contractor", "department": "external", "approver": null, "role_assigned": "admin", "system": "cloud_console" },
+    { "_time": "2026-05-19T11:20:00Z", "action": "user_disabled", "user": "former.employee", "department": "marketing", "approver": "hr_system", "role_assigned": null }
+  ],
+  "aggregations": {
+    "total_provisioning_events": 312,
+    "approved_with_authorization": 278,
+    "missing_approval": 34,
+    "approval_rate_pct": 0.89,
+    "privilege_escalations_without_approval": 7,
+    "external_users_with_admin": 3
+  }
+}
