@@ -220,8 +220,58 @@ async def _run(args: argparse.Namespace) -> None:
     console.print(f"[bold cyan][4/4][/] Wrote {transcript_path}")
     console.print(f"      Wrote {memo_path}")
 
+    # Step 5: Evidence chain + xlsx + manifest
+    from aec.agent.snapshot_adapter import extract_gap_findings, panel_result_to_snapshots
+    from aec.formatter.audit_findings import write_findings
+    from aec.integrity.chain import chain_snapshots, write_trail
+    from aec.integrity.manifest import write_manifest_sheet
+
+    trail_path = out_dir / f"audit_trail_{ts}.jsonl"
+    xlsx_path = out_dir / f"gap_report_{ts}.xlsx"
+
+    snapshots = panel_result_to_snapshots(panel_result, snapshot, control_id)
+    chained = chain_snapshots(snapshots)
+    write_trail(trail_path, chained)
+
+    chain_root = chained[-1]["this_hash"]
+    chain_length = len(chained)
+
+    findings = extract_gap_findings(
+        panel_result, snapshot, control_id, str(trail_path),
+    )
+    if not findings:
+        from aec.formatter.audit_findings import GapFinding
+
+        findings = [GapFinding(
+            finding_id=f"AEC-{control_id}-001",
+            audit_type="Internal",
+            framework=snapshot.get("framework", ""),
+            audit_reference=control_id,
+            finding_description=f"Panel verdict: {panel_result.final_verdict} for {control_id}",
+            finding_category="Access Control",
+            severity="Low",
+            root_cause="No gaps identified",
+            current_status="Closed",
+            evidence_reference=str(trail_path),
+        )]
+
+    write_findings(findings, xlsx_path)
+
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    write_manifest_sheet(xlsx_path, chain_root, chain_length, created_at=created_at)
+
+    console.print(f"      Wrote {trail_path}")
+    console.print(
+        f"\n[bold green]Wrote {xlsx_path} "
+        f"({chain_length} evidence snapshots, Merkle-sealed)[/]"
+    )
+    console.print(
+        f"\nVerify integrity:\n"
+        f"  $ aec verify {xlsx_path} --trail {trail_path}"
+    )
+
     total = time.monotonic() - start
-    console.print(f"[bold green]Done in {total:.0f}s.[/]")
+    console.print(f"\n[bold green]Done in {total:.0f}s.[/]")
 
 
 def main() -> None:
