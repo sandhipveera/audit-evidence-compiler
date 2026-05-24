@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from aec.splunk.snapshot import (
+    SAMPLES_DIR,
     _cache_path,
     _write_cache,
     fetch_snapshot,
@@ -36,9 +37,9 @@ def mock_client():
     return client
 
 
-class TestFetchSnapshotShape:
-    def test_returns_expected_dict_shape(self, mock_client):
-        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client, use_cache=False)
+class TestFetchSnapshotLive:
+    def test_live_returns_expected_dict_shape(self, mock_client):
+        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client, live=True, use_cache=False)
         assert result["control_id"] == "CC6.1"
         assert result["framework"] == "SOC2"
         assert "snapshot_name" in result
@@ -51,14 +52,37 @@ class TestFetchSnapshotShape:
         assert "sample_events" in result
         assert isinstance(result["sample_events"], list)
         assert "aggregations" in result
+        mock_client.search.assert_called_once()
 
-    def test_iso_control_inferred(self, mock_client):
-        result = fetch_snapshot("A.9.2.1", client=mock_client, use_cache=False)
+    def test_live_iso_control_inferred(self, mock_client):
+        result = fetch_snapshot("A.9.2.1", client=mock_client, live=True, use_cache=False)
         assert result["framework"] == "ISO27001"
 
-    def test_nist_csf_control_inferred(self, mock_client):
-        result = fetch_snapshot("PR.AC-1", client=mock_client, use_cache=False)
+    def test_live_nist_csf_control_inferred(self, mock_client):
+        result = fetch_snapshot("PR.AC-1", client=mock_client, live=True, use_cache=False)
         assert result["framework"] == "NIST_CSF"
+
+
+class TestFetchSnapshotSample:
+    def test_sample_mode_returns_canned_data(self):
+        result = fetch_snapshot("CC6.1", live=False)
+        assert result["control_id"] == "CC6.1"
+        assert result["framework"] == "SOC2"
+        assert result["event_count"] == 1247
+        assert "botsv3" in result["search"]
+
+    def test_sample_mode_does_not_hit_client(self, mock_client):
+        fetch_snapshot("CC6.1", client=mock_client, live=False)
+        mock_client.search.assert_not_called()
+
+    def test_sample_mode_missing_control_raises(self):
+        with pytest.raises(FileNotFoundError, match="No sample file"):
+            fetch_snapshot("XX.99", live=False)
+
+    def test_all_sample_controls_load(self):
+        for control_id in ["CC6.1", "CC7.2", "A.9.2.1"]:
+            result = fetch_snapshot(control_id, live=False)
+            assert result["control_id"] == control_id
 
 
 class TestCacheHit:
@@ -69,21 +93,21 @@ class TestCacheHit:
             "snapshot_name": "soc2-cc61",
             "fetched_at": "2026-05-24T12:00:00Z",
             "time_range": {"earliest": "-30d", "latest": "now"},
-            "search": "index=auth",
+            "search": "index=botsv3",
             "event_count": 50,
             "sample_events": [],
             "aggregations": {},
         }
         _write_cache("CC6.1", "30d", cached_data)
 
-        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client)
+        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client, live=True)
         assert result == cached_data
         mock_client.search.assert_not_called()
 
 
 class TestCacheMiss:
     def test_cache_miss_writes_file(self, tmp_path, mock_client):
-        fetch_snapshot("CC6.1", time_window="30d", client=mock_client)
+        fetch_snapshot("CC6.1", time_window="30d", client=mock_client, live=True)
 
         cache_file = _cache_path("CC6.1", "30d")
         assert cache_file.exists()
@@ -101,9 +125,17 @@ class TestCorruptedCache:
         cache_file.parent.mkdir(parents=True, exist_ok=True)
         cache_file.write_text("not valid json {{{", encoding="utf-8")
 
-        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client)
+        result = fetch_snapshot("CC6.1", time_window="30d", client=mock_client, live=True)
         assert result["event_count"] == 100
         mock_client.search.assert_called_once()
 
         refreshed = json.loads(cache_file.read_text())
         assert refreshed["event_count"] == 100
+
+
+class TestCacheKeyIncludesSha:
+    def test_cache_key_has_sha8_suffix(self):
+        path = _cache_path("CC6.1", "30d")
+        stem = path.stem
+        parts = stem.split("_")
+        assert len(parts[-1]) == 8
