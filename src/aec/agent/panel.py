@@ -66,16 +66,23 @@ def _build_user_prompt(
     snapshot: dict[str, Any],
     control_text: str,
     spl_executed: str,
+    splunk_snapshot: dict[str, Any] | None = None,
 ) -> str:
     """Build the user prompt sent to all three personas."""
     snapshot_json = json.dumps(snapshot, indent=2, ensure_ascii=False)
-    return (
-        f"## Control requirement\n\n{control_text}\n\n"
-        f"## SPL query executed\n\n```spl\n{spl_executed}\n```\n\n"
-        f"## Evidence snapshot\n\n```json\n{snapshot_json}\n```\n\n"
+    parts = [
+        f"## Control requirement\n\n{control_text}\n\n",
+        f"## SPL query executed\n\n```spl\n{spl_executed}\n```\n\n",
+        f"## Evidence snapshot\n\n```json\n{snapshot_json}\n```\n\n",
+    ]
+    if splunk_snapshot is not None:
+        splunk_json = json.dumps(splunk_snapshot, indent=2, ensure_ascii=False)
+        parts.append(f"## Splunk snapshot\n\n```json\n{splunk_json}\n```\n\n")
+    parts.append(
         "Evaluate this evidence against the control requirement. "
         "Respond with a single JSON object as specified in your instructions."
     )
+    return "".join(parts)
 
 
 def _parse_critique_json(raw_text: str) -> dict[str, Any]:
@@ -123,9 +130,43 @@ def _compute_consensus(critiques: list[Critique]) -> str:
     return max(critiques, key=lambda c: VERDICT_SEVERITY[c.verdict]).verdict
 
 
-def _render_transcript(critiques: list[Critique], final_verdict: str) -> str:
+def _format_followup_section(followups: list[dict[str, Any]]) -> str:
+    """Render adversary follow-up searches for transcript output."""
+    if not followups:
+        return ""
+
+    lines = ["## Adversary follow-up searches", ""]
+    for result in followups:
+        status = "OK" if result.get("ok") else "ERROR"
+        lines.append(f"### `{result.get('query', '')}`")
+        lines.append(f"- Status: {status}")
+        lines.append(f"- Hit count: {result.get('hit_count', 0)}")
+        if result.get("error"):
+            lines.append(f"- Error: {result['error']}")
+        sample = result.get("sample") or []
+        if sample:
+            lines.append("- Sample:")
+            lines.append("```json")
+            lines.append(json.dumps(sample[:3], indent=2, ensure_ascii=False))
+            lines.append("```")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_transcript(
+    critiques: list[Critique],
+    final_verdict: str,
+    splunk_snapshot: dict[str, Any] | None = None,
+    followups: list[dict[str, Any]] | None = None,
+) -> str:
     """Render the panel debate as a markdown transcript."""
     lines = ["# Panel Debate Transcript\n"]
+    if splunk_snapshot is not None:
+        lines.append("## Splunk snapshot")
+        lines.append("```json")
+        lines.append(json.dumps(splunk_snapshot, indent=2, ensure_ascii=False))
+        lines.append("```")
+        lines.append("")
     for c in critiques:
         lines.append(f"## {c.persona.upper()} ({c.model} via {c.transport})")
         lines.append(f"**Verdict:** {c.verdict} (confidence: {c.confidence:.0%})")
@@ -141,6 +182,10 @@ def _render_transcript(critiques: list[Critique], final_verdict: str) -> str:
         lines.append(f"*Latency: {c.latency_ms}ms | Fallback: {c.fallback_used}*")
         lines.append("")
     lines.append(f"## Consensus: **{final_verdict}** (lowest-of-three)")
+    followup_section = _format_followup_section(followups or [])
+    if followup_section:
+        lines.append("")
+        lines.append(followup_section.rstrip())
     return "\n".join(lines)
 
 
@@ -178,6 +223,9 @@ async def run_panel(
     spl_executed: str,
     persona_dir: Path | None = None,
     view: Any | None = None,
+    splunk_snapshot: dict[str, Any] | None = None,
+    splunk_client: Any | None = None,
+    time_window: str = "30d",
 ) -> PanelResult:
     """Run the three-persona panel debate and return the result.
 
@@ -197,7 +245,7 @@ async def run_panel(
     if not personas:
         raise RuntimeError("No personas could be loaded")
 
-    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed)
+    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed, splunk_snapshot)
 
     async def _invoke(persona: PersonaSpec, force_fallback_used: bool = False) -> Critique | None:
         if view:
@@ -242,7 +290,27 @@ async def run_panel(
     final_verdict = _compute_consensus(critiques)
     degraded = len(critiques) < 3 or used_single_vendor_fallback
     mode = _mode_for(critiques, used_single_vendor_fallback)
-    transcript = _render_transcript(critiques, final_verdict)
+
+    followups: list[dict[str, Any]] = []
+    run_followups = os.environ.get("AEC_RUN_ADVERSARY_SEARCHES", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    adversary = next((c for c in critiques if c.persona == "adversary"), None)
+    if (
+        run_followups
+        and splunk_client is not None
+        and adversary is not None
+        and adversary.recommended_additional_searches
+    ):
+        from aec.splunk.spl_validator import run_spl
+
+        for query in adversary.recommended_additional_searches:
+            result = run_spl(query, time_window=time_window, client=splunk_client)
+            followups.append({"query": query, **result})
+
+    transcript = _render_transcript(critiques, final_verdict, splunk_snapshot, followups)
 
     panel_result = PanelResult(
         critiques=critiques,
@@ -251,6 +319,8 @@ async def run_panel(
         transcript=transcript,
         degraded=degraded,
         mode=mode,
+        splunk_snapshot=splunk_snapshot,
+        adversary_followups=followups,
     )
 
     if view:
@@ -275,6 +345,13 @@ def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name:
         f"Personas: {persona_status}",
         "",
     ]
+    if result.splunk_snapshot is not None:
+        lines.append("## Splunk snapshot")
+        lines.append("```json")
+        lines.append(json.dumps(result.splunk_snapshot, indent=2, ensure_ascii=False))
+        lines.append("```")
+        lines.append("")
+
     for c in result.critiques:
         lines.append(f"## {c.persona.capitalize()}")
         lines.append(f"- Model: {c.model}")
@@ -302,6 +379,9 @@ def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name:
     lines.append(
         f"Rationale: {result.consensus_method} — the highest-severity verdict dominates."
     )
+    if result.adversary_followups:
+        lines.append("")
+        lines.append(_format_followup_section(result.adversary_followups).rstrip())
     return "\n".join(lines) + "\n"
 
 
