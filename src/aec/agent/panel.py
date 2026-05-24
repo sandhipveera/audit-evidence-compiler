@@ -66,16 +66,23 @@ def _build_user_prompt(
     snapshot: dict[str, Any],
     control_text: str,
     spl_executed: str,
+    splunk_snapshot: dict[str, Any] | None = None,
 ) -> str:
     """Build the user prompt sent to all three personas."""
     snapshot_json = json.dumps(snapshot, indent=2, ensure_ascii=False)
-    return (
-        f"## Control requirement\n\n{control_text}\n\n"
-        f"## SPL query executed\n\n```spl\n{spl_executed}\n```\n\n"
-        f"## Evidence snapshot\n\n```json\n{snapshot_json}\n```\n\n"
+    parts = [
+        f"## Control requirement\n\n{control_text}\n\n",
+        f"## SPL query executed\n\n```spl\n{spl_executed}\n```\n\n",
+        f"## Evidence snapshot\n\n```json\n{snapshot_json}\n```\n\n",
+    ]
+    if splunk_snapshot is not None:
+        splunk_json = json.dumps(splunk_snapshot, indent=2, ensure_ascii=False)
+        parts.append(f"## Splunk snapshot\n\n```json\n{splunk_json}\n```\n\n")
+    parts.append(
         "Evaluate this evidence against the control requirement. "
         "Respond with a single JSON object as specified in your instructions."
     )
+    return "".join(parts)
 
 
 def _parse_critique_json(raw_text: str) -> dict[str, Any]:
@@ -178,6 +185,7 @@ async def run_panel(
     spl_executed: str,
     persona_dir: Path | None = None,
     view: Any | None = None,
+    splunk_snapshot: dict[str, Any] | None = None,
 ) -> PanelResult:
     """Run the three-persona panel debate and return the result.
 
@@ -197,7 +205,7 @@ async def run_panel(
     if not personas:
         raise RuntimeError("No personas could be loaded")
 
-    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed)
+    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed, splunk_snapshot)
 
     async def _invoke(persona: PersonaSpec, force_fallback_used: bool = False) -> Critique | None:
         if view:
