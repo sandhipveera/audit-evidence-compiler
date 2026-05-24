@@ -4,20 +4,22 @@
   "snapshot_name": "soc2-cc61",
   "fetched_at": "2026-05-24T12:00:00Z",
   "time_range": { "earliest": "-30d", "latest": "now" },
-  "search": "index=auth EventCode=4625 OR EventCode=4624 | stats count by user, EventCode | join user [search index=auth mfa_status=* | stats values(mfa_status) as mfa by user]",
+  "search": "index=botsv3 sourcetype=o365:management:activity action=Login | stats count by user, mfa_used, src_ip | where mfa_used=\"false\"",
   "event_count": 1247,
   "sample_events": [
-    { "_time": "2026-05-23T08:14:00Z", "user": "alice", "EventCode": 4624, "src_ip": "10.0.1.42", "mfa_status": "success" },
-    { "_time": "2026-05-23T09:01:00Z", "user": "bob", "EventCode": 4625, "src_ip": "10.0.1.91", "mfa_status": "not_enrolled" },
-    { "_time": "2026-05-23T09:45:00Z", "user": "svc_deploy", "EventCode": 4624, "src_ip": "10.0.2.10", "mfa_status": "bypassed" },
-    { "_time": "2026-05-22T14:30:00Z", "user": "carol", "EventCode": 4624, "src_ip": "10.0.1.55", "mfa_status": "success" },
-    { "_time": "2026-05-22T16:20:00Z", "user": "dave", "EventCode": 4625, "src_ip": "192.168.1.100", "mfa_status": "not_enrolled" }
+    { "_time": "2018-08-20T08:14:00Z", "user": "mkraeusen@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-08-20T09:01:00Z", "user": "bgist@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-08-20T09:45:00Z", "user": "btun@froth.ly", "mfa_used": "false", "src_ip": "45.77.65.211", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-08-20T14:30:00Z", "user": "fyodor@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-08-20T16:20:00Z", "user": "bstoll@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" }
   ],
   "aggregations": {
     "successful_logins": 1198,
     "failed_logins": 49,
     "mfa_enforced_pct": 0.83,
     "unique_users": 142,
-    "service_accounts_bypassing_mfa": 12
+    "service_accounts_bypassing_mfa": 12,
+    "source_index": "botsv3",
+    "source_sourcetype": "o365:management:activity"
   }
 }
