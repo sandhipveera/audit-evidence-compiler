@@ -14,27 +14,23 @@
 | 011b — Transport bug fixes | ✅ merged | Claude is_error + Codex gpt-5.5 |
 | 012 — Live Splunk + BOTS v3 | ✅ merged + ingested | 1.7M events queryable |
 | **013 — Splunk MCP (dual server)** | ✅ merged | Headline hook, both servers, runtime switch |
-| **014 — Counter-evidence loop** | 📝 spec'd, ready to launch | The cinematic 2-round debate |
-| **015 — Drift detection** | 📝 spec'd | Continuous-compliance story |
-| **016 — LangGraph wrapper + HITL** | 📝 spec'd | Makes "agentic" claim rigorous |
-| **017 — Differential framework mapping** | 📝 spec'd | One prompt → 3 frameworks |
-| **018 — Splunk app package** | 📝 spec'd | The moonshot; ship in 3 stages |
-| **019 — Web dashboard** | 📝 spec'd | Stretch — only if everything else lands |
+| **014 — Counter-evidence loop** | ✅ merged | 2-round debate, adversary counter-searches |
+| **015 — Drift detection** | ✅ merged | Two-window comparison, DriftAnalysis model |
+| **016 — LangGraph wrapper + HITL** | ✅ merged | 8-node graph, HITL gates, checkpointing |
+| **017 — Differential framework mapping** | ✅ merged | One prompt → 3 frameworks, minimal SPL set |
+| **018 — Splunk app package** | ✅ merged | `\| auditcompiler` custom search command, .spl |
+| **019 — Web dashboard** | ✅ merged | FastAPI + WebSocket, aec.accessquint.com |
 | Architecture diagram refresh | ⏳ end | Match final shipped reality |
 | README rewrite | ⏳ end | Front-load the differentiators |
 | 3-min demo video | ⏳ end | Tmux split + iterative takes |
 | Submission ceremony | ⏳ end | Hackathon portal form |
 
-## Recommended launch order for Tier 2 + 3
+## ✅ ALL TIERS COMPLETE — Day 1 of 23
 
-Each waits for the previous to merge (panel.py overlap risks):
+YuktiCastle shipped all 9 remaining tasks in a single overnight run on 2026-05-25.
+Actual merge order: 014 → 016 → 015 → 017 → 018 → 019 (matched the planned sequence).
 
-1. **014 (counter-evidence loop)** — strongest narrative beat addition
-2. **016 (LangGraph wrapper)** — second; LangGraph state model is referenced by some 015 internals
-3. **015 (drift detection)** — third; benefits from graph state structure
-4. **017 (differential framework mapping)** — fourth; can stretch to parallel-with-018 since they touch different files
-5. **018 (Splunk app package)** — stage A first (validates app loading), stage B + C if time allows
-6. **019 (web dashboard)** — only if 018 lands by day 18
+Remaining work: architecture refresh → README → demo video → submission.
 
 ## Critical path (most pessimistic)
 
@@ -63,8 +59,8 @@ That alone is a winning submission. 017, 019, full 018 are amplifiers.
 ## Tier statuses
 
 - [x] Tier 1 (table-stakes): 011 + 012 + 013 — ALL DONE
-- [ ] Tier 2 (winners): 014 + 015 + 016
-- [ ] Tier 3 (moonshot): 017 + 018 + 019
+- [x] Tier 2 (winners): 014 + 015 + 016 — ALL DONE (merged 2026-05-25)
+- [x] Tier 3 (moonshot): 017 + 018 + 019 — ALL DONE (merged 2026-05-25)
 - [ ] Submission ceremony
 
 ## Notes / observations
