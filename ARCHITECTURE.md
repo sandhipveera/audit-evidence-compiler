@@ -26,7 +26,8 @@ operator prompt
 3. SPL Validator       ← policy.json (allowed indexes, forbidden cmds, time bounds)
       │                  on reject → straight to formatter as gap finding
       ▼
-4. Splunk Executor (REST API + token auth → Splunk Enterprise w/ BOTS v3, or sample fallback)
+4. Splunk Executor (MCP Router → splunk-official | livehybrid MCP servers → Splunk Enterprise w/ BOTS v3)
+      │                  REST API fallback (--mcp rest), or sample fallback (--sample)
       │
       ▼
 5. Evidence Normalizer → EvidenceSnapshot
@@ -64,7 +65,7 @@ gap_report.xlsx  +  audit_package.md  +  audit_trail.jsonl  → all verifiable v
 |---|---|---|
 | Agent runtime | Python 3.11 + LangGraph | Splunk ecosystem is Python-first; LangGraph's stateful nodes map 1:1 to the pipeline and make HITL approval gates trivial |
 | LLM | Claude Sonnet 4 (Anthropic SDK) | Highest reasoning quality for SPL synthesis + audit narrative |
-| Splunk integration | REST API with bearer token auth (`SPLUNK_HOST`, `SPLUNK_TOKEN`) | One concrete transport for the hackathon path; Splunk MCP is future work |
+| Splunk integration | Dual MCP Server (splunk-official + livehybrid) with REST API fallback | Both [splunk/mcp-server-for-splunk](https://github.com/splunk/mcp-server-for-splunk) and [livehybrid/splunk-mcp](https://github.com/livehybrid/splunk-mcp) behind a runtime router; `--mcp rest` bypasses MCP for direct REST |
 | Splunk runtime | Live Splunk Enterprise + BOTS v3 (default), or pre-canned sample snapshots as fallback | Live path is the demo default; `--sample` flag available for offline/quick runs |
 | Output | openpyxl → real vCISO audit template | Auditors recognize the format instantly |
 | Priors | JSON, hand-curated from 89 vCISO templates | The "I lived this" unfair advantage |
