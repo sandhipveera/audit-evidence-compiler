@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from aec.splunk.client import SplunkClient, SplunkSearchError
+from aec.splunk.time_window import normalize_earliest
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ def run_spl(
         except ValueError as e:
             return {"ok": False, "hit_count": 0, "sample": [], "error": str(e)}
 
-    earliest = f"-{time_window}" if not time_window.startswith("-") else time_window
+    earliest = normalize_earliest(time_window)
 
     try:
         result = client.search(query=query, earliest=earliest, latest="now", max_results=10)

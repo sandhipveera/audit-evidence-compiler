@@ -99,15 +99,16 @@ class TestDemoProducesAllArtifacts:
         assert trail.stat().st_size > 0
         assert xlsx.stat().st_size > 0
 
-    def test_trail_has_four_snapshots(self, demo_output):
+    def test_trail_has_persona_consensus_and_final_snapshots(self, demo_output):
         trail = _find_file(demo_output, "audit_trail_", ".jsonl")
         snapshots = [json.loads(line) for line in trail.read_text().strip().splitlines()]
-        assert len(snapshots) == 4
+        assert len(snapshots) == 5
         personas = [s["persona"] for s in snapshots]
         assert "auditor" in personas
         assert "engineer" in personas
         assert "adversary" in personas
         assert "consensus" in personas
+        assert personas[-1] == "final"
 
     def test_trail_chain_is_valid(self, demo_output):
         trail = _find_file(demo_output, "audit_trail_", ".jsonl")
