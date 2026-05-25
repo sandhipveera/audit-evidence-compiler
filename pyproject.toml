@@ -46,6 +46,9 @@ packages = ["src/aec", "cli"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = [
+    "integration: tests that require external services such as live Splunk or MCP servers",
+]
 
 [tool.ruff]
 line-length = 100

@@ -17,11 +17,12 @@ def panel_result_to_snapshots(
 ) -> list[dict[str, Any]]:
     """Convert panel critiques + consensus into EvidenceSnapshot dicts for chaining."""
     ts = timestamp or datetime.now(timezone.utc).isoformat()
-    base = {
+    base: dict[str, Any] = {
         "control_id": control_id,
         "spl_executed": splunk_snapshot.get("search", ""),
         "row_count": splunk_snapshot.get("event_count", 0),
         "timestamp": ts,
+        "mcp_server": splunk_snapshot.get("mcp_server"),
     }
 
     snapshots = []
