@@ -163,6 +163,36 @@ def _has_splunk_env() -> bool:
     return bool(os.environ.get("SPLUNK_HOST") and os.environ.get("SPLUNK_TOKEN"))
 
 
+def _resolve_mcp_mode(cli_value: str | None, live: bool = False) -> str:
+    """Resolve CLI/env transport selection.
+
+    The hackathon default is MCP via splunk-official. The legacy --live flag
+    still forces the direct REST path unless --mcp is explicitly provided.
+    """
+    if cli_value is not None:
+        return cli_value
+    if live:
+        return "rest"
+
+    env_value = os.environ.get("AEC_SPLUNK_MCP_SERVER")
+    if not env_value:
+        return "official"
+
+    mcp_map = {
+        "official": "official",
+        "splunk-official": "official",
+        "livehybrid": "livehybrid",
+        "rest": "rest",
+    }
+    try:
+        return mcp_map[env_value]
+    except KeyError as exc:
+        valid = ", ".join(sorted(mcp_map))
+        raise ValueError(
+            f"Invalid AEC_SPLUNK_MCP_SERVER={env_value!r}; choose one of: {valid}"
+        ) from exc
+
+
 async def _run(args: argparse.Namespace) -> None:
     start = time.monotonic()
     splunk_client = None
@@ -337,7 +367,13 @@ async def _run(args: argparse.Namespace) -> None:
     write_findings(findings, xlsx_path)
 
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    write_manifest_sheet(xlsx_path, chain_root, chain_length, created_at=created_at)
+    write_manifest_sheet(
+        xlsx_path,
+        chain_root,
+        chain_length,
+        created_at=created_at,
+        mcp_server=snapshot.get("mcp_server"),
+    )
 
     console.print(f"[bold cyan][5/5][/] Wrote {trail_path}")
     console.print(
@@ -394,7 +430,7 @@ def main() -> None:
         help=(
             "Splunk transport: official (splunk-official MCP), "
             "livehybrid (community MCP), rest (direct REST API). "
-            "Default: read AEC_SPLUNK_MCP_SERVER env, else REST."
+            "Default: read AEC_SPLUNK_MCP_SERVER env, else official."
         ),
     )
 
@@ -404,11 +440,10 @@ def main() -> None:
     if not args.sample and os.environ.get("AEC_SAMPLE"):
         args.sample = os.environ["AEC_SAMPLE"]
 
-    # Default --mcp from env var when not explicitly set
-    if args.mcp is None and os.environ.get("AEC_SPLUNK_MCP_SERVER"):
-        env_mcp = os.environ["AEC_SPLUNK_MCP_SERVER"]
-        mcp_map = {"splunk-official": "official", "livehybrid": "livehybrid"}
-        args.mcp = mcp_map.get(env_mcp)
+    try:
+        args.mcp = _resolve_mcp_mode(args.mcp, live=args.live)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if not args.sample and not args.control:
         parser.error("Provide --sample or --control")

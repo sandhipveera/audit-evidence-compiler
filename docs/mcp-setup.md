@@ -85,6 +85,8 @@ Every `EvidenceSnapshot` records which MCP transport executed the SPL:
 
 This appears in:
 - `audit_trail.jsonl` — every snapshot's `mcp_server` field
+- `gap_report.xlsx` — Manifest sheet `mcp_server` field
+- `transcript_*.md` — Splunk snapshot JSON block
 - CLI output — `provenance: mcp_server=splunk-official-0.3.2`
 
 ## Troubleshooting
