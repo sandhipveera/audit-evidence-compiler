@@ -1,7 +1,6 @@
 """Transport-level parsing tests."""
 from __future__ import annotations
 
-import asyncio
 import json
 from unittest.mock import AsyncMock, patch
 

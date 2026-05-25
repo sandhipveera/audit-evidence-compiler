@@ -68,6 +68,13 @@ class TestPanelResultToSnapshots:
         assert auditor["control_id"] == "CC6.1"
         assert auditor["spl_executed"] == "index=auth EventCode=4625"
         assert auditor["row_count"] == 1247
+        assert auditor["mcp_server"] is None
+
+    def test_snapshots_carry_mcp_server_provenance(self):
+        result = _make_panel_result("PARTIAL")
+        snapshot = {**SAMPLE_SNAPSHOT, "mcp_server": "splunk-official-0.3.2"}
+        snaps = panel_result_to_snapshots(result, snapshot, "CC6.1")
+        assert all(s["mcp_server"] == "splunk-official-0.3.2" for s in snaps)
 
     def test_snapshot_ids_are_unique(self):
         result = _make_panel_result("PASS")

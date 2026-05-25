@@ -4,7 +4,8 @@ flowchart TD
     subgraph Agent[LangGraph Evidence Agent]
         CM[1. Control Mapper<br/>request → framework controls] --> SG[2. SPL Generator<br/>draft evidence queries]
         SG --> SV[3. SPL Validator<br/>policy guard]
-        SV --> SE[4. Splunk Executor<br/>via MCP]
+        SV --> MCPR[4a. MCP Router<br/>runtime transport switch]
+        MCPR --> SE[4b. Splunk Executor]
         SE --> EN[5. Evidence Normalizer<br/>raw rows → EvidenceSnapshot]
 
         EN --> PANEL
@@ -23,8 +24,12 @@ flowchart TD
     HINT[(SPL Hints<br/>by control category)] -.lookup.-> SG
     POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds)] -.validate.-> SV
 
-    SE <-->|REST API + token auth| SPL[(Splunk Enterprise<br/>BOTS v3 dataset)]
-    SE -.->|fallback| SAMPLES[(Sample JSON files<br/>samples/*.json)]
+    MCPR -->|primary| MCP_OFF[(splunk-official<br/>MCP Server)]
+    MCPR -->|fallback| MCP_LH[(livehybrid<br/>MCP Server)]
+    MCP_OFF <-->|MCP tool calls| SPL[(Splunk Enterprise<br/>BOTS v3 dataset)]
+    MCP_LH <-->|MCP tool calls| SPL
+    SE -.->|REST API fallback| SPL
+    SE -.->|sample fallback| SAMPLES[(Sample JSON files<br/>samples/*.json)]
     SPL --- O365[(o365:management:activity)]
     SPL --- WEVT[(wineventlog)]
     SPL --- CT[(aws:cloudtrail)]

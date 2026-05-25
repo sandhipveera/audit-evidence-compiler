@@ -38,8 +38,13 @@ The agent shows its work, and the work can't be silently rewritten.
 
 ```mermaid
 graph LR
-    A[Splunk Enterprise<br/>BOTS v3 dataset] -->|REST API + token auth| B[Snapshot Fetcher]
-    A2[Sample JSON files] -.->|fallback| B
+    A[Splunk Enterprise<br/>BOTS v3 dataset] --> MCP_R{MCP Router}
+    MCP_R -->|primary| MCP_O[splunk-official<br/>MCP Server]
+    MCP_R -->|fallback| MCP_L[livehybrid<br/>MCP Server]
+    MCP_O -->|MCP tool calls| B[Snapshot Fetcher]
+    MCP_L -->|MCP tool calls| B
+    A -.->|REST API fallback| B
+    A2[Sample JSON files] -.->|offline fallback| B
     B --> C[Local Cache]
     C --> D[Three-Persona Panel]
     D --> E[Auditor - Claude]
@@ -54,13 +59,13 @@ graph LR
     K -.->|follow-up results| I
 ```
 
-**Splunk transport: REST API with token auth (live Splunk Enterprise + BOTS v3 is the default).** Falls back to sample files when `--sample` is used. MCP integration is future work — see [docs/splunk-setup.md](docs/splunk-setup.md).
+**Splunk transport: Dual MCP Server support (splunk-official + livehybrid) with automatic fallback.** The `--mcp` flag selects the transport: `official` (default), `livehybrid`, or `rest` (direct REST API). Falls back to sample files when `--sample` is used. See [docs/mcp-setup.md](docs/mcp-setup.md) for the full MCP setup runbook.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for component detail.
 
 ## What it does
 
-1. **Splunk snapshot** — connects to Splunk Enterprise via REST API (bearer token auth), executes SPL against BOTS v3 data, and captures evidence as a structured snapshot. Caches locally for deterministic reruns. Falls back to pre-canned sample files when `--sample` is used.
+1. **Splunk snapshot** — connects to Splunk Enterprise via MCP Server (both [splunk-official](https://github.com/splunk/mcp-server-for-splunk) and [livehybrid](https://github.com/livehybrid/splunk-mcp) implementations supported), executes SPL via MCP tool calls against BOTS v3 data, and captures evidence as a structured snapshot. Falls back to REST API or pre-canned sample files. Every snapshot records which MCP transport executed the SPL for provenance.
 2. **Control mapping layer** — translates `"SOC 2 CC6.1"` or `"NIST CSF PR.AC-1"` into the specific internal controls and evidence types required, using a curated prior built from 89 production vCISO templates.
 3. **SPL validator** — blocks empty or malformed follow-up searches and destructive commands (`| delete`, `| outputlookup`) *before* anything hits Splunk. Rejection becomes transcript evidence with a clear reason.
 4. **Panel debate** — three personas (Auditor, Engineer, Adversary) critique the evidence in parallel; lowest-of-three verdict wins; transcript persists.
@@ -74,7 +79,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for component detail.
 # Basic (uses pre-canned samples, no live Splunk)
 pip install -e .
 
-# Stable Splunk install target; current transport uses requests.
+# With Splunk MCP support (included by default via the mcp SDK)
 pip install -e .[splunk]
 ```
 
@@ -92,7 +97,27 @@ aec_demo --sample soc2-cc61
 aec_demo --sample soc2-cc61 --no-llm
 ```
 
-## Live Splunk (BOTS v3)
+## Live Splunk via MCP (recommended)
+
+```bash
+# Bring up Splunk + both MCP servers
+export SPLUNK_TOKEN="your-bearer-token"
+docker compose -f infra/docker-compose.mcp.yml up -d
+
+# Run via splunk-official MCP server (default)
+aec_demo --control CC6.1 --mcp official
+
+# Run via livehybrid MCP server
+aec_demo --control CC6.1 --mcp livehybrid
+
+# Both servers shown in output:
+#   [1/5] MCP server: splunk-official (v0.3.2)
+#         Fallback configured: livehybrid (v1.4.0)
+```
+
+See [docs/mcp-setup.md](docs/mcp-setup.md) for the full MCP setup runbook.
+
+## Live Splunk via REST API (fallback)
 
 ```bash
 # Set credentials (see docs/splunk-setup.md for full runbook)
@@ -102,10 +127,10 @@ export SPLUNK_TOKEN="your-bearer-token"
 # Test connectivity — lists indexes and verifies BOTS v3 sourcetypes
 python -m aec.splunk.client --probe
 
-# Run against live Splunk (auto-detects from env vars)
-aec_demo --control CC6.1
+# Run via direct REST API (bypasses MCP)
+aec_demo --control CC6.1 --mcp rest
 
-# Or explicitly force live mode
+# Or auto-detect from env vars (legacy mode)
 aec_demo --control CC6.1 --live
 ```
 

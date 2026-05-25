@@ -18,6 +18,7 @@ MANIFEST_HASH_FIELD = "manifest_hash"
 MANIFEST_FIELDS = [
     ("chain_root", "SHA-256 root hash of the evidence chain"),
     ("chain_length", "Total number of evidence snapshots"),
+    ("mcp_server", "MCP server transport recorded for this evidence package, or null"),
     ("workbook_hash", "SHA-256 digest of non-Manifest workbook cells"),
     ("created_at", "UTC timestamp when this report was sealed"),
     ("aec_version", "Audit Evidence Compiler version"),
@@ -31,6 +32,7 @@ def write_manifest_sheet(
     chain_root: str,
     chain_length: int,
     created_at: str | None = None,
+    mcp_server: str | None = None,
 ) -> None:
     """Append (or replace) a Manifest sheet in the given xlsx."""
     if created_at is None:
@@ -67,6 +69,7 @@ def write_manifest_sheet(
     values = {
         "chain_root": chain_root,
         "chain_length": str(chain_length),
+        "mcp_server": mcp_server or "null",
         "workbook_hash": workbook_hash,
         "created_at": created_at,
         "aec_version": aec.__version__,
