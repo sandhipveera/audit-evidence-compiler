@@ -83,6 +83,24 @@ class TestExpandFindingsMultiFramework:
         for f in expanded:
             assert f.evidence_reference == "trail.jsonl#snap-003"
 
+    def test_expansion_scopes_rows_to_internal_control_coverage(self):
+        base = _base_finding(audit_reference="CTRL-007")
+        parsed_refs = [
+            {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
+             "catalog_fw": "SOC 2", "category": "Access Control"},
+            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+             "catalog_fw": "ISO 27001", "category": "Access Control"},
+            {"input": "NIST-CSF:PR.AC-1", "display_fw": "NIST CSF", "control_id": "PR.AC-1",
+             "catalog_fw": "NIST CSF", "category": "Access Control"},
+        ]
+        coverage = {
+            "SOC2:CC6.1": ["CTRL-002", "CTRL-003"],
+            "ISO:A.9.2.3": ["CTRL-003", "CTRL-007"],
+            "NIST-CSF:PR.AC-1": ["CTRL-002", "CTRL-003", "CTRL-007"],
+        }
+        expanded = expand_findings_multi_framework([base], parsed_refs, coverage)
+        assert [f.framework for f in expanded] == ["ISO 27001", "NIST CSF"]
+
 
 class TestMultiFrameworkXlsx:
     def test_xlsx_has_n_rows_per_framework(self, tmp_path: Path):
