@@ -1,132 +1,75 @@
 # 23-day roadmap to submission
 
-Tasks 011, 012, 013 have full specs in their respective files. Tasks 014–019 are outlined here and will be detail-spec'd as we approach them.
+## Status
 
-## Week 1 (Tier 1 — table-stakes)
+| Task | Status | Notes |
+|---|---|---|
+| 001 — Priors parser | ✅ done (kickoff) | 36 controls across 5 frameworks |
+| 004 — xlsx formatter | ✅ merged | 620 LOC |
+| 007 — Panel debate | ✅ merged | 3 vendors × OAuth CLIs, 23 tests |
+| 008 — Merkle chain | ✅ merged | 35 integrity tests |
+| 009 — Panel must-fixes | ✅ merged | max_tokens, transcript persist, severity doc |
+| 010 — Splunk REST | ✅ merged | Initial Splunk client + samples |
+| 011 — xlsx + Merkle wire | ✅ merged | 4 artifacts in one run |
+| 011b — Transport bug fixes | ✅ merged | Claude is_error + Codex gpt-5.5 |
+| 012 — Live Splunk + BOTS v3 | ✅ merged + ingested | 1.7M events queryable |
+| **013 — Splunk MCP (dual server)** | ✅ merged | Headline hook, both servers, runtime switch |
+| **014 — Counter-evidence loop** | 📝 spec'd, ready to launch | The cinematic 2-round debate |
+| **015 — Drift detection** | 📝 spec'd | Continuous-compliance story |
+| **016 — LangGraph wrapper + HITL** | 📝 spec'd | Makes "agentic" claim rigorous |
+| **017 — Differential framework mapping** | 📝 spec'd | One prompt → 3 frameworks |
+| **018 — Splunk app package** | 📝 spec'd | The moonshot; ship in 3 stages |
+| **019 — Web dashboard** | 📝 spec'd | Stretch — only if everything else lands |
+| Architecture diagram refresh | ⏳ end | Match final shipped reality |
+| README rewrite | ⏳ end | Front-load the differentiators |
+| 3-min demo video | ⏳ end | Tmux split + iterative takes |
+| Submission ceremony | ⏳ end | Hackathon portal form |
 
-### Task 011 — Wire xlsx + Merkle into aec_demo (0.5 day)
-Closes the differentiator loop. Demo produces 4 files; `aec verify` works. **Fire immediately.**
+## Recommended launch order for Tier 2 + 3
 
-### Task 012 — Live Splunk + BOTS v3 (2 days)
-Real Splunk on the VM. One live control (SOC 2 CC6.1.c — MFA bypass). Regenerates the canned samples from live data.
+Each waits for the previous to merge (panel.py overlap risks):
 
-### Task 013 — Splunk MCP integration (3 days)
-Both `splunk/mcp-server-for-splunk` and `livehybrid/splunk-mcp` behind a runtime switch. **The headline hook.**
+1. **014 (counter-evidence loop)** — strongest narrative beat addition
+2. **016 (LangGraph wrapper)** — second; LangGraph state model is referenced by some 015 internals
+3. **015 (drift detection)** — third; benefits from graph state structure
+4. **017 (differential framework mapping)** — fourth; can stretch to parallel-with-018 since they touch different files
+5. **018 (Splunk app package)** — stage A first (validates app loading), stage B + C if time allows
+6. **019 (web dashboard)** — only if 018 lands by day 18
 
-## Week 2 (Tier 2 — differentiators)
+## Critical path (most pessimistic)
 
-### Task 014 — Counter-evidence recurrence loop (2–3 days)
-The Adversary persona's `recommended_additional_searches` get auto-executed (via MCP). Results feed back into a *second* panel round. Two-debate verdict has stronger weight. Demo beat: "the agent argues with itself, twice."
+Even if 014 + 015 + 016 + part of 018 land, you have:
+- Three-vendor OAuth panel ✅
+- Merkle-sealed audit artifacts ✅
+- Live Splunk via MCP (dual server) ✅
+- Counter-evidence recurrence ✅
+- Drift detection ✅
+- LangGraph orchestration ✅
+- Splunk app stub (registers `| auditcompiler` command) ✅
 
-**Pre-spec sketch:**
-- `panel.run_panel()` gains `recurrence: int = 0` kwarg (0 = current behavior; 1 = one extra round)
-- After round 1's consensus, if any persona's `recommended_additional_searches` non-empty AND `AEC_RUN_ADVERSARY_SEARCHES=true`:
-  - Execute each via MCP
-  - Append results to the snapshot
-  - Re-run the panel with the augmented snapshot
-- Final verdict = lowest-of-three across BOTH rounds (most conservative wins)
-- Transcript shows both rounds + a "what changed" summary
-- ~300 LOC + tests
+That alone is a winning submission. 017, 019, full 018 are amplifiers.
 
-### Task 015 — Drift detection (2 days)
-Same SPL, two time windows (e.g., this quarter vs last quarter), surface deltas. "MFA coverage dropped from 98% → 87%."
+## Estimated LOC at submission
 
-**Pre-spec sketch:**
-- `aec_demo --compare T-90d:T-60d,T-30d:now` runs the same SPL twice
-- New persona role (?): "Compliance trend analyst" OR add drift analysis to consensus
-- Output: a "Compliance drift" section in the audit memo
-- Probably needs synthetic drift data injection into BOTS v3 to make the demo land (real BOTS v3 data is static)
-- ~250 LOC
+- Already merged: ~5,000 LOC
+- 014: +300
+- 015: +250
+- 016: +400
+- 017: +200
+- 018: +500 + conf files
+- 019: +600
+- Final: ~7,250 LOC of substance
 
-### Task 016 — LangGraph wrapper + HITL gate (2 days)
-Makes the "agentic" claim rigorous. Currently the pipeline is async function calls; LangGraph adds explicit state, checkpointing, and a human approval interrupt.
+## Tier statuses
 
-**Pre-spec sketch:**
-- Wrap the existing aec_demo flow as a LangGraph graph (`src/aec/agent/graph.py`)
-- 6 nodes: control_map → spl_gen → spl_validate → mcp_execute → normalize → panel → format
-- HITL interrupt before `mcp_execute` (review SPL before running) and before `format` (review verdict before sealing)
-- `aec_demo --review interactive` enables interrupts
-- Default `--review auto` skips them (demo speed)
-- ~400 LOC + tests
-- State persists to `.aec_cache/graph_state_<run_id>.json`
+- [x] Tier 1 (table-stakes): 011 + 012 + 013 — ALL DONE
+- [ ] Tier 2 (winners): 014 + 015 + 016
+- [ ] Tier 3 (moonshot): 017 + 018 + 019
+- [ ] Submission ceremony
 
-## Week 3 (Tier 3 — moonshot)
+## Notes / observations
 
-### Task 017 — Differential framework mapping (2 days)
-One prompt → satisfies multiple framework controls simultaneously. Leverages the 36-control catalog uniquely.
-
-**Pre-spec sketch:**
-- `aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3+NIST:PR.AC-1"` (or natural language: "what evidence satisfies access control across all three frameworks?")
-- Control mapper finds the *minimal* SPL set that covers all referenced controls
-- The xlsx output has 3 evidence rows, one per framework, all sourced from the same SPL
-- Demonstrates a multi-framework efficiency story
-- ~200 LOC
-
-### Task 018 — Splunk app package (`| auditcompiler`) (5 days)
-The moonshot. Package as a custom Splunk search command, Splunkbase-deployable.
-
-**Pre-spec sketch:**
-- `splunk-app/auditcompiler/`
-  - `default/app.conf`
-  - `default/commands.conf` (register `| auditcompiler` as a custom command)
-  - `bin/auditcompiler.py` (Splunk SDK ScriptingCommand)
-- Inside `auditcompiler.py`: read the SPL row stream, invoke the panel, return enriched rows with `verdict`, `severity`, `root_cause` columns
-- Demo: open Splunk Search bar, type `index=botsv3 sourcetype=o365 | auditcompiler control=CC6.1`, get back rows tagged with verdicts
-- Packaged as `.spl` (Splunk tarball) per Splunkbase requirements
-- Manifest / icon / app metadata for Splunkbase listing
-- ~500 LOC + Splunk config files
-- Highest integration risk; ship a stubbed version first that just echoes the SPL, then layer in real panel invocation
-
-### Task 019 — Live web dashboard (3 days, optional)
-Public URL where judges can see panel debates happening live.
-
-**Pre-spec sketch:**
-- FastAPI app at `web/main.py`
-- Single page with a SPL input form
-- Submits → server runs `aec_demo` programmatically → WebSocket streams the panel debate to the browser
-- Same 3-column layout as the Rich TUI, in HTML
-- Deployed to the Vultr VM under a subdomain (e.g., `aec.accessquint.com`)
-- ~400 LOC + 200 LOC frontend (vanilla JS, no framework — keep it small)
-- Stretch goal; do AFTER 018 is in any state
-
-## Final 2 days (submission ceremony)
-
-- Architecture diagram refresh (reflect MCP + LangGraph + panel + chain)
-- README rewrite — "what's different" front-loaded
-- 3-min demo video — script, takes, edit
-- `docs/` polish: `auth-setup.md`, `splunk-setup.md`, `mcp-setup.md`, `architecture-decisions.md`
-- Submission form on the hackathon portal
-- Tag a release: `git tag v0.1.0-hackathon && git push --tags`
-
-## Total LOC estimate
-
-- 011: ~100
-- 012: ~200
-- 013: ~700
-- 014: ~300
-- 015: ~250
-- 016: ~400
-- 017: ~200
-- 018: ~500 + Splunk conf
-- 019: ~600
-- **Total: ~3300 LOC** + tests + docs
-
-Existing repo at task 010 merge: ~2300 LOC. Final at submission: ~5600 LOC. That's a substantial but not bloated open-source artifact.
-
-## Tracking
-
-This file is the source of truth. Update statuses here as tasks land:
-
-- [ ] 011 — xlsx + Merkle wire
-- [ ] 012 — Live Splunk + BOTS v3
-- [ ] 013 — Splunk MCP integration
-- [ ] 014 — Counter-evidence recurrence
-- [ ] 015 — Drift detection
-- [ ] 016 — LangGraph wrapper
-- [ ] 017 — Differential framework mapping
-- [ ] 018 — Splunk app package
-- [ ] 019 — Web dashboard
-- [ ] Architecture diagram refresh
-- [ ] README rewrite
-- [ ] Demo video
-- [ ] Submission
+- **Cross-vendor reviewer (Codex) catches real bugs every time.** Keep `REVIEWER=codex` on for all remaining tasks. Cost: 0 (subscription-paid). Value: ~1 silent bug per task.
+- **Panel debate already self-corrects.** Task 014's value-add is making that visible to judges; the underlying reasoning is already there.
+- **BOTS v3 is 2018 data.** All sample time ranges must use `earliest=2018-08-01 latest=2018-09-30` for live runs. Documented in `samples/*.json`.
+- **Don't forget the demo transcript from 2026-05-25T022914Z.md.** That's the gold artifact showing the agent caught its own setup bug. Should appear in the README + demo video.
