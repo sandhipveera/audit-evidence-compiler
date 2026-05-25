@@ -222,10 +222,23 @@ class TestManifestSheet:
         assert manifest is not None
         assert manifest["chain_root"] == "sha256:deadbeef"
         assert manifest["chain_length"] == "12"
+        assert manifest["mcp_server"] == "null"
         assert manifest["workbook_hash"].startswith("sha256:")
         assert manifest["manifest_hash"].startswith("sha256:")
         assert manifest["manifest_hash"] == compute_manifest_hash(xlsx)
         assert "aec_version" in manifest
+
+    def test_manifest_records_mcp_server(self, tmp_path: Path):
+        xlsx = self._make_xlsx(tmp_path)
+        write_manifest_sheet(
+            xlsx,
+            "sha256:deadbeef",
+            12,
+            mcp_server="splunk-official-0.3.2",
+        )
+        manifest = read_manifest(xlsx)
+        assert manifest is not None
+        assert manifest["mcp_server"] == "splunk-official-0.3.2"
 
     def test_overwrite_manifest(self, tmp_path: Path):
         xlsx = self._make_xlsx(tmp_path)
