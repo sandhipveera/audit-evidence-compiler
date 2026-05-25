@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from aec.splunk.snapshot import (
-    SAMPLES_DIR,
     _cache_path,
     _write_cache,
     fetch_snapshot,
