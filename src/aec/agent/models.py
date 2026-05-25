@@ -56,3 +56,24 @@ class PanelResult(BaseModel):
     mode: str = "multi-vendor"
     splunk_snapshot: dict[str, Any] | None = None
     adversary_followups: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AdversarySearch(BaseModel):
+    spl: str
+    validation_status: Literal["accepted", "rejected"]
+    rejection_reason: str | None = None
+    executed: bool
+    row_count: int = 0
+    sample_events: list[dict[str, Any]] = Field(default_factory=list)
+    execution_time_ms: int = 0
+    error: str | None = None
+
+
+class PanelResultWithRecurrence(BaseModel):
+    round_1: PanelResult
+    round_2: PanelResult | None = None
+    counter_searches: list[AdversarySearch] = Field(default_factory=list)
+    final_verdict: Literal["PASS", "PARTIAL", "FAIL", "INSUFFICIENT"]
+    final_consensus_round: Literal[1, 2]
+    transcript: str
+    iteration_count: int
