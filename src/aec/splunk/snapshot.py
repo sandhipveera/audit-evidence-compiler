@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from aec.splunk.client import SplunkClient
+from aec.splunk.time_window import normalize_earliest
 
 log = logging.getLogger(__name__)
 
@@ -44,17 +45,18 @@ def _sha8(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:8]
 
 
-def _cache_key(control_id: str, time_window: str) -> str:
+def _cache_key(control_id: str, time_window: str, latest: str = "now") -> str:
     spl = SPL_BY_CONTROL.get(control_id, f"index=main control_id={control_id}")
-    return f"{control_id}_{time_window}_{_sha8(spl)}".replace(".", "_").replace(" ", "_")
+    window = f"{time_window}_{latest}" if latest != "now" else time_window
+    return f"{control_id}_{window}_{_sha8(spl)}".replace(".", "_").replace(" ", "_")
 
 
-def _cache_path(control_id: str, time_window: str) -> Path:
-    return CACHE_DIR / f"{_cache_key(control_id, time_window)}.json"
+def _cache_path(control_id: str, time_window: str, latest: str = "now") -> Path:
+    return CACHE_DIR / f"{_cache_key(control_id, time_window, latest)}.json"
 
 
-def _read_cache(control_id: str, time_window: str) -> dict[str, Any] | None:
-    path = _cache_path(control_id, time_window)
+def _read_cache(control_id: str, time_window: str, latest: str = "now") -> dict[str, Any] | None:
+    path = _cache_path(control_id, time_window, latest)
     if not path.exists():
         return None
     try:
@@ -66,9 +68,14 @@ def _read_cache(control_id: str, time_window: str) -> dict[str, Any] | None:
     return None
 
 
-def _write_cache(control_id: str, time_window: str, data: dict[str, Any]) -> None:
+def _write_cache(
+    control_id: str,
+    time_window: str,
+    data: dict[str, Any],
+    latest: str = "now",
+) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    path = _cache_path(control_id, time_window)
+    path = _cache_path(control_id, time_window, latest)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
@@ -88,6 +95,7 @@ def _load_sample(control_id: str) -> dict[str, Any] | None:
 def fetch_snapshot(
     control_id: str,
     time_window: str = "30d",
+    latest: str = "now",
     live: bool = True,
     client: SplunkClient | None = None,
     use_cache: bool = True,
@@ -107,35 +115,84 @@ def fetch_snapshot(
         )
 
     if use_cache:
-        cached = _read_cache(control_id, time_window)
+        cached = _read_cache(control_id, time_window, latest)
         if cached is not None:
-            log.info("Cache hit for %s/%s", control_id, time_window)
+            log.info("Cache hit for %s/%s/%s", control_id, time_window, latest)
             return cached
 
     if client is None:
         client = SplunkClient()
 
     spl = SPL_BY_CONTROL.get(control_id, f"index=main control_id={control_id}")
-    earliest = f"-{time_window}" if not time_window.startswith("-") else time_window
+    earliest = normalize_earliest(time_window)
 
-    result = client.search(query=spl, earliest=earliest, latest="now", max_results=50)
+    result = client.search(query=spl, earliest=earliest, latest=latest, max_results=50)
 
     snapshot: dict[str, Any] = {
         "control_id": control_id,
         "framework": _infer_framework(control_id),
         "snapshot_name": f"{_infer_framework(control_id).lower()}-{control_id.lower().replace('.', '')}",
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "time_range": {"earliest": earliest, "latest": "now"},
+        "time_range": {"earliest": earliest, "latest": latest},
         "search": spl,
         "event_count": result["event_count"],
         "sample_events": result["results"][:10],
-        "aggregations": {},
+        "aggregations": derive_aggregations(result),
     }
 
     if use_cache:
-        _write_cache(control_id, time_window, snapshot)
+        _write_cache(control_id, time_window, snapshot, latest)
 
     return snapshot
+
+
+def _coerce_number(value: Any) -> float | int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return value
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.strip().replace(",", "")
+    if not normalized:
+        return None
+    try:
+        if any(ch in normalized.lower() for ch in (".", "e")):
+            return float(normalized)
+        return int(normalized)
+    except ValueError:
+        return None
+
+
+def derive_aggregations(result: dict[str, Any]) -> dict[str, float | int]:
+    """Derive stable numeric aggregation fields from a live Splunk result."""
+    results = result.get("results", [])
+    if not isinstance(results, list):
+        results = []
+
+    aggregations: dict[str, float | int] = {
+        "event_count": int(result.get("event_count") or 0),
+        "result_row_count": len(results),
+    }
+
+    numeric_sums: dict[str, float] = {}
+    for row in results:
+        if not isinstance(row, dict):
+            continue
+        for key, value in row.items():
+            number = _coerce_number(value)
+            if number is None:
+                continue
+            numeric_sums[key] = numeric_sums.get(key, 0.0) + float(number)
+
+    for key, value in sorted(numeric_sums.items()):
+        if key.startswith("_"):
+            continue
+        metric_name = "result_count_sum" if key == "count" else f"{key}_sum"
+        aggregations[metric_name] = int(value) if value.is_integer() else round(value, 4)
+
+    return aggregations
 
 
 def _infer_framework(control_id: str) -> str:

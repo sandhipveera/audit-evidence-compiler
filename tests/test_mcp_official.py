@@ -81,6 +81,25 @@ class TestExecuteSpl:
         assert result["results"] == [{"user": "alice", "count": "5"}]
         assert result["search_id"] == "search-abc"
 
+    async def test_execute_spl_accepts_absolute_latest_range(self):
+        transport = SplunkOfficialTransport()
+        transport._session = AsyncMock()
+        transport._tool_map = {"execute_spl": "run_search"}
+
+        transport._session.call_tool = AsyncMock(
+            return_value=_tool_result({"results": [], "eventCount": 0})
+        )
+
+        await transport.execute_spl(
+            "index=botsv3 | head 5",
+            "2018-08-01",
+            latest="2018-08-15",
+        )
+
+        arguments = transport._session.call_tool.call_args.args[1]
+        assert arguments["earliest_time"] == "2018-08-01"
+        assert arguments["latest_time"] == "2018-08-15"
+
     async def test_execute_spl_missing_tool_raises(self):
         transport = SplunkOfficialTransport()
         transport._session = AsyncMock()

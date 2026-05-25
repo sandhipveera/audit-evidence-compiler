@@ -1,7 +1,7 @@
 """Splunk MCP integration — dual-server support (splunk-official + livehybrid).
 
 Public API (all async):
-    execute_spl(query, time_window) -> dict
+    execute_spl(query, time_window, latest) -> dict
     list_indexes() -> list[str]
     get_sourcetypes(index) -> list[str]
     get_metadata() -> dict
@@ -41,9 +41,13 @@ async def get_router(preferred: str | None = None) -> MCPRouter:
     return _router
 
 
-async def execute_spl(query: str, time_window: str = "-30d") -> dict[str, Any]:
+async def execute_spl(
+    query: str,
+    time_window: str = "-30d",
+    latest: str = "now",
+) -> dict[str, Any]:
     router = await get_router()
-    return await router.execute_spl(query, time_window=time_window)
+    return await router.execute_spl(query, time_window=time_window, latest=latest)
 
 
 async def list_indexes() -> list[str]:
