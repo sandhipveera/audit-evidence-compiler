@@ -22,10 +22,8 @@ def panel_result_to_snapshots(
         "spl_executed": splunk_snapshot.get("search", ""),
         "row_count": splunk_snapshot.get("event_count", 0),
         "timestamp": ts,
+        "mcp_server": splunk_snapshot.get("mcp_server"),
     }
-    mcp_server = splunk_snapshot.get("mcp_server")
-    if mcp_server:
-        base["mcp_server"] = mcp_server
 
     snapshots = []
     for critique in result.critiques:
