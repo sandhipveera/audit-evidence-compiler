@@ -3,7 +3,7 @@
   "framework": "SOC2",
   "snapshot_name": "soc2-cc61",
   "fetched_at": "2026-05-24T12:00:00Z",
-  "time_range": { "earliest": "-30d", "latest": "now" },
+  "time_range": { "earliest": "2018-08-01", "latest": "2018-09-30" },
   "search": "index=botsv3 sourcetype=o365:management:activity action=Login | stats count by user, mfa_used, src_ip | where mfa_used=\"false\"",
   "event_count": 1247,
   "sample_events": [
