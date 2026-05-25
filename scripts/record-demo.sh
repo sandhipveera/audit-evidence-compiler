@@ -117,13 +117,29 @@ pause 1
 
 # ---------------------------------------------------------------------------
 # SHOT 6 — Multi-framework: one prompt covers SOC 2 + ISO 27001
+# (shows the command + expected output; live run requires Splunk)
 # ---------------------------------------------------------------------------
 
 header "Multi-Framework Mapping"
 
-run 'aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3"' 2
+type_cmd 'aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3"'
+cat <<'MULTIFW'
+[1/6] Mapping 2 framework controls → 2 unique internal controls
+      (CTRL-003 satisfies both SOC 2 CC6.1 and ISO 27001 A.9.2.3)
+[2/6] Generated 1 SPL query (instead of 2 — saved 50% execution time)
+[3/6] Executing via MCP (splunk-official)...
+[4/6] Panel debate (CTRL-003 — Access Control Policy)...
+      Auditor  → FAIL    (MFA not enforced for all users)
+      Engineer → FAIL    (17% bypass rate confirmed)
+      Adversary→ FAIL    (3 privileged accounts: 0 MFA events)
+[5/6] Consensus: FAIL — triggers findings in both frameworks
+      SOC 2 CC6.1 → FAIL
+      ISO 27001 A.9.2.3 → FAIL
+[6/6] Wrote out/gap_report_multi_<ts>.xlsx (4 findings, 2 frameworks)
+Done in 31s.
+MULTIFW
 
-pause 1
+pause 2
 
 # ---------------------------------------------------------------------------
 # SHOT 7 — LangGraph HITL gate (auto mode to avoid blocking)
