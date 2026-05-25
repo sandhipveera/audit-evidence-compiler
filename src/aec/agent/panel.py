@@ -14,8 +14,10 @@ import yaml
 
 from aec.agent import llm_router
 from aec.agent.models import (
+    AdversarySearch,
     Critique,
     PanelResult,
+    PanelResultWithRecurrence,
     PersonaSpec,
     TransportSpec,
     VERDICT_SEVERITY,
@@ -327,6 +329,215 @@ async def run_panel(
         view.finish(final_verdict, "lowest_of_three")
 
     return panel_result
+
+
+def _render_recurrence_transcript(
+    round_1: PanelResult,
+    round_2: PanelResult | None,
+    counter_searches: list[AdversarySearch],
+) -> str:
+    """Render a combined transcript showing both rounds and counter-search results."""
+    lines = ["# Panel Debate Transcript\n"]
+
+    lines.append("## Round 1\n")
+    lines.append(round_1.transcript)
+    lines.append("")
+
+    if counter_searches:
+        executed_count = sum(1 for s in counter_searches if s.executed)
+        total_count = len(counter_searches)
+        lines.append("## Counter-evidence loop\n")
+        lines.append(
+            f"The Adversary recommended {total_count} follow-up searches. "
+            f"Executed {executed_count} via MCP.\n"
+        )
+        for i, search in enumerate(counter_searches, 1):
+            lines.append(f"### Search {i}: `{search.spl}`")
+            lines.append(f"- Validation: {search.validation_status}")
+            if search.validation_status == "rejected":
+                lines.append(f"  Reason: {search.rejection_reason}")
+                lines.append("- Result: not executed")
+            elif search.executed:
+                lines.append(
+                    f"- Result: {search.row_count} events, {search.execution_time_ms}ms"
+                )
+                if search.sample_events:
+                    lines.append(f"- Sample event: {json.dumps(search.sample_events[0])}")
+                if search.error:
+                    lines.append(f"- Error: {search.error}")
+            lines.append("")
+
+    if round_2 is not None:
+        lines.append("## Round 2 panel debate\n")
+        lines.append(round_2.transcript)
+        lines.append("")
+
+        lines.append("### What changed")
+        r1_map = {c.persona: c.verdict for c in round_1.critiques}
+        r2_map = {c.persona: c.verdict for c in round_2.critiques}
+        for persona in ("auditor", "engineer", "adversary"):
+            v1 = r1_map.get(persona, "N/A")
+            v2 = r2_map.get(persona, "N/A")
+            change = "no change" if v1 == v2 else f"{v1} → {v2}"
+            lines.append(f"- {persona.capitalize()}: {change}")
+        consensus_change = (
+            "no change"
+            if round_1.final_verdict == round_2.final_verdict
+            else f"{round_1.final_verdict} → {round_2.final_verdict}"
+        )
+        lines.append(f"- Consensus: {consensus_change} (round 2 supersedes)")
+
+    return "\n".join(lines)
+
+
+async def run_panel_with_recurrence(
+    snapshot: dict[str, Any],
+    control_text: str,
+    spl_executed: str,
+    persona_dir: Path | None = None,
+    view: Any | None = None,
+    splunk_snapshot: dict[str, Any] | None = None,
+    splunk_client: Any | None = None,
+    time_window: str = "30d",
+    enable_recurrence: bool = True,
+    max_counter_searches: int = 3,
+) -> PanelResultWithRecurrence:
+    """Run panel debate with optional counter-evidence recurrence loop.
+
+    After round 1, if the Adversary recommends additional searches and recurrence
+    is enabled, those searches are validated, executed, and fed into a second round.
+    Round 2's verdict supersedes round 1.
+    """
+    recurrence_enabled = enable_recurrence and os.environ.get(
+        "AEC_RUN_ADVERSARY_SEARCHES", "true"
+    ).lower() not in {"0", "false", "no"}
+
+    if not recurrence_enabled:
+        log.info("Counter-evidence loop disabled")
+
+    round_1 = await run_panel(
+        snapshot=snapshot,
+        control_text=control_text,
+        spl_executed=spl_executed,
+        persona_dir=persona_dir,
+        view=view,
+        splunk_snapshot=splunk_snapshot,
+        splunk_client=None,
+        time_window=time_window,
+    )
+
+    adversary = next((c for c in round_1.critiques if c.persona == "adversary"), None)
+    recommended = adversary.recommended_additional_searches if adversary else []
+
+    if not recurrence_enabled or not recommended:
+        return PanelResultWithRecurrence(
+            round_1=round_1,
+            round_2=None,
+            counter_searches=[],
+            final_verdict=round_1.final_verdict,
+            final_consensus_round=1,
+            transcript=round_1.transcript,
+            iteration_count=1,
+        )
+
+    from aec.splunk.spl_validator import _validate_spl_syntax
+
+    capped = recommended[:max_counter_searches]
+    counter_searches: list[AdversarySearch] = []
+
+    for spl_query in capped:
+        validation_error = _validate_spl_syntax(spl_query)
+        if validation_error:
+            counter_searches.append(AdversarySearch(
+                spl=spl_query,
+                validation_status="rejected",
+                rejection_reason=validation_error,
+                executed=False,
+            ))
+            continue
+
+        if splunk_client is None:
+            counter_searches.append(AdversarySearch(
+                spl=spl_query,
+                validation_status="accepted",
+                executed=False,
+                error="No Splunk client available",
+            ))
+            continue
+
+        start_ms = time.monotonic()
+        from aec.splunk.spl_validator import run_spl
+
+        result = run_spl(spl_query, time_window=time_window, client=splunk_client)
+        elapsed_ms = int((time.monotonic() - start_ms) * 1000)
+
+        counter_searches.append(AdversarySearch(
+            spl=spl_query,
+            validation_status="accepted",
+            executed=True,
+            row_count=result.get("hit_count", 0),
+            sample_events=result.get("sample", []),
+            execution_time_ms=elapsed_ms,
+            error=result.get("error"),
+        ))
+
+    executed_searches = [s for s in counter_searches if s.executed]
+    if not executed_searches:
+        transcript = _render_recurrence_transcript(round_1, None, counter_searches)
+        return PanelResultWithRecurrence(
+            round_1=round_1,
+            round_2=None,
+            counter_searches=counter_searches,
+            final_verdict=round_1.final_verdict,
+            final_consensus_round=1,
+            transcript=transcript,
+            iteration_count=1,
+        )
+
+    augmented_snapshot = {
+        **snapshot,
+        "iteration": 2,
+        "counter_searches": [s.model_dump() for s in executed_searches],
+    }
+
+    round_2_timeout = 60.0
+    try:
+        round_2 = await asyncio.wait_for(
+            run_panel(
+                snapshot=augmented_snapshot,
+                control_text=control_text,
+                spl_executed=spl_executed,
+                persona_dir=persona_dir,
+                view=view,
+                splunk_snapshot=splunk_snapshot,
+                splunk_client=None,
+                time_window=time_window,
+            ),
+            timeout=round_2_timeout,
+        )
+    except asyncio.TimeoutError:
+        log.warning("Round 2 timed out after %.0fs — using round 1 verdict", round_2_timeout)
+        transcript = _render_recurrence_transcript(round_1, None, counter_searches)
+        return PanelResultWithRecurrence(
+            round_1=round_1,
+            round_2=None,
+            counter_searches=counter_searches,
+            final_verdict=round_1.final_verdict,
+            final_consensus_round=1,
+            transcript=transcript,
+            iteration_count=1,
+        )
+
+    transcript = _render_recurrence_transcript(round_1, round_2, counter_searches)
+    return PanelResultWithRecurrence(
+        round_1=round_1,
+        round_2=round_2,
+        counter_searches=counter_searches,
+        final_verdict=round_2.final_verdict,
+        final_consensus_round=2,
+        transcript=transcript,
+        iteration_count=2,
+    )
 
 
 def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name: str) -> str:
