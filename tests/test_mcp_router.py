@@ -128,6 +128,36 @@ class TestDelegate:
         official_inst.execute_spl.assert_awaited_once()
         await router.close()
 
+    async def test_delegate_execute_spl_with_latest(self, clean_env):
+        router = MCPRouter(preferred="splunk-official")
+        official_cls, official_inst = _mock_transport_cls("splunk-official", "0.3.2")
+        official_inst.execute_spl = AsyncMock(
+            return_value={"results": [], "event_count": 0, "search_id": "s1"}
+        )
+        livehybrid_cls, _ = _mock_transport_cls(
+            "livehybrid", "1.4.0",
+            connect_exc=MCPTransportError("not running"),
+        )
+
+        with patch.dict(TRANSPORT_CLASSES, {
+            "splunk-official": official_cls,
+            "livehybrid": livehybrid_cls,
+        }):
+            await router.connect()
+
+        await router.execute_spl(
+            "index=botsv3 | head 5",
+            time_window="2018-08-01",
+            latest="2018-08-15",
+        )
+
+        official_inst.execute_spl.assert_awaited_once_with(
+            query="index=botsv3 | head 5",
+            time_window="2018-08-01",
+            latest="2018-08-15",
+        )
+        await router.close()
+
     async def test_delegate_without_connect_raises(self, clean_env):
         router = MCPRouter()
         with pytest.raises(MCPTransportError, match="No MCP transport connected"):

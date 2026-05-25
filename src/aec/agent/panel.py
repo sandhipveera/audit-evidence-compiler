@@ -16,6 +16,7 @@ from aec.agent import llm_router
 from aec.agent.models import (
     AdversarySearch,
     Critique,
+    DriftAnalysis,
     PanelResult,
     PanelResultWithRecurrence,
     PersonaSpec,
@@ -69,6 +70,7 @@ def _build_user_prompt(
     control_text: str,
     spl_executed: str,
     splunk_snapshot: dict[str, Any] | None = None,
+    drift: DriftAnalysis | None = None,
 ) -> str:
     """Build the user prompt sent to all three personas."""
     snapshot_json = json.dumps(snapshot, indent=2, ensure_ascii=False)
@@ -80,6 +82,11 @@ def _build_user_prompt(
     if splunk_snapshot is not None:
         splunk_json = json.dumps(splunk_snapshot, indent=2, ensure_ascii=False)
         parts.append(f"## Splunk snapshot\n\n```json\n{splunk_json}\n```\n\n")
+    if drift is not None:
+        from aec.splunk.drift import format_drift_transcript
+
+        parts.append(format_drift_transcript(drift))
+        parts.append("\n")
     parts.append(
         "Evaluate this evidence against the control requirement. "
         "Respond with a single JSON object as specified in your instructions."
@@ -228,6 +235,7 @@ async def run_panel(
     splunk_snapshot: dict[str, Any] | None = None,
     splunk_client: Any | None = None,
     time_window: str = "30d",
+    drift: DriftAnalysis | None = None,
 ) -> PanelResult:
     """Run the three-persona panel debate and return the result.
 
@@ -240,14 +248,24 @@ async def run_panel(
     personas: list[PersonaSpec] = []
     for name in PERSONA_NAMES:
         try:
-            personas.append(load_persona(name, persona_dir))
+            p = load_persona(name, persona_dir)
+            if drift is not None:
+                from aec.splunk.drift import format_drift_persona_appendix
+
+                p = PersonaSpec(
+                    persona=p.persona,
+                    transports=p.transports,
+                    temperature=p.temperature,
+                    system_prompt=p.system_prompt + format_drift_persona_appendix(drift),
+                )
+            personas.append(p)
         except Exception as exc:
             log.warning("Failed to load persona %s: %s", name, exc)
 
     if not personas:
         raise RuntimeError("No personas could be loaded")
 
-    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed, splunk_snapshot)
+    user_prompt = _build_user_prompt(snapshot, control_text, spl_executed, splunk_snapshot, drift)
 
     async def _invoke(persona: PersonaSpec, force_fallback_used: bool = False) -> Critique | None:
         if view:
@@ -401,6 +419,7 @@ async def run_panel_with_recurrence(
     time_window: str = "30d",
     enable_recurrence: bool = True,
     max_counter_searches: int = 3,
+    drift: DriftAnalysis | None = None,
 ) -> PanelResultWithRecurrence:
     """Run panel debate with optional counter-evidence recurrence loop.
 
@@ -424,6 +443,7 @@ async def run_panel_with_recurrence(
         splunk_snapshot=splunk_snapshot,
         splunk_client=None,
         time_window=time_window,
+        drift=drift,
     )
 
     adversary = next((c for c in round_1.critiques if c.persona == "adversary"), None)
@@ -512,6 +532,7 @@ async def run_panel_with_recurrence(
                 splunk_snapshot=splunk_snapshot,
                 splunk_client=None,
                 time_window=time_window,
+                drift=drift,
             ),
             timeout=round_2_timeout,
         )

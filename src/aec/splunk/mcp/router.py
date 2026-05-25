@@ -118,8 +118,18 @@ class MCPRouter:
             await self._fallback_transport.close()
             self._fallback_transport = None
 
-    async def execute_spl(self, query: str, time_window: str = "-30d") -> dict[str, Any]:
-        return await self._delegate("execute_spl", query=query, time_window=time_window)
+    async def execute_spl(
+        self,
+        query: str,
+        time_window: str = "-30d",
+        latest: str = "now",
+    ) -> dict[str, Any]:
+        return await self._delegate(
+            "execute_spl",
+            query=query,
+            time_window=time_window,
+            latest=latest,
+        )
 
     async def list_indexes(self) -> list[str]:
         return await self._delegate("list_indexes")

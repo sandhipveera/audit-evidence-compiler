@@ -77,3 +77,28 @@ class PanelResultWithRecurrence(BaseModel):
     final_consensus_round: Literal[1, 2]
     transcript: str
     iteration_count: int
+
+
+class DriftMetric(BaseModel):
+    name: str
+    value_1: float | int
+    value_2: float | int
+    delta_abs: float
+    delta_pct: float
+    direction: Literal["improving", "stable", "worsening"]
+    material: bool
+
+
+class DriftAnalysis(BaseModel):
+    window_1: dict[str, Any]
+    window_2: dict[str, Any]
+    metrics: list[DriftMetric]
+    overall_direction: Literal["improving", "stable", "worsening"]
+    summary: str
+
+
+class TwoWindowSnapshot(BaseModel):
+    control_id: str
+    snapshot_1: dict[str, Any]
+    snapshot_2: dict[str, Any]
+    drift: DriftAnalysis
