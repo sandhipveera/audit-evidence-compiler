@@ -21,6 +21,7 @@ out/
 # Splunk
 splunk-data/
 splunk-logs/
+splunk-app/auditcompiler/bin/lib/
 
 # IDE / OS
 .DS_Store
