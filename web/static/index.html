@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Evidence Compiler</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="hero">
+    <h1>Audit Evidence Auto-Compiler</h1>
+    <p>Three AI vendors debate compliance evidence from Splunk in real time.</p>
+  </div>
+
+  <form id="run-form">
+    <div class="form-row">
+      <select id="control"></select>
+      <button type="submit" id="run-btn">Run debate</button>
+    </div>
+  </form>
+
+  <div id="status-bar" class="status-bar hidden"></div>
+
+  <div id="panel" class="panel-3col hidden">
+    <div class="persona" data-name="auditor">
+      <h3>Auditor <span class="model-tag">Claude Sonnet 4</span></h3>
+      <div class="status">idle</div>
+      <div class="reasoning"></div>
+      <div class="verdict-pill"></div>
+      <div class="concerns"></div>
+    </div>
+    <div class="persona" data-name="engineer">
+      <h3>Engineer <span class="model-tag">GPT-5</span></h3>
+      <div class="status">idle</div>
+      <div class="reasoning"></div>
+      <div class="verdict-pill"></div>
+      <div class="concerns"></div>
+    </div>
+    <div class="persona" data-name="adversary">
+      <h3>Adversary <span class="model-tag">Gemini 2.5 Pro</span></h3>
+      <div class="status">idle</div>
+      <div class="reasoning"></div>
+      <div class="verdict-pill"></div>
+      <div class="concerns"></div>
+    </div>
+  </div>
+
+  <div id="consensus" class="consensus hidden"></div>
+  <div id="downloads" class="downloads hidden"></div>
+  <div id="error-bar" class="error-bar hidden"></div>
+
+  <footer>
+    <p>Built for the Splunk SOAR AI Agents Hackathon &mdash; <a href="https://github.com/sandhipveera/audit-evidence-compiler">GitHub</a></p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
