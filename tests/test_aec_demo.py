@@ -70,6 +70,27 @@ def test_live_flag_defaults_to_rest(monkeypatch):
     assert seen["mcp"] == "rest"
 
 
+def test_ask_routes_to_multi_framework(monkeypatch):
+    seen = {}
+
+    async def fake_run_multi(args):
+        seen["ask"] = args.ask
+
+    monkeypatch.setattr(aec_demo, "_run_multi_framework", fake_run_multi)
+
+    with patch(
+        "sys.argv",
+        [
+            "aec_demo",
+            "--ask",
+            "Show access control evidence across SOC 2, ISO 27001, and NIST CSF",
+        ],
+    ):
+        aec_demo.main()
+
+    assert seen["ask"].startswith("Show access control")
+
+
 def test_invalid_mcp_env_fails(monkeypatch):
     monkeypatch.setenv("AEC_SPLUNK_MCP_SERVER", "bogus")
 
