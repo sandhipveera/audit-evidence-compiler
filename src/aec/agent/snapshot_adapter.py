@@ -5,7 +5,7 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Any
 
-from aec.agent.models import PanelResult
+from aec.agent.models import PanelResult, PanelResultWithRecurrence
 from aec.formatter.audit_findings import GapFinding
 
 
@@ -85,6 +85,50 @@ def extract_gap_findings(
         current_status="Open",
         evidence_reference=trail_path,
     )]
+
+
+def recurrence_result_to_snapshots(
+    result: PanelResultWithRecurrence,
+    splunk_snapshot: dict[str, Any],
+    control_id: str,
+    timestamp: str | None = None,
+) -> list[dict[str, Any]]:
+    """Convert a 2-round PanelResultWithRecurrence into 9 chained EvidenceSnapshot dicts.
+
+    Layout: 3 persona critiques (round 1) + 1 consensus (round 1)
+          + 3 persona critiques (round 2) + 1 consensus (round 2)
+          + 1 final verdict snapshot.
+    When round 2 is None, returns only the round 1 snapshots + final (5 total).
+    """
+    ts = timestamp or datetime.now(timezone.utc).isoformat()
+
+    snapshots = []
+
+    r1_snaps = panel_result_to_snapshots(result.round_1, splunk_snapshot, control_id, ts)
+    for snap in r1_snaps:
+        snap["iteration"] = 1
+        snapshots.append(snap)
+
+    if result.round_2 is not None:
+        r2_snaps = panel_result_to_snapshots(result.round_2, splunk_snapshot, control_id, ts)
+        for snap in r2_snaps:
+            snap["snapshot_id"] = snap["snapshot_id"] + "-r2"
+            snap["iteration"] = 2
+            snapshots.append(snap)
+
+    snapshots.append({
+        "control_id": control_id,
+        "snapshot_id": f"{control_id}-final",
+        "timestamp": ts,
+        "iteration": result.iteration_count,
+        "panel_verdict": result.final_verdict,
+        "persona": "final",
+        "final_consensus_round": result.final_consensus_round,
+        "counter_searches_count": len(result.counter_searches),
+        "panel_transcript_hash": _text_hash(result.transcript),
+    })
+
+    return snapshots
 
 
 def _text_hash(text: str) -> str:
