@@ -141,15 +141,19 @@ def _load_live(control_id: str, window: str) -> tuple[dict, object]:
 
 
 async def _load_via_mcp(
-    control_id: str, window: str, mcp_router,
+    control_id: str,
+    window: str,
+    mcp_router,
+    latest: str = "now",
 ) -> dict:
     """Fetch live snapshot from Splunk via MCP transport."""
-    from aec.splunk.snapshot import SPL_BY_CONTROL, _infer_framework
+    from aec.splunk.snapshot import SPL_BY_CONTROL, _infer_framework, derive_aggregations
+    from aec.splunk.time_window import normalize_earliest
 
     spl = SPL_BY_CONTROL.get(control_id, f"index=main control_id={control_id}")
-    earliest = f"-{window}" if not window.startswith("-") else window
+    earliest = normalize_earliest(window)
 
-    result = await mcp_router.execute_spl(spl, time_window=earliest)
+    result = await mcp_router.execute_spl(spl, time_window=earliest, latest=latest)
 
     from datetime import datetime, timezone
 
@@ -160,11 +164,11 @@ async def _load_via_mcp(
             f"{_infer_framework(control_id).lower()}-{control_id.lower().replace('.', '')}"
         ),
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "time_range": {"earliest": earliest, "latest": "now"},
+        "time_range": {"earliest": earliest, "latest": latest},
         "search": spl,
         "event_count": result.get("event_count", 0),
         "sample_events": result.get("results", [])[:10],
-        "aggregations": {},
+        "aggregations": derive_aggregations(result),
         "mcp_server": mcp_router.mcp_server_tag,
     }
 
@@ -280,6 +284,13 @@ def _parse_drift_window(drift_window: str) -> tuple[str, str]:
         raise ValueError(f"--drift-window must end with 'd' (days), got: {drift_window}")
     days = int(drift_window[:-1])
     return f"-{days * 2}d:-{days}d", f"-{days}d:now"
+
+
+def _parse_window_range(spec: str) -> tuple[str, str]:
+    earliest, sep, latest = spec.partition(":")
+    if not sep or not earliest or not latest:
+        raise ValueError(f"Invalid window range: {spec}")
+    return earliest, latest
 
 
 def _write_drift_audit_memo(
@@ -602,6 +613,7 @@ async def _run_drift(args: argparse.Namespace) -> None:
     from aec.splunk.drift import compute_drift, format_drift_transcript
 
     start = time.monotonic()
+    mcp_router = None
     threshold = getattr(args, "drift_threshold", 5.0)
 
     compare_str = args.compare
@@ -629,35 +641,71 @@ async def _run_drift(args: argparse.Namespace) -> None:
             console.print("[red]--control is required for live drift comparison[/]")
             raise SystemExit(1)
 
-        if _has_splunk_env() or args.live:
+        e1, l1 = _parse_window_range(window_1_spec)
+        e2, l2 = _parse_window_range(window_2_spec)
+
+        if args.mcp and args.mcp != "rest":
+            from aec.splunk.mcp import MCPRouter, MCPTransportError
+
+            preferred = {"official": "splunk-official", "livehybrid": "livehybrid"}[args.mcp]
+            mcp_router = MCPRouter(preferred=preferred)
+            try:
+                await mcp_router.connect()
+            except MCPTransportError as exc:
+                console.print(f"[red]MCP connection failed: {exc}[/]")
+                raise SystemExit(1)
+
+            console.print(f"[bold cyan]MCP server:[/] {mcp_router.active_label}")
+            if mcp_router.fallback_label:
+                console.print(f"      Fallback configured: {mcp_router.fallback_label}")
+
+            console.print(
+                f"[bold cyan][1/6][/] Fetching window 1 snapshot... ({e1} to {l1})"
+            )
+            try:
+                snapshot_1 = await _load_via_mcp(args.control, e1, mcp_router, latest=l1)
+            except MCPTransportError as exc:
+                console.print(f"[red]MCP query failed: {exc}[/]")
+                if mcp_router:
+                    await mcp_router.close()
+                raise SystemExit(1)
+
+            console.print(
+                f"[bold cyan][2/6][/] Fetching window 2 snapshot... ({e2} to {l2})"
+            )
+            try:
+                snapshot_2 = await _load_via_mcp(args.control, e2, mcp_router, latest=l2)
+            except MCPTransportError as exc:
+                console.print(f"[red]MCP query failed: {exc}[/]")
+                if mcp_router:
+                    await mcp_router.close()
+                raise SystemExit(1)
+        elif _has_splunk_env() or args.live:
             from aec.splunk.client import SplunkClient
             from aec.splunk.snapshot import fetch_snapshot
-
-            def _parse_window_range(spec: str) -> tuple[str, str]:
-                parts = spec.split(":")
-                if len(parts) != 2:
-                    raise ValueError(f"Invalid window range: {spec}")
-                return parts[0], parts[1]
-
-            e1, l1 = _parse_window_range(window_1_spec)
-            e2, l2 = _parse_window_range(window_2_spec)
 
             client = SplunkClient(verify_ssl=False)
             console.print(
                 f"[bold cyan][1/6][/] Fetching window 1 snapshot... ({e1} to {l1})"
             )
             snapshot_1 = fetch_snapshot(
-                args.control, time_window="30d", client=client, live=True,
+                args.control,
+                time_window=e1,
+                latest=l1,
+                client=client,
+                live=True,
             )
-            snapshot_1["time_range"] = {"earliest": e1, "latest": l1}
 
             console.print(
                 f"[bold cyan][2/6][/] Fetching window 2 snapshot... ({e2} to {l2})"
             )
             snapshot_2 = fetch_snapshot(
-                args.control, time_window="30d", client=client, live=True,
+                args.control,
+                time_window=e2,
+                latest=l2,
+                client=client,
+                live=True,
             )
-            snapshot_2["time_range"] = {"earliest": e2, "latest": l2}
         else:
             console.print("[red]No Splunk connection available for live drift.[/]")
             console.print("Use sample names with --compare (e.g., --compare soc2-cc61,soc2-cc61-q2)")
@@ -684,6 +732,8 @@ async def _run_drift(args: argparse.Namespace) -> None:
         console.print("[yellow][4/6] Skipping panel (--no-llm)[/]")
         drift_text = format_drift_transcript(drift_analysis)
         console.print(Panel(drift_text, title="Drift Analysis", border_style="cyan"))
+        if mcp_router:
+            await mcp_router.close()
         return
 
     console.print(
@@ -713,6 +763,9 @@ async def _run_drift(args: argparse.Namespace) -> None:
         )
     finally:
         view.stop()
+        if mcp_router:
+            await mcp_router.close()
+            mcp_router = None
 
     panel_result = recurrence_result.round_2 or recurrence_result.round_1
 
