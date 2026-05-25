@@ -26,6 +26,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamablehttp_client
 
+from aec.splunk.time_window import normalize_earliest
+
 from . import BaseMCPTransport, MCPTransportError
 
 log = logging.getLogger(__name__)
@@ -148,12 +150,17 @@ class LivehybridTransport(BaseMCPTransport):
         except Exception as exc:
             raise MCPTransportError(f"Probe failed: {exc}") from exc
 
-    async def execute_spl(self, query: str, time_window: str = "-30d") -> dict[str, Any]:
-        earliest = time_window if time_window.startswith("-") else f"-{time_window}"
+    async def execute_spl(
+        self,
+        query: str,
+        time_window: str = "-30d",
+        latest: str = "now",
+    ) -> dict[str, Any]:
+        earliest = normalize_earliest(time_window)
         raw = await self._call_tool("execute_spl", {
             "search_query": query,
             "earliest_time": earliest,
-            "latest_time": "now",
+            "latest_time": latest,
         })
         return _normalize_search_result(raw)
 

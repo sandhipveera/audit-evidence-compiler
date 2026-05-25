@@ -28,7 +28,12 @@ class BaseMCPTransport(ABC):
         """Health check — returns server info or raises MCPTransportError."""
 
     @abstractmethod
-    async def execute_spl(self, query: str, time_window: str = "-30d") -> dict[str, Any]:
+    async def execute_spl(
+        self,
+        query: str,
+        time_window: str = "-30d",
+        latest: str = "now",
+    ) -> dict[str, Any]:
         """Execute a SPL query and return normalized results.
 
         Returns dict with keys: results, event_count, search_id.

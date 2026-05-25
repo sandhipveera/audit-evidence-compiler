@@ -51,7 +51,26 @@ class TestFetchSnapshotLive:
         assert "sample_events" in result
         assert isinstance(result["sample_events"], list)
         assert "aggregations" in result
+        assert result["aggregations"]["event_count"] == 100
         mock_client.search.assert_called_once()
+
+    def test_live_absolute_range_is_not_rewritten(self, mock_client):
+        result = fetch_snapshot(
+            "CC6.1",
+            time_window="2018-08-01",
+            latest="2018-08-15",
+            client=mock_client,
+            live=True,
+            use_cache=False,
+        )
+
+        assert result["time_range"] == {
+            "earliest": "2018-08-01",
+            "latest": "2018-08-15",
+        }
+        mock_client.search.assert_called_once()
+        assert mock_client.search.call_args.kwargs["earliest"] == "2018-08-01"
+        assert mock_client.search.call_args.kwargs["latest"] == "2018-08-15"
 
     def test_live_iso_control_inferred(self, mock_client):
         result = fetch_snapshot("A.9.2.1", client=mock_client, live=True, use_cache=False)
