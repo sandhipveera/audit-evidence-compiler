@@ -1,0 +1,25 @@
+{
+  "control_id": "CC6.1",
+  "framework": "SOC2",
+  "snapshot_name": "soc2-cc61-q2",
+  "fetched_at": "2026-05-24T12:00:00Z",
+  "time_range": { "earliest": "2018-09-01", "latest": "2018-09-30" },
+  "search": "index=botsv3 sourcetype=o365:management:activity action=Login | stats count by user, mfa_used, src_ip | where mfa_used=\"false\"",
+  "event_count": 1389,
+  "sample_events": [
+    { "_time": "2018-09-05T10:22:00Z", "user": "mkraeusen@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-09-06T14:10:00Z", "user": "bgist@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-09-08T09:30:00Z", "user": "btun@froth.ly", "mfa_used": "false", "src_ip": "45.77.65.211", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-09-10T11:45:00Z", "user": "fyodor@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
+    { "_time": "2018-09-12T16:05:00Z", "user": "bstoll@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" }
+  ],
+  "aggregations": {
+    "successful_logins": 1261,
+    "failed_logins": 128,
+    "mfa_enforced_pct": 0.71,
+    "unique_users": 157,
+    "service_accounts_bypassing_mfa": 19,
+    "source_index": "botsv3",
+    "source_sourcetype": "o365:management:activity"
+  }
+}
