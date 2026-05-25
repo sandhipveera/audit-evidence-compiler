@@ -797,6 +797,88 @@ def _write_multi_framework_memo(
     return memo_path
 
 
+def _json_event(event: dict) -> None:
+    """Print a single JSON event to stdout for --json-stream mode."""
+    print(json.dumps(event, ensure_ascii=False), flush=True)
+
+
+async def _run_json_stream(args: argparse.Namespace) -> None:
+    """Run the pipeline emitting structured JSON events to stdout."""
+    start = time.monotonic()
+
+    if not args.sample:
+        _json_event({"type": "error", "message": "JSON stream mode requires --sample"})
+        raise SystemExit(1)
+
+    _json_event({"type": "phase", "name": "snapshot_fetch", "status": "start"})
+    snapshot = _load_sample(args.sample)
+    _json_event({
+        "type": "phase", "name": "snapshot_fetch", "status": "done",
+        "duration_ms": int((time.monotonic() - start) * 1000),
+        "control_id": snapshot["control_id"],
+        "event_count": snapshot.get("event_count", 0),
+    })
+
+    control_id = snapshot["control_id"]
+    control_text = _control_text_for(control_id)
+
+    _json_event({"type": "phase", "name": "panel_debate", "status": "start"})
+
+    from aec.agent.panel import run_panel
+
+    class JsonStreamView:
+        def start(self) -> None:
+            pass
+
+        def update(self, persona: str, status: str, verdict: str | None = None) -> None:
+            event: dict = {"type": "panel", "persona": persona, "status": "thinking"}
+            if verdict:
+                event["status"] = "complete"
+                event["verdict"] = verdict
+            event["rationale"] = status
+            _json_event(event)
+
+        def finish(self, final_verdict: str, consensus_method: str) -> None:
+            _json_event({"type": "consensus", "verdict": final_verdict})
+
+        def stop(self) -> None:
+            pass
+
+    view = JsonStreamView()
+    panel_result = await run_panel(
+        snapshot=snapshot,
+        control_text=control_text,
+        spl_executed=snapshot.get("search", ""),
+        splunk_snapshot=snapshot,
+        view=view,
+    )
+
+    for c in panel_result.critiques:
+        _json_event({
+            "type": "panel", "persona": c.persona, "status": "complete",
+            "verdict": c.verdict, "confidence": c.confidence,
+            "rationale": c.rationale, "concerns": c.concerns,
+            "model": c.model, "latency_ms": c.latency_ms,
+        })
+
+    _json_event({"type": "consensus", "verdict": panel_result.final_verdict})
+
+    _json_event({"type": "phase", "name": "panel_debate", "status": "done",
+                 "duration_ms": int((time.monotonic() - start) * 1000)})
+
+    out_dir = Path("out")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+    transcript_path = out_dir / f"transcript_{ts}.md"
+    transcript_path.write_text(panel_result.transcript, encoding="utf-8")
+
+    _json_event({"type": "artifact", "kind": "transcript", "path": str(transcript_path)})
+    _json_event({
+        "type": "done", "verdict": panel_result.final_verdict,
+        "duration_ms": int((time.monotonic() - start) * 1000),
+    })
+
+
 def _has_splunk_env() -> bool:
     return bool(os.environ.get("SPLUNK_HOST") and os.environ.get("SPLUNK_TOKEN"))
 
@@ -1359,6 +1441,11 @@ def main() -> None:
         default=None,
         help="Resume a previously interrupted run from its checkpoint.",
     )
+    parser.add_argument(
+        "--json-stream",
+        action="store_true",
+        help="Emit structured JSON events to stdout (for web dashboard integration)",
+    )
 
     args = parser.parse_args()
 
@@ -1393,6 +1480,10 @@ def main() -> None:
         args.mcp = _resolve_mcp_mode(args.mcp, live=getattr(args, "live", False))
     except ValueError as exc:
         parser.error(str(exc))
+
+    if args.json_stream:
+        asyncio.run(_run_json_stream(args))
+        return
 
     if args.resume:
         asyncio.run(_run_graph(args))

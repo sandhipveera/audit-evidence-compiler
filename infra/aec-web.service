@@ -1,0 +1,15 @@
+[Unit]
+Description=Audit Evidence Compiler Web
+After=network.target
+
+[Service]
+Type=simple
+User=veera
+WorkingDirectory=/home/veera/audit-evidence-compiler
+EnvironmentFile=/home/veera/audit-evidence-compiler/.env
+ExecStart=/home/veera/audit-evidence-compiler/.venv/bin/uvicorn web.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
