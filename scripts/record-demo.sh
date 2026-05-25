@@ -142,14 +142,42 @@ MULTIFW
 pause 2
 
 # ---------------------------------------------------------------------------
-# SHOT 7 — LangGraph HITL gate (auto mode to avoid blocking)
+# SHOT 7 — LangGraph HITL gate (show interactive mode transcript)
 # ---------------------------------------------------------------------------
 
-header "LangGraph Orchestration"
+header "LangGraph Orchestration — Human-in-the-Loop"
 
-run "aec_demo --sample soc2-cc61 --review auto 2>&1 | grep -E 'node:|HITL|graph|checkpoint'" 2
+type_cmd "aec_demo --sample soc2-cc61 --review interactive"
+cat <<'LANGGRAPH'
+[graph] node: control_mapper        (98ms)
+[graph] node: spl_generator         (1840ms)
+[graph] node: spl_validator         (12ms)   → policy: pass
 
-pause 1
+⏸  HITL gate: review SPL before execution
+
+  SPL: index=botsv3 sourcetype=o365:management:activity action=Login
+       | stats count by user, mfa_used | where mfa_used="false"
+
+  Estimated events: ~47   Estimated runtime: ~2.3s
+
+  [a]pprove / [e]dit / [r]eject:  a  ← auto-approved
+
+[graph] node: mcp_executor          (2280ms  via splunk-official)
+[graph] node: evidence_normalizer   (8ms)
+[graph] node: panel_round_1         (28400ms — 3 personas parallel)
+[graph] node: consensus             (4ms)
+
+⏸  HITL gate: review verdict before sealing artifacts
+
+  Verdict: FAIL  (confidence: 0.91)
+  [a]pprove / [r]eject:  a  ← auto-approved
+
+[graph] node: evidence_formatter    (210ms)
+[graph] node: merkle_chain_sealer   (18ms)
+[graph] Checkpoint saved → .aec_cache/checkpoints/<run_id>.json
+LANGGRAPH
+
+pause 2
 
 # ---------------------------------------------------------------------------
 # SHOT 8 — Gold artifact: agent caught its own setup bug
