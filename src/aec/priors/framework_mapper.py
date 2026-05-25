@@ -6,6 +6,7 @@ finds the minimal set of internal controls and SPL queries that cover all of the
 from __future__ import annotations
 
 import json
+import re
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
@@ -18,8 +19,8 @@ FRAMEWORK_ALIASES: dict[str, str] = {
     "ISO": "ISO 27001",
     "ISO27001": "ISO 27001",
     "ISO 27001": "ISO 27001",
-    "NIST-CSF": "NIST 800-53",
-    "NIST CSF": "NIST 800-53",
+    "NIST-CSF": "NIST CSF",
+    "NIST CSF": "NIST CSF",
     "NIST": "NIST 800-53",
     "NIST-800-53": "NIST 800-53",
     "NIST 800-53": "NIST 800-53",
@@ -59,6 +60,30 @@ CONTROL_REF_TO_CATEGORY: dict[str, str] = {
     "DS5.3": "Access Control",
 }
 
+CONTROL_REF_TO_INTERNAL_IDS: dict[tuple[str, str], list[str]] = {
+    ("SOC 2", "CC6.1"): ["CTRL-002", "CTRL-003"],
+    ("SOC 2", "CC6.2"): ["CTRL-003", "CTRL-021"],
+    ("SOC 2", "CC6.3"): ["CTRL-003", "CTRL-024"],
+    ("SOC 2", "CC7.2"): ["CTRL-014", "CTRL-015"],
+    ("SOC 2", "CC7.3"): ["CTRL-015", "CTRL-016"],
+    ("ISO 27001", "A.9.2.1"): ["CTRL-020", "CTRL-023"],
+    ("ISO 27001", "A.9.2.3"): ["CTRL-003", "CTRL-007"],
+    ("ISO 27001", "A.12.4.1"): ["CTRL-013", "CTRL-015"],
+    ("ISO 27001", "A.12.6.1"): ["CTRL-001", "CTRL-008"],
+    ("NIST CSF", "PR.AC-1"): ["CTRL-002", "CTRL-003", "CTRL-007"],
+    ("NIST CSF", "PR.AC-4"): ["CTRL-003", "CTRL-020"],
+    ("NIST CSF", "DE.CM-1"): ["CTRL-014", "CTRL-015"],
+    ("NIST CSF", "DE.CM-7"): ["CTRL-015", "CTRL-016"],
+    ("NIST CSF", "ID.RA-1"): ["CTRL-002", "CTRL-007"],
+    ("NIST 800-53", "PR.AC-1"): ["CTRL-002", "CTRL-003", "CTRL-007"],
+    ("NIST 800-53", "PR.AC-4"): ["CTRL-003", "CTRL-020"],
+    ("NIST 800-53", "DE.CM-1"): ["CTRL-014", "CTRL-015"],
+    ("NIST 800-53", "DE.CM-7"): ["CTRL-015", "CTRL-016"],
+    ("NIST 800-53", "ID.RA-1"): ["CTRL-002", "CTRL-007"],
+    ("COBIT", "DS5.5"): ["CTRL-013", "CTRL-015"],
+    ("COBIT", "DS5.3"): ["CTRL-020", "CTRL-021"],
+}
+
 CONCEPT_TO_CATEGORY: dict[str, str] = {
     "access-control": "Access Control",
     "logging": "Logging & Monitoring",
@@ -71,10 +96,59 @@ CONCEPT_TO_CATEGORY: dict[str, str] = {
     "patch-management": "Risk Management",
 }
 
+CONCEPT_FRAMEWORK_DEFAULT_REFS: dict[str, dict[str, str]] = {
+    "access-control": {
+        "SOC 2": "CC6.1",
+        "ISO 27001": "A.9.2.3",
+        "NIST CSF": "PR.AC-1",
+        "NIST 800-53": "PR.AC-1",
+        "COBIT": "DS5.3",
+    },
+    "logging": {
+        "SOC 2": "CC7.2",
+        "ISO 27001": "A.12.4.1",
+        "NIST CSF": "DE.CM-1",
+        "NIST 800-53": "DE.CM-1",
+        "COBIT": "DS5.5",
+    },
+    "monitoring": {
+        "SOC 2": "CC7.2",
+        "ISO 27001": "A.12.4.1",
+        "NIST CSF": "DE.CM-1",
+        "NIST 800-53": "DE.CM-1",
+        "COBIT": "DS5.5",
+    },
+    "risk-management": {
+        "ISO 27001": "A.12.6.1",
+        "NIST CSF": "ID.RA-1",
+        "NIST 800-53": "ID.RA-1",
+    },
+    "patch-management": {
+        "ISO 27001": "A.12.6.1",
+        "NIST CSF": "ID.RA-1",
+        "NIST 800-53": "ID.RA-1",
+    },
+}
+
 
 def _load_catalog() -> dict[str, Any]:
     catalog_path = Path(str(files("aec.priors"))) / "catalog.json"
     return json.loads(catalog_path.read_text(encoding="utf-8"))
+
+
+def _lookup_alias(alias: str, aliases: dict[str, str]) -> str | None:
+    alias = alias.strip()
+    return aliases.get(alias) or aliases.get(alias.upper())
+
+
+def parse_framework_alias(fw_alias: str) -> tuple[str, str]:
+    """Parse a framework alias into (catalog_framework, display_framework)."""
+    fw_alias = fw_alias.strip()
+    catalog_fw = _lookup_alias(fw_alias, FRAMEWORK_ALIASES)
+    if catalog_fw is None:
+        raise ValueError(f"Unknown framework alias '{fw_alias}'")
+    display_fw = _lookup_alias(fw_alias, DISPLAY_FRAMEWORK) or fw_alias
+    return catalog_fw, display_fw
 
 
 def parse_control_ref(ref: str) -> tuple[str, str, str]:
@@ -82,13 +156,18 @@ def parse_control_ref(ref: str) -> tuple[str, str, str]:
     if ":" not in ref:
         raise ValueError(f"Invalid control reference '{ref}' — expected 'FRAMEWORK:CONTROL_ID'")
     fw_alias, control_id = ref.split(":", 1)
-    fw_alias = fw_alias.strip()
     control_id = control_id.strip()
-    catalog_fw = FRAMEWORK_ALIASES.get(fw_alias)
-    if catalog_fw is None:
-        raise ValueError(f"Unknown framework alias '{fw_alias}' in '{ref}'")
-    display_fw = DISPLAY_FRAMEWORK.get(fw_alias, fw_alias)
+    try:
+        catalog_fw, display_fw = parse_framework_alias(fw_alias)
+    except ValueError as exc:
+        raise ValueError(f"Unknown framework alias '{fw_alias.strip()}' in '{ref}'") from exc
     return catalog_fw, display_fw, control_id
+
+
+def _fallback_frameworks(catalog_fw: str) -> list[str]:
+    if catalog_fw == "NIST CSF":
+        return ["NIST CSF", "NIST 800-53"]
+    return [catalog_fw]
 
 
 def _find_controls_for(
@@ -97,8 +176,24 @@ def _find_controls_for(
     """Find internal controls matching a framework + category."""
     return [
         c for c in controls
-        if c["frameworks"].get(catalog_fw) and c.get("splunk_hint_category") == category
+        if any(c["frameworks"].get(fw) for fw in _fallback_frameworks(catalog_fw))
+        and c.get("splunk_hint_category") == category
     ]
+
+
+def _find_controls_for_ref(
+    catalog_fw: str,
+    control_id: str,
+    category: str,
+    controls: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    control_by_id = {c["internal_id"]: c for c in controls}
+    curated_ids = CONTROL_REF_TO_INTERNAL_IDS.get((catalog_fw, control_id))
+    if curated_ids is not None:
+        curated = [control_by_id[ctrl_id] for ctrl_id in curated_ids if ctrl_id in control_by_id]
+        if curated:
+            return curated
+    return _find_controls_for(catalog_fw, category, controls)
 
 
 def map_controls(
@@ -138,7 +233,7 @@ def map_controls(
             "category": category,
         })
 
-        matching = _find_controls_for(catalog_fw, category, all_controls)
+        matching = _find_controls_for_ref(catalog_fw, control_id, category, all_controls)
         ids = [c["internal_id"] for c in matching]
         framework_coverage[ref] = ids
         all_internal_ids.update(ids)
@@ -167,18 +262,14 @@ def map_concept(
     if category is None:
         raise ValueError(f"Unknown concept '{concept}'")
 
-    category_to_ref: dict[str, str] = {}
-    for ref, cat in CONTROL_REF_TO_CATEGORY.items():
-        if cat == category:
-            for fw_alias in DISPLAY_FRAMEWORK:
-                if fw_alias not in category_to_ref:
-                    category_to_ref[fw_alias] = ref
-
     prompts = []
     for fw in frameworks:
         fw_stripped = fw.strip()
-        if fw_stripped in category_to_ref:
-            prompts.append(f"{fw_stripped}:{category_to_ref[fw_stripped]}")
+        catalog_fw, display_fw = parse_framework_alias(fw_stripped)
+        default_refs = CONCEPT_FRAMEWORK_DEFAULT_REFS.get(concept, {})
+        control_id = default_refs.get(display_fw) or default_refs.get(catalog_fw)
+        if control_id:
+            prompts.append(f"{fw_stripped}:{control_id}")
 
     if not prompts:
         if catalog is None:
@@ -190,9 +281,9 @@ def map_concept(
         parsed_refs: list[dict[str, str]] = []
         for fw in frameworks:
             fw_stripped = fw.strip()
-            catalog_fw = FRAMEWORK_ALIASES.get(fw_stripped)
-            display_fw = DISPLAY_FRAMEWORK.get(fw_stripped, fw_stripped)
-            if catalog_fw is None:
+            try:
+                catalog_fw, display_fw = parse_framework_alias(fw_stripped)
+            except ValueError:
                 continue
             matching = _find_controls_for(catalog_fw, category, all_controls)
             ids = [c["internal_id"] for c in matching]
@@ -222,6 +313,55 @@ def map_concept(
     return map_controls(prompts, catalog)
 
 
+def map_ask(prompt: str, catalog: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Resolve a natural-language request to framework controls.
+
+    This intentionally stays deterministic for the demo path: tests can fixture
+    the prompt text without requiring an LLM call or network access.
+    """
+    text = prompt.lower()
+    frameworks: list[str] = []
+    if re.search(r"\bsoc\s*2\b|\bsoc2\b", text):
+        frameworks.append("SOC2")
+    if re.search(r"\biso\b|\b27001\b", text):
+        frameworks.append("ISO")
+    if re.search(r"\bnist[-\s]*csf\b|\bcsf\b", text):
+        frameworks.append("NIST-CSF")
+    elif re.search(r"\bnist\b", text):
+        frameworks.append("NIST")
+    if re.search(r"\bcobit\b", text):
+        frameworks.append("COBIT")
+
+    concept = None
+    if re.search(r"\baccess\b|\bmfa\b|\blogin\b|\bidentity\b", text):
+        concept = "access-control"
+    elif re.search(r"\blogging\b|\bmonitoring\b|\blog source\b|\banomal", text):
+        concept = "logging"
+    elif re.search(r"\brisk\b|\bvulnerab|\bpatch\b", text):
+        concept = "risk-management"
+    elif re.search(r"\bencryption\b|\bdata protection\b|\bdlp\b", text):
+        concept = "data-protection"
+
+    if concept and frameworks:
+        return map_concept(concept, frameworks, catalog)
+
+    refs: list[str] = []
+    for control_id in CONTROL_REF_TO_CATEGORY:
+        if control_id.lower() in text:
+            if control_id.startswith("CC"):
+                refs.append(f"SOC2:{control_id}")
+            elif control_id.startswith("A."):
+                refs.append(f"ISO:{control_id}")
+            elif control_id.startswith(("PR.", "DE.", "ID.")):
+                refs.append(f"NIST-CSF:{control_id}")
+            elif control_id.startswith("DS"):
+                refs.append(f"COBIT:{control_id}")
+    if refs:
+        return map_controls(refs, catalog)
+
+    raise ValueError("Could not resolve natural-language request to supported controls")
+
+
 def _compute_shared(framework_coverage: dict[str, list[str]]) -> set[str]:
     """Find controls that appear in ALL framework refs."""
     if not framework_coverage:
@@ -233,6 +373,7 @@ def _compute_shared(framework_coverage: dict[str, list[str]]) -> set[str]:
 def expand_findings_multi_framework(
     findings: list[GapFinding],
     parsed_refs: list[dict[str, str]],
+    framework_coverage: dict[str, list[str]] | None = None,
 ) -> list[GapFinding]:
     """Expand a list of findings into N rows — one per framework reference.
 
@@ -241,8 +382,9 @@ def expand_findings_multi_framework(
     """
     expanded: list[GapFinding] = []
     for finding in findings:
-        for i, ref in enumerate(parsed_refs, 1):
-            suffix = f"-{ref['display_fw'].replace(' ', '')}"
+        refs_for_finding = _refs_for_finding(finding, parsed_refs, framework_coverage)
+        for ref in refs_for_finding:
+            suffix = _finding_suffix(ref)
             expanded.append(GapFinding(
                 finding_id=f"{finding.finding_id}{suffix}",
                 audit_type=finding.audit_type,
@@ -261,6 +403,26 @@ def expand_findings_multi_framework(
                 comments=finding.comments,
             ))
     return expanded
+
+
+def _refs_for_finding(
+    finding: GapFinding,
+    parsed_refs: list[dict[str, str]],
+    framework_coverage: dict[str, list[str]] | None,
+) -> list[dict[str, str]]:
+    if not framework_coverage or not finding.audit_reference.startswith("CTRL-"):
+        return parsed_refs
+    scoped = [
+        ref for ref in parsed_refs
+        if finding.audit_reference in framework_coverage.get(ref["input"], [])
+    ]
+    return scoped or parsed_refs
+
+
+def _finding_suffix(ref: dict[str, str]) -> str:
+    fw = re.sub(r"[^A-Za-z0-9]+", "", ref["display_fw"])
+    ctrl = re.sub(r"[^A-Za-z0-9]+", "", ref["control_id"])
+    return f"-{fw}-{ctrl}"
 
 
 def _greedy_minimal_spl(
