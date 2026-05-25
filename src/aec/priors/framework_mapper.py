@@ -1,0 +1,301 @@
+"""Cross-framework control mapper — resolves mixed-framework prompts to internal controls.
+
+Given a list of framework-qualified control references (e.g. "SOC2:CC6.1", "ISO:A.9.2.3"),
+finds the minimal set of internal controls and SPL queries that cover all of them.
+"""
+from __future__ import annotations
+
+import json
+from importlib.resources import files
+from pathlib import Path
+from typing import Any
+
+from aec.formatter.audit_findings import GapFinding
+
+FRAMEWORK_ALIASES: dict[str, str] = {
+    "SOC2": "SOC 2",
+    "SOC 2": "SOC 2",
+    "ISO": "ISO 27001",
+    "ISO27001": "ISO 27001",
+    "ISO 27001": "ISO 27001",
+    "NIST-CSF": "NIST 800-53",
+    "NIST CSF": "NIST 800-53",
+    "NIST": "NIST 800-53",
+    "NIST-800-53": "NIST 800-53",
+    "NIST 800-53": "NIST 800-53",
+    "COBIT": "COBIT",
+}
+
+DISPLAY_FRAMEWORK: dict[str, str] = {
+    "SOC2": "SOC 2",
+    "SOC 2": "SOC 2",
+    "ISO": "ISO 27001",
+    "ISO27001": "ISO 27001",
+    "ISO 27001": "ISO 27001",
+    "NIST-CSF": "NIST CSF",
+    "NIST CSF": "NIST CSF",
+    "NIST": "NIST 800-53",
+    "NIST-800-53": "NIST 800-53",
+    "NIST 800-53": "NIST 800-53",
+    "COBIT": "COBIT",
+}
+
+CONTROL_REF_TO_CATEGORY: dict[str, str] = {
+    "CC6.1": "Access Control",
+    "CC6.2": "Access Control",
+    "CC6.3": "Access Control",
+    "CC7.2": "Logging & Monitoring",
+    "CC7.3": "Logging & Monitoring",
+    "A.9.2.1": "Access Control",
+    "A.9.2.3": "Access Control",
+    "A.12.4.1": "Logging & Monitoring",
+    "A.12.6.1": "Risk Management",
+    "PR.AC-1": "Access Control",
+    "PR.AC-4": "Access Control",
+    "DE.CM-1": "Logging & Monitoring",
+    "DE.CM-7": "Logging & Monitoring",
+    "ID.RA-1": "Risk Management",
+    "DS5.5": "Logging & Monitoring",
+    "DS5.3": "Access Control",
+}
+
+CONCEPT_TO_CATEGORY: dict[str, str] = {
+    "access-control": "Access Control",
+    "logging": "Logging & Monitoring",
+    "monitoring": "Logging & Monitoring",
+    "incident-response": "Logging & Monitoring",
+    "data-protection": "Data Protection",
+    "encryption": "Data Protection",
+    "risk-management": "Risk Management",
+    "vendor-risk": "Vendor Risk",
+    "patch-management": "Risk Management",
+}
+
+
+def _load_catalog() -> dict[str, Any]:
+    catalog_path = Path(str(files("aec.priors"))) / "catalog.json"
+    return json.loads(catalog_path.read_text(encoding="utf-8"))
+
+
+def parse_control_ref(ref: str) -> tuple[str, str, str]:
+    """Parse 'SOC2:CC6.1' into (catalog_framework, display_framework, control_ref)."""
+    if ":" not in ref:
+        raise ValueError(f"Invalid control reference '{ref}' — expected 'FRAMEWORK:CONTROL_ID'")
+    fw_alias, control_id = ref.split(":", 1)
+    fw_alias = fw_alias.strip()
+    control_id = control_id.strip()
+    catalog_fw = FRAMEWORK_ALIASES.get(fw_alias)
+    if catalog_fw is None:
+        raise ValueError(f"Unknown framework alias '{fw_alias}' in '{ref}'")
+    display_fw = DISPLAY_FRAMEWORK.get(fw_alias, fw_alias)
+    return catalog_fw, display_fw, control_id
+
+
+def _find_controls_for(
+    catalog_fw: str, category: str, controls: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Find internal controls matching a framework + category."""
+    return [
+        c for c in controls
+        if c["frameworks"].get(catalog_fw) and c.get("splunk_hint_category") == category
+    ]
+
+
+def map_controls(
+    prompts: list[str], catalog: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Map framework-qualified control refs to internal controls and minimal SPL set.
+
+    Input:  ["SOC2:CC6.1", "ISO:A.9.2.3", "NIST-CSF:PR.AC-1"]
+    Output: {
+        "internal_controls": ["CTRL-003", ...],
+        "framework_coverage": {"SOC2:CC6.1": ["CTRL-003", ...], ...},
+        "shared_controls": ["CTRL-003"],
+        "minimal_spl_set": [{"spl": "...", "covers": ["CTRL-003"]}],
+        "parsed_refs": [{"input": "SOC2:CC6.1", "catalog_fw": ..., "display_fw": ..., "control_id": ...}],
+    }
+    """
+    if catalog is None:
+        catalog = _load_catalog()
+    all_controls = catalog["controls"]
+    spl_hints = catalog.get("spl_hints", {})
+
+    parsed_refs: list[dict[str, str]] = []
+    framework_coverage: dict[str, list[str]] = {}
+    all_internal_ids: set[str] = set()
+
+    for ref in prompts:
+        catalog_fw, display_fw, control_id = parse_control_ref(ref)
+        category = CONTROL_REF_TO_CATEGORY.get(control_id)
+        if category is None:
+            raise ValueError(f"Unknown control reference '{control_id}' — not in mapping")
+
+        parsed_refs.append({
+            "input": ref,
+            "catalog_fw": catalog_fw,
+            "display_fw": display_fw,
+            "control_id": control_id,
+            "category": category,
+        })
+
+        matching = _find_controls_for(catalog_fw, category, all_controls)
+        ids = [c["internal_id"] for c in matching]
+        framework_coverage[ref] = ids
+        all_internal_ids.update(ids)
+
+    shared = _compute_shared(framework_coverage)
+    minimal_spl = _greedy_minimal_spl(all_internal_ids, all_controls, spl_hints)
+
+    return {
+        "internal_controls": sorted(all_internal_ids),
+        "framework_coverage": framework_coverage,
+        "shared_controls": sorted(shared),
+        "minimal_spl_set": minimal_spl,
+        "parsed_refs": parsed_refs,
+    }
+
+
+def map_concept(
+    concept: str, frameworks: list[str], catalog: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Map a concept + framework list to the same output as map_controls.
+
+    E.g. concept="access-control", frameworks=["SOC2", "ISO", "NIST-CSF"]
+    builds synthetic refs like "SOC2:CC6.1" etc.
+    """
+    category = CONCEPT_TO_CATEGORY.get(concept)
+    if category is None:
+        raise ValueError(f"Unknown concept '{concept}'")
+
+    category_to_ref: dict[str, str] = {}
+    for ref, cat in CONTROL_REF_TO_CATEGORY.items():
+        if cat == category:
+            for fw_alias in DISPLAY_FRAMEWORK:
+                if fw_alias not in category_to_ref:
+                    category_to_ref[fw_alias] = ref
+
+    prompts = []
+    for fw in frameworks:
+        fw_stripped = fw.strip()
+        if fw_stripped in category_to_ref:
+            prompts.append(f"{fw_stripped}:{category_to_ref[fw_stripped]}")
+
+    if not prompts:
+        if catalog is None:
+            catalog = _load_catalog()
+        all_controls = catalog["controls"]
+
+        framework_coverage: dict[str, list[str]] = {}
+        all_ids: set[str] = set()
+        parsed_refs: list[dict[str, str]] = []
+        for fw in frameworks:
+            fw_stripped = fw.strip()
+            catalog_fw = FRAMEWORK_ALIASES.get(fw_stripped)
+            display_fw = DISPLAY_FRAMEWORK.get(fw_stripped, fw_stripped)
+            if catalog_fw is None:
+                continue
+            matching = _find_controls_for(catalog_fw, category, all_controls)
+            ids = [c["internal_id"] for c in matching]
+            label = f"{fw_stripped}:{concept}"
+            framework_coverage[label] = ids
+            all_ids.update(ids)
+            parsed_refs.append({
+                "input": label,
+                "catalog_fw": catalog_fw,
+                "display_fw": display_fw,
+                "control_id": concept,
+                "category": category,
+            })
+
+        shared = _compute_shared(framework_coverage)
+        spl_hints = catalog.get("spl_hints", {})
+        minimal_spl = _greedy_minimal_spl(all_ids, all_controls, spl_hints)
+
+        return {
+            "internal_controls": sorted(all_ids),
+            "framework_coverage": framework_coverage,
+            "shared_controls": sorted(shared),
+            "minimal_spl_set": minimal_spl,
+            "parsed_refs": parsed_refs,
+        }
+
+    return map_controls(prompts, catalog)
+
+
+def _compute_shared(framework_coverage: dict[str, list[str]]) -> set[str]:
+    """Find controls that appear in ALL framework refs."""
+    if not framework_coverage:
+        return set()
+    sets = [set(ids) for ids in framework_coverage.values()]
+    return sets[0].intersection(*sets[1:])
+
+
+def expand_findings_multi_framework(
+    findings: list[GapFinding],
+    parsed_refs: list[dict[str, str]],
+) -> list[GapFinding]:
+    """Expand a list of findings into N rows — one per framework reference.
+
+    Each base finding is replicated for every parsed_ref, with framework and
+    audit_reference updated. Finding IDs are suffixed to stay unique.
+    """
+    expanded: list[GapFinding] = []
+    for finding in findings:
+        for i, ref in enumerate(parsed_refs, 1):
+            suffix = f"-{ref['display_fw'].replace(' ', '')}"
+            expanded.append(GapFinding(
+                finding_id=f"{finding.finding_id}{suffix}",
+                audit_type=finding.audit_type,
+                framework=ref["display_fw"],
+                audit_reference=ref["control_id"],
+                finding_description=finding.finding_description,
+                finding_category=finding.finding_category,
+                severity=finding.severity,
+                root_cause=finding.root_cause,
+                affected_system=finding.affected_system,
+                risk_owner=finding.risk_owner,
+                remediation_action=finding.remediation_action,
+                remediation_owner=finding.remediation_owner,
+                current_status=finding.current_status,
+                evidence_reference=finding.evidence_reference,
+                comments=finding.comments,
+            ))
+    return expanded
+
+
+def _greedy_minimal_spl(
+    target_controls: set[str],
+    all_controls: list[dict[str, Any]],
+    spl_hints: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Greedy set-cover: pick SPL queries that cover the most uncovered controls."""
+    control_map = {c["internal_id"]: c for c in all_controls}
+
+    by_spl: dict[str, list[str]] = {}
+    for ctrl_id in target_controls:
+        ctrl = control_map.get(ctrl_id)
+        if ctrl is None:
+            continue
+        category = ctrl.get("splunk_hint_category", "")
+        hint = spl_hints.get(category, ctrl.get("splunk_hint", {}))
+        spl = hint.get("spl_skeleton", "")
+        if spl:
+            by_spl.setdefault(spl, []).append(ctrl_id)
+
+    uncovered = set(target_controls)
+    result: list[dict[str, Any]] = []
+
+    while uncovered:
+        best_spl = None
+        best_covers: list[str] = []
+        for spl, ctrl_ids in by_spl.items():
+            covers = [c for c in ctrl_ids if c in uncovered]
+            if len(covers) > len(best_covers):
+                best_spl = spl
+                best_covers = covers
+        if not best_spl:
+            break
+        result.append({"spl": best_spl, "covers": sorted(best_covers)})
+        uncovered -= set(best_covers)
+
+    return result
