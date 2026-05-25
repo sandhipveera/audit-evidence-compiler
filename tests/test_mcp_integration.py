@@ -10,7 +10,6 @@ import os
 import pytest
 
 from aec.splunk.mcp.router import MCPRouter
-from aec.splunk.mcp.transports import MCPTransportError
 
 
 pytestmark = pytest.mark.integration
