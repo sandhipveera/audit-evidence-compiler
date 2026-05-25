@@ -267,17 +267,22 @@ async def _run(args: argparse.Namespace) -> None:
         console.print(Panel(json.dumps(snapshot, indent=2), title="Snapshot", border_style="cyan"))
         return
 
-    # Step 2: Run panel
-    console.print("[bold cyan][2/5][/] Running panel debate (3 personas, parallel)...")
+    # Step 2: Run panel (with recurrence loop)
+    enable_recurrence = not getattr(args, "no_recurrence", False)
+    max_counter = getattr(args, "max_counter_searches", 3)
+    round_label = "with recurrence" if enable_recurrence else "single round"
+    console.print(
+        f"[bold cyan][2/5][/] Running panel debate (3 personas, parallel, {round_label})..."
+    )
 
-    from aec.agent.panel import run_panel
+    from aec.agent.panel import run_panel_with_recurrence
     from aec.agent.panel_view import PanelView
 
     view = PanelView(console=console)
     view.start()
 
     try:
-        panel_result = await run_panel(
+        recurrence_result = await run_panel_with_recurrence(
             snapshot=snapshot,
             control_text=control_text,
             spl_executed=snapshot.get("search", ""),
@@ -285,14 +290,18 @@ async def _run(args: argparse.Namespace) -> None:
             splunk_client=splunk_client,
             time_window=args.window,
             view=view,
+            enable_recurrence=enable_recurrence,
+            max_counter_searches=max_counter,
         )
     finally:
         view.stop()
 
+    panel_result = recurrence_result.round_2 or recurrence_result.round_1
+
     # Step 3: Consensus
     verdict_style = (
-        "green" if panel_result.final_verdict == "PASS"
-        else "yellow" if panel_result.final_verdict == "PARTIAL"
+        "green" if recurrence_result.final_verdict == "PASS"
+        else "yellow" if recurrence_result.final_verdict == "PARTIAL"
         else "red"
     )
 
@@ -303,9 +312,17 @@ async def _run(args: argparse.Namespace) -> None:
 
     console.print(
         f"[bold cyan][3/5][/] Consensus: "
-        f"[bold {verdict_style}]{panel_result.final_verdict}[/]"
+        f"[bold {verdict_style}]{recurrence_result.final_verdict}[/]"
+        f" (round {recurrence_result.final_consensus_round})"
         f"{consensus_detail}"
     )
+
+    if recurrence_result.counter_searches:
+        executed = sum(1 for s in recurrence_result.counter_searches if s.executed)
+        console.print(
+            f"      Counter-evidence: {executed}/{len(recurrence_result.counter_searches)} "
+            f"adversary searches executed"
+        )
 
     if panel_result.adversary_followups:
         console.print("      Included adversary follow-up search results in transcript")
@@ -315,13 +332,8 @@ async def _run(args: argparse.Namespace) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
 
-    from aec.agent.panel import _format_transcript_file
-
-    snapshot_name = snapshot.get("snapshot_name", "unknown")
-    transcript_content = _format_transcript_file(panel_result, control_id, snapshot_name)
-
     transcript_path = out_dir / f"transcript_{ts}.md"
-    transcript_path.write_text(transcript_content, encoding="utf-8")
+    transcript_path.write_text(recurrence_result.transcript, encoding="utf-8")
 
     elapsed = time.monotonic() - start
     memo_path = _write_audit_memo(snapshot, panel_result, out_dir, ts, elapsed)
@@ -330,7 +342,10 @@ async def _run(args: argparse.Namespace) -> None:
     console.print(f"      Wrote {memo_path}")
 
     # Step 5: Evidence chain + xlsx + manifest (Merkle seal)
-    from aec.agent.snapshot_adapter import extract_gap_findings, panel_result_to_snapshots
+    from aec.agent.snapshot_adapter import (
+        extract_gap_findings,
+        recurrence_result_to_snapshots,
+    )
     from aec.formatter.audit_findings import write_findings
     from aec.integrity.chain import chain_snapshots, write_trail
     from aec.integrity.manifest import write_manifest_sheet
@@ -338,7 +353,7 @@ async def _run(args: argparse.Namespace) -> None:
     trail_path = out_dir / f"audit_trail_{ts}.jsonl"
     xlsx_path = out_dir / f"gap_report_{ts}.xlsx"
 
-    snapshots = panel_result_to_snapshots(panel_result, snapshot, control_id)
+    snapshots = recurrence_result_to_snapshots(recurrence_result, snapshot, control_id)
     chained = chain_snapshots(snapshots)
     write_trail(trail_path, chained)
 
@@ -356,7 +371,7 @@ async def _run(args: argparse.Namespace) -> None:
             audit_type="Internal",
             framework=snapshot.get("framework", ""),
             audit_reference=control_id,
-            finding_description=f"Panel verdict: {panel_result.final_verdict} for {control_id}",
+            finding_description=f"Panel verdict: {recurrence_result.final_verdict} for {control_id}",
             finding_category="Access Control",
             severity="Low",
             root_cause="No gaps identified",
@@ -432,6 +447,17 @@ def main() -> None:
             "livehybrid (community MCP), rest (direct REST API). "
             "Default: read AEC_SPLUNK_MCP_SERVER env, else official."
         ),
+    )
+    parser.add_argument(
+        "--no-recurrence",
+        action="store_true",
+        help="Disable counter-evidence recurrence loop (single round only)",
+    )
+    parser.add_argument(
+        "--max-counter-searches",
+        type=int,
+        default=3,
+        help="Max adversary counter-searches to execute per recurrence loop (default: 3)",
     )
 
     args = parser.parse_args()
