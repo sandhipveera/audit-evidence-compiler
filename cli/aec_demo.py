@@ -4,6 +4,9 @@ Usage:
     aec_demo --sample soc2-cc61
     aec_demo --control CC6.1 --window 30d
     aec_demo --sample soc2-cc61 --no-llm
+    aec_demo --control CC6.1 --review interactive
+    aec_demo --control CC6.1 --resume <run_id>
+    aec_demo list-checkpoints
 """
 from __future__ import annotations
 
@@ -19,6 +22,100 @@ from rich.console import Console
 from rich.panel import Panel
 
 console = Console()
+
+
+async def _run_graph(args: argparse.Namespace) -> None:
+    """Execute the pipeline through the LangGraph wrapper."""
+    from langgraph.checkpoint.memory import MemorySaver
+    from langgraph.types import Command
+
+    from aec.agent.graph import build_graph, make_initial_state
+    from aec.agent.state import read_checkpoint
+
+    review_mode = getattr(args, "review", "auto")
+    resume_id = getattr(args, "resume", None)
+
+    checkpointer = MemorySaver()
+    graph = build_graph(checkpointer=checkpointer)
+
+    if resume_id:
+        saved = read_checkpoint(resume_id)
+        if saved is None:
+            console.print(f"[red]No checkpoint found for run_id={resume_id}[/]")
+            raise SystemExit(1)
+        console.print(
+            f"[bold cyan]Resuming run {resume_id}[/] "
+            f"(control={saved.control_id}, "
+            f"completed={', '.join(saved.completed_nodes)})"
+        )
+        initial = saved.model_dump()
+        thread_id = resume_id
+    else:
+        sample_name = args.sample
+        control_id = args.control or (None if not sample_name else _sample_control(sample_name))
+
+        if not control_id:
+            console.print("[red]Cannot determine control_id[/]")
+            raise SystemExit(1)
+
+        mcp_mode = getattr(args, "mcp", "official")
+        enable_recurrence = not getattr(args, "no_recurrence", False)
+        max_counter = getattr(args, "max_counter_searches", 3)
+
+        initial = make_initial_state(
+            control_id=control_id,
+            sample_name=sample_name,
+            review_mode=review_mode,
+            mcp_mode=mcp_mode,
+            window_str=args.window,
+            enable_recurrence=enable_recurrence,
+            max_counter_searches=max_counter,
+        )
+        thread_id = initial["run_id"]
+
+    config = {"configurable": {"thread_id": thread_id}}
+
+    console.print(
+        f"\n[bold]audit-evidence-compiler[/] "
+        f"(run_id={thread_id}, review={review_mode})\n"
+    )
+
+    result = await graph.ainvoke(initial, config=config)
+
+    while "__interrupt__" in result:
+        interrupts = result["__interrupt__"]
+        for intr in interrupts:
+            payload = intr.value if hasattr(intr, "value") else intr
+            if isinstance(payload, dict):
+                prompt_text = payload.get("prompt", "Approve? [a/r]: ")
+            else:
+                prompt_text = str(payload)
+            console.print(prompt_text)
+
+        user_input = input("→ ").strip().lower()
+        result = await graph.ainvoke(
+            Command(resume=user_input), config=config,
+        )
+
+    verdict = result.get("final_verdict")
+    if verdict:
+        style = (
+            "green" if verdict == "PASS"
+            else "yellow" if verdict == "PARTIAL"
+            else "red"
+        )
+        console.print(f"\n[bold {style}]Final verdict: {verdict}[/]")
+
+    console.print(f"\n[bold green]Done.[/]  (run_id={thread_id})")
+
+
+def _sample_control(sample_name: str) -> str | None:
+    mapping = {
+        "soc2-cc61": "CC6.1",
+        "soc2-cc72": "CC7.2",
+        "iso27001-a921": "A.9.2.1",
+    }
+    return mapping.get(sample_name)
 
 SAMPLES_DIR = Path(__file__).resolve().parent.parent / "samples"
 
@@ -415,6 +512,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Audit Evidence Compiler — Splunk hackathon demo"
     )
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    subparsers.add_parser(
+        "list-checkpoints", help="Show resumable checkpoint runs"
+    )
+    subparsers.add_parser(
+        "clean", help="Remove all checkpoints"
+    )
+
     parser.add_argument(
         "--control",
         help="Control ID (e.g., CC6.1, A.9.2.1, PR.AC-1)",
@@ -459,22 +565,70 @@ def main() -> None:
         default=3,
         help="Max adversary counter-searches to execute per recurrence loop (default: 3)",
     )
+    parser.add_argument(
+        "--review",
+        choices=["auto", "interactive", "spl-only", "verdict-only"],
+        default="auto",
+        help=(
+            "HITL review mode: auto (no interrupts), interactive (both gates), "
+            "spl-only, verdict-only. Default: auto."
+        ),
+    )
+    parser.add_argument(
+        "--resume",
+        metavar="RUN_ID",
+        default=None,
+        help="Resume a previously interrupted run from its checkpoint.",
+    )
 
     args = parser.parse_args()
+
+    if args.subcommand == "list-checkpoints":
+        from aec.agent.state import list_checkpoints
+
+        checkpoints = list_checkpoints()
+        if not checkpoints:
+            console.print("[yellow]No checkpoints found.[/]")
+        else:
+            for cp in checkpoints:
+                nodes = ", ".join(cp["completed_nodes"]) if cp["completed_nodes"] else "(none)"
+                console.print(
+                    f"  {cp['run_id']}  control={cp['control_id']}  "
+                    f"started={cp['started_at']}  nodes=[{nodes}]  "
+                    f"verdict={cp['final_verdict'] or '—'}"
+                )
+        return
+
+    if args.subcommand == "clean":
+        from aec.agent.state import clean_checkpoints
+
+        count = clean_checkpoints()
+        console.print(f"[green]Removed {count} checkpoint(s).[/]")
+        return
 
     # Allow AEC_SAMPLE env var as shortcut
     if not args.sample and os.environ.get("AEC_SAMPLE"):
         args.sample = os.environ["AEC_SAMPLE"]
 
     try:
-        args.mcp = _resolve_mcp_mode(args.mcp, live=args.live)
+        args.mcp = _resolve_mcp_mode(args.mcp, live=getattr(args, "live", False))
     except ValueError as exc:
         parser.error(str(exc))
+
+    if args.resume:
+        asyncio.run(_run_graph(args))
+        return
 
     if not args.sample and not args.control:
         parser.error("Provide --sample or --control")
 
-    asyncio.run(_run(args))
+    review_mode = getattr(args, "review", "auto")
+    use_graph = review_mode != "auto" or args.resume
+
+    if use_graph:
+        asyncio.run(_run_graph(args))
+    else:
+        asyncio.run(_run(args))
 
 
 if __name__ == "__main__":
