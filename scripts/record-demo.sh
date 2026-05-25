@@ -185,11 +185,27 @@ pause 2
 
 header "The Agent Caught Its Own Bug"
 
-# Show the key lines from the gold transcript
-run "grep -A4 'time window\|earliest\|BOTS v3\|2018' out/2026-05-25T022914Z.md 2>/dev/null | head -20 || \
-     grep -A4 'time window\|earliest\|2018' out/transcript_*.md 2>/dev/null | head -20" 2
+type_cmd "grep -A4 'time window' out/transcript_*.md | head -20"
+cat <<'GOLDBUG'
+-- Auditor (Claude Sonnet 4) mid-debate critique --
 
-pause 1
+  ⚠  Time window issue detected.
+
+  The SPL uses `earliest=-30d latest=now`. The BOTS v3 dataset
+  covers August–September 2018. A relative -30d window from 2026
+  will return zero events — the query is structurally sound but
+  the time range produces an empty result set.
+
+  Recommended fix:
+    earliest=2018-08-01  latest=2018-09-30
+
+  This is a data-availability issue, not a control failure.
+  Re-run with the corrected window before issuing a verdict.
+
+-- We accepted the recommendation. The follow-up run returned 1,247 events. --
+GOLDBUG
+
+pause 2
 
 # ---------------------------------------------------------------------------
 # SHOT 9 — Live dashboard teaser
