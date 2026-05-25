@@ -7,6 +7,7 @@ Usage:
     aec_demo --control CC6.1 --review interactive
     aec_demo --control CC6.1 --resume <run_id>
     aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"
+    aec_demo --ask "Show access control evidence across SOC 2, ISO 27001, and NIST CSF"
     aec_demo --concept access-control --frameworks "SOC2,ISO,NIST-CSF"
     aec_demo list-checkpoints
 """
@@ -21,7 +22,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
+from rich.text import Text
 
 console = Console()
 
@@ -358,17 +361,160 @@ def _write_drift_audit_memo(
     return memo_path
 
 
+def _framework_refs_for_internal(mapping: dict, internal_control: str) -> list[dict]:
+    """Return requested framework refs covered by an internal control."""
+    return [
+        ref for ref in mapping["parsed_refs"]
+        if internal_control in mapping["framework_coverage"].get(ref["input"], [])
+    ]
+
+
+def _spl_for_internal(mapping: dict, internal_control: str, fallback: str = "") -> str:
+    """Return the deduped SPL query selected for an internal control."""
+    for entry in mapping["minimal_spl_set"]:
+        if internal_control in entry["covers"]:
+            return entry["spl"]
+    return fallback
+
+
+def _multi_framework_control_text(mapping: dict, internal_control: str) -> str:
+    refs = _framework_refs_for_internal(mapping, internal_control)
+    frameworks = ", ".join(ref["display_fw"] for ref in refs)
+    controls = ", ".join(ref["control_id"] for ref in refs)
+    text = (
+        f"This evidence is being evaluated against {len(refs)} compliance "
+        f"requirements from {frameworks}. Controls: {controls}. "
+        f"The underlying internal control is {internal_control}."
+    )
+    if internal_control in mapping["shared_controls"]:
+        text += (
+            " This same underlying control appears in all referenced frameworks. "
+            "A deficiency here triggers findings in all referenced frameworks simultaneously."
+        )
+    elif len(refs) > 1:
+        text += (
+            " This same underlying control appears across multiple requested frameworks. "
+            "A deficiency here triggers findings in each covered framework."
+        )
+    return text
+
+
+def _worst_verdict(verdicts: list[str]) -> str:
+    from aec.agent.models import VERDICT_SEVERITY
+
+    return max(verdicts, key=lambda verdict: VERDICT_SEVERITY.get(verdict, 3))
+
+
+def _snapshot_from_spl_result(
+    internal_control: str,
+    spl: str,
+    result: dict,
+    earliest: str,
+    latest: str = "now",
+    mcp_server: str | None = None,
+) -> dict:
+    from aec.splunk.snapshot import derive_aggregations
+
+    events = result.get("results", [])
+    event_count = result.get("event_count", len(events))
+    snapshot = {
+        "control_id": internal_control,
+        "framework": "Multi-framework",
+        "snapshot_name": f"multi-framework-{internal_control.lower()}",
+        "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "time_range": {"earliest": earliest, "latest": latest},
+        "search": spl,
+        "event_count": event_count,
+        "sample_events": events[:10],
+        "aggregations": derive_aggregations(result),
+    }
+    if mcp_server:
+        snapshot["mcp_server"] = mcp_server
+    return snapshot
+
+
+async def _load_multi_framework_snapshots(args: argparse.Namespace, mapping: dict) -> dict[str, dict]:
+    """Load or execute one evidence snapshot per internal control."""
+    sample_name = getattr(args, "sample", None)
+    if sample_name:
+        sample = _load_sample(sample_name)
+        console.print(
+            f"[bold cyan][3/6][/] Loaded sample: {sample_name} "
+            f"({sample['event_count']} events)"
+        )
+        return {
+            internal_control: {**sample, "control_id": internal_control}
+            for internal_control in mapping["internal_controls"]
+        }
+
+    from aec.splunk.time_window import normalize_earliest
+
+    earliest = normalize_earliest(args.window)
+    snapshots: dict[str, dict] = {}
+
+    if args.mcp and args.mcp != "rest":
+        from aec.splunk.mcp import MCPRouter, MCPTransportError
+
+        preferred = {"official": "splunk-official", "livehybrid": "livehybrid"}[args.mcp]
+        mcp_router = MCPRouter(preferred=preferred)
+        try:
+            await mcp_router.connect()
+            console.print(f"[bold cyan][3/6][/] MCP server: {mcp_router.active_label}")
+            for entry in mapping["minimal_spl_set"]:
+                result = await mcp_router.execute_spl(entry["spl"], time_window=earliest)
+                for internal_control in entry["covers"]:
+                    snapshots[internal_control] = _snapshot_from_spl_result(
+                        internal_control,
+                        entry["spl"],
+                        result,
+                        earliest,
+                        mcp_server=mcp_router.mcp_server_tag,
+                    )
+        except MCPTransportError as exc:
+            console.print(f"[red]MCP query failed: {exc}[/]")
+            raise SystemExit(1) from exc
+        finally:
+            await mcp_router.close()
+    else:
+        if not _has_splunk_env():
+            console.print("[red]Live multi-framework mode requires Splunk credentials.[/]")
+            console.print("Use --sample <name>, or set SPLUNK_HOST and SPLUNK_TOKEN.")
+            raise SystemExit(1)
+        from aec.splunk.client import SplunkClient
+
+        client = SplunkClient(verify_ssl=False)
+        console.print("[bold cyan][3/6][/] Executing minimal SPL set via REST...")
+        for entry in mapping["minimal_spl_set"]:
+            result = client.search(query=entry["spl"], earliest=earliest, latest="now", max_results=50)
+            for internal_control in entry["covers"]:
+                snapshots[internal_control] = _snapshot_from_spl_result(
+                    internal_control,
+                    entry["spl"],
+                    result,
+                    earliest,
+                )
+
+    missing = [c for c in mapping["internal_controls"] if c not in snapshots]
+    if missing:
+        console.print(f"[red]No evidence snapshots produced for: {', '.join(missing)}[/]")
+        raise SystemExit(1)
+    return snapshots
+
+
 async def _run_multi_framework(args: argparse.Namespace) -> None:
     """Execute multi-framework pipeline: map controls, run panel per internal control, emit N rows."""
     from aec.priors.framework_mapper import (
         expand_findings_multi_framework,
+        map_ask,
         map_concept,
         map_controls,
     )
 
     start = time.monotonic()
 
-    if args.concept and args.frameworks:
+    if args.ask:
+        mapping = map_ask(args.ask)
+    elif args.concept and args.frameworks:
         frameworks = [f.strip() for f in args.frameworks.split(",")]
         mapping = map_concept(args.concept, frameworks)
     else:
@@ -379,6 +525,9 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
     n_internal = len(mapping["internal_controls"])
     n_spl = len(mapping["minimal_spl_set"])
     shared = mapping["shared_controls"]
+    if not mapping["internal_controls"]:
+        console.print("[red]No internal controls matched the requested frameworks.[/]")
+        raise SystemExit(1)
 
     console.print(
         f"[bold cyan][1/6][/] Mapping {n_refs} framework controls → "
@@ -388,49 +537,26 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
         console.print(
             f"      ({', '.join(shared)} satisfies multiple frameworks)"
         )
+    saved_pct = 0 if n_refs == 0 else max(0, n_refs - n_spl) / n_refs
     console.print(
         f"[bold cyan][2/6][/] Generated {n_spl} SPL queries "
-        f"(instead of {n_refs} — saved {max(0, n_refs - n_spl)}/{n_refs} execution time)"
+        f"(instead of {n_refs} — saved {saved_pct:.0%} execution time)"
     )
 
     for entry in mapping["minimal_spl_set"]:
-        console.print(f"      SPL covers {', '.join(entry['covers'])}: {entry['spl'][:80]}...")
-
-    sample_name = getattr(args, "sample", None)
-    if sample_name:
-        snapshot = _load_sample(sample_name)
         console.print(
-            f"[bold cyan][3/6][/] Loaded sample: {sample_name} "
-            f"({snapshot['event_count']} events)"
-        )
-    else:
-        first_ctrl = mapping["internal_controls"][0] if mapping["internal_controls"] else "CTRL-003"
-        first_ref = mapping["parsed_refs"][0] if mapping["parsed_refs"] else {}
-        ctrl_id_for_snapshot = first_ref.get("control_id", first_ctrl)
-        snapshot = _load_sample("soc2-cc61")
-        snapshot["control_id"] = ctrl_id_for_snapshot
-        console.print(
-            f"[bold cyan][3/6][/] Using sample snapshot for {ctrl_id_for_snapshot} "
-            f"({snapshot['event_count']} events)"
-        )
-
-    multi_fw_text = ", ".join(r["display_fw"] for r in mapping["parsed_refs"])
-    multi_ctrl_text = ", ".join(r["control_id"] for r in mapping["parsed_refs"])
-    control_text = (
-        f"This evidence is being evaluated against {n_refs} compliance requirements from "
-        f"{multi_fw_text}. Controls: {multi_ctrl_text}. "
-    )
-    if shared:
-        ctrl_names = ", ".join(shared)
-        control_text += (
-            f"The same underlying controls ({ctrl_names}) appear across multiple "
-            f"frameworks. A deficiency triggers findings in all referenced frameworks."
+            f"      SPL covers {', '.join(entry['covers'])}: "
+            f"{escape(entry['spl'][:80])}..."
         )
 
     if args.no_llm:
-        console.print("[yellow][4/6] Skipping panel (--no-llm)[/]")
-        console.print(Panel(json.dumps(mapping, indent=2), title="Mapping", border_style="cyan"))
+        console.print("[yellow][3/6] Skipping evidence execution and panel (--no-llm)[/]")
+        console.print(
+            Panel(Text(json.dumps(mapping, indent=2)), title="Mapping", border_style="cyan")
+        )
         return
+
+    snapshots_by_internal = await _load_multi_framework_snapshots(args, mapping)
 
     console.print(
         f"[bold cyan][4/6][/] Panel debate ({n_internal} internal controls)..."
@@ -438,49 +564,6 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
 
     from aec.agent.panel import run_panel_with_recurrence
     from aec.agent.panel_view import PanelView
-
-    view = PanelView(console=console)
-    view.start()
-
-    try:
-        recurrence_result = await run_panel_with_recurrence(
-            snapshot=snapshot,
-            control_text=control_text,
-            spl_executed=snapshot.get("search", ""),
-            splunk_snapshot=snapshot,
-            time_window=args.window,
-            view=view,
-            enable_recurrence=not getattr(args, "no_recurrence", False),
-            max_counter_searches=getattr(args, "max_counter_searches", 3),
-        )
-    finally:
-        view.stop()
-
-    panel_result = recurrence_result.round_2 or recurrence_result.round_1
-
-    verdict_style = (
-        "green" if recurrence_result.final_verdict == "PASS"
-        else "yellow" if recurrence_result.final_verdict == "PARTIAL"
-        else "red"
-    )
-    console.print(
-        f"[bold cyan][5/6][/] Consensus: "
-        f"[bold {verdict_style}]{recurrence_result.final_verdict}[/]"
-        f" → triggers findings in {n_refs} frameworks"
-    )
-
-    out_dir = Path("out")
-    out_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
-
-    transcript_path = out_dir / f"transcript_{ts}.md"
-    transcript_path.write_text(recurrence_result.transcript, encoding="utf-8")
-
-    elapsed = time.monotonic() - start
-    memo_path = _write_multi_framework_memo(
-        snapshot, panel_result, mapping, out_dir, ts, elapsed,
-    )
-
     from aec.agent.snapshot_adapter import (
         extract_gap_findings,
         recurrence_result_to_snapshots,
@@ -489,42 +572,140 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
     from aec.integrity.chain import chain_snapshots, write_trail
     from aec.integrity.manifest import write_manifest_sheet
 
+    panel_records = []
+    for internal_control in mapping["internal_controls"]:
+        refs_for_control = _framework_refs_for_internal(mapping, internal_control)
+        source_snapshot = snapshots_by_internal[internal_control]
+        spl_for_control = _spl_for_internal(mapping, internal_control, source_snapshot.get("search", ""))
+        control_snapshot = {
+            **source_snapshot,
+            "control_id": internal_control,
+            "framework": "Multi-framework",
+            "framework_controls": [
+                f"{ref['display_fw']}:{ref['control_id']}" for ref in refs_for_control
+            ],
+            "search": spl_for_control,
+        }
+        control_text = _multi_framework_control_text(mapping, internal_control)
+
+        view = PanelView(console=console)
+        view.start()
+        try:
+            recurrence_result = await run_panel_with_recurrence(
+                snapshot=control_snapshot,
+                control_text=control_text,
+                spl_executed=spl_for_control,
+                splunk_snapshot=control_snapshot,
+                time_window=args.window,
+                view=view,
+                enable_recurrence=not getattr(args, "no_recurrence", False),
+                max_counter_searches=getattr(args, "max_counter_searches", 3),
+            )
+        finally:
+            view.stop()
+
+        panel_result = recurrence_result.round_2 or recurrence_result.round_1
+        panel_records.append({
+            "internal_control": internal_control,
+            "refs": refs_for_control,
+            "snapshot": control_snapshot,
+            "recurrence_result": recurrence_result,
+            "panel_result": panel_result,
+        })
+
+        console.print(
+            f"      {internal_control}: {recurrence_result.final_verdict} "
+            f"({len(refs_for_control)} framework refs)"
+        )
+
+    final_verdict = _worst_verdict(
+        [record["recurrence_result"].final_verdict for record in panel_records]
+    )
+    verdict_style = (
+        "green" if final_verdict == "PASS"
+        else "yellow" if final_verdict == "PARTIAL"
+        else "red"
+    )
+    console.print(
+        f"[bold cyan][5/6][/] Consensus: "
+        f"[bold {verdict_style}]{final_verdict}[/]"
+        f" across {len(panel_records)} internal controls"
+    )
+
+    out_dir = Path("out")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+
+    transcript_path = out_dir / f"transcript_{ts}.md"
+    transcript_blocks = []
+    for record in panel_records:
+        transcript_blocks.append(
+            f"# Internal Control {record['internal_control']}\n\n"
+            f"{record['recurrence_result'].transcript}"
+        )
+    transcript_path.write_text("\n\n".join(transcript_blocks), encoding="utf-8")
+
+    elapsed = time.monotonic() - start
+    first_snapshot = next(iter(snapshots_by_internal.values()))
+    memo_path = _write_multi_framework_memo(
+        first_snapshot, panel_records, mapping, out_dir, ts, elapsed,
+    )
+
     trail_path = out_dir / f"audit_trail_{ts}.jsonl"
     xlsx_path = out_dir / f"gap_report_{ts}.xlsx"
 
-    control_id = snapshot["control_id"]
-    snapshots = recurrence_result_to_snapshots(recurrence_result, snapshot, control_id)
+    snapshots = []
+    base_findings = []
+    for record in panel_records:
+        internal_control = record["internal_control"]
+        control_snapshot = record["snapshot"]
+        recurrence_result = record["recurrence_result"]
+        panel_result = record["panel_result"]
+
+        snapshots.extend(
+            recurrence_result_to_snapshots(
+                recurrence_result, control_snapshot, internal_control,
+            )
+        )
+
+        findings = extract_gap_findings(
+            panel_result, control_snapshot, internal_control, str(trail_path),
+        )
+        if not findings:
+            category = record["refs"][0].get("category", "Access Control")
+            findings = [GapFinding(
+                finding_id=f"AEC-{internal_control}-001",
+                audit_type="Internal",
+                framework="Multi-framework",
+                audit_reference=internal_control,
+                finding_description=(
+                    f"Panel verdict: {recurrence_result.final_verdict} "
+                    f"for {internal_control}"
+                ),
+                finding_category=category,
+                severity="Low",
+                root_cause="No gaps identified",
+                current_status="Closed",
+                evidence_reference=str(trail_path),
+            )]
+        base_findings.extend(findings)
+
     chained = chain_snapshots(snapshots)
     write_trail(trail_path, chained)
     chain_root = chained[-1]["this_hash"]
     chain_length = len(chained)
 
-    base_findings = extract_gap_findings(
-        panel_result, snapshot, control_id, str(trail_path),
+    expanded_findings = expand_findings_multi_framework(
+        base_findings,
+        mapping["parsed_refs"],
+        mapping["framework_coverage"],
     )
-    if not base_findings:
-        base_findings = [GapFinding(
-            finding_id=f"AEC-{control_id}-001",
-            audit_type="Internal",
-            framework=snapshot.get("framework", ""),
-            audit_reference=control_id,
-            finding_description=(
-                f"Panel verdict: {recurrence_result.final_verdict} for {control_id}"
-            ),
-            finding_category="Access Control",
-            severity="Low",
-            root_cause="No gaps identified",
-            current_status="Closed",
-            evidence_reference=str(trail_path),
-        )]
-
-    expanded_findings = expand_findings_multi_framework(base_findings, mapping["parsed_refs"])
     write_findings(expanded_findings, xlsx_path)
 
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     write_manifest_sheet(
         xlsx_path, chain_root, chain_length, created_at=created_at,
-        mcp_server=snapshot.get("mcp_server"),
+        mcp_server=first_snapshot.get("mcp_server"),
     )
 
     console.print(f"[bold cyan][6/6][/] Wrote {trail_path}")
@@ -532,8 +713,8 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
     console.print(f"      Wrote {memo_path}")
     console.print(
         f"\n[bold green]Wrote {xlsx_path} "
-        f"({len(expanded_findings)} findings: {n_refs} frameworks × "
-        f"{len(base_findings)} base finding(s), Merkle-sealed)[/]"
+        f"({len(expanded_findings)} framework-tagged rows from "
+        f"{len(base_findings)} internal-control finding(s), Merkle-sealed)[/]"
     )
 
     total = time.monotonic() - start
@@ -542,7 +723,7 @@ async def _run_multi_framework(args: argparse.Namespace) -> None:
 
 def _write_multi_framework_memo(
     snapshot: dict,
-    panel_result,
+    panel_records: list[dict],
     mapping: dict,
     out_dir: Path,
     ts: str,
@@ -581,23 +762,31 @@ def _write_multi_framework_memo(
         )
         lines.append("")
 
-    lines.append("## Verdict")
+    lines.append("## Verdicts")
     lines.append("")
-    lines.append(
-        f"**{panel_result.final_verdict}** (consensus: {panel_result.consensus_method})"
-    )
+    for record in panel_records:
+        result = record["panel_result"]
+        refs = ", ".join(
+            f"{ref['display_fw']} {ref['control_id']}" for ref in record["refs"]
+        )
+        lines.append(
+            f"- **{record['internal_control']}**: {result.final_verdict} "
+            f"(consensus: {result.consensus_method}; frameworks: {refs})"
+        )
     lines.append("")
 
     lines.append("## Panel Summary")
     lines.append("")
-    for c in panel_result.critiques:
-        lines.append(f"### {c.persona.capitalize()} ({c.model})")
-        lines.append(f"- Verdict: {c.verdict} (confidence: {c.confidence:.0%})")
-        lines.append(f"- Rationale: {c.rationale}")
-        if c.concerns:
-            lines.append("- Concerns:")
-            for concern in c.concerns:
-                lines.append(f"  - {concern}")
+    for record in panel_records:
+        lines.append(f"### {record['internal_control']}")
+        for c in record["panel_result"].critiques:
+            lines.append(f"#### {c.persona.capitalize()} ({c.model})")
+            lines.append(f"- Verdict: {c.verdict} (confidence: {c.confidence:.0%})")
+            lines.append(f"- Rationale: {c.rationale}")
+            if c.concerns:
+                lines.append("- Concerns:")
+                for concern in c.concerns:
+                    lines.append(f"  - {concern}")
         lines.append("")
 
     lines.append("---")
@@ -1132,6 +1321,11 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--ask",
+        default=None,
+        help="Natural-language multi-framework evidence request.",
+    )
+    parser.add_argument(
         "--frameworks",
         default=None,
         help=(
@@ -1211,7 +1405,8 @@ def main() -> None:
         return
 
     is_multi_framework = (
-        (args.control and "+" in args.control)
+        bool(args.ask)
+        or (args.control and "+" in args.control)
         or (args.concept and args.frameworks)
     )
     if is_multi_framework:
