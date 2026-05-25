@@ -195,8 +195,16 @@ srchMaxTime = 300
 capability = search
 ```
 
+## MCP Server Integration
+
+AEC now supports dual MCP server integration as the primary Splunk transport. See [docs/mcp-setup.md](mcp-setup.md) for:
+- Setting up both `splunk-official` and `livehybrid` MCP servers
+- Runtime switching via `--mcp` CLI flag or `AEC_SPLUNK_MCP_SERVER` env var
+- Automatic fallback between servers
+
+The REST API transport documented above remains available via `--mcp rest`.
+
 ## Future Work
 
-- **Splunk MCP Server** — agent-native tool integration via the [Splunk MCP Server](https://github.com/splunk/mcp-server-for-splunk)
 - **Splunk Cloud token rotation** — automatic refresh before expiry
 - **Federated search** — cross-instance queries for multi-tenant environments

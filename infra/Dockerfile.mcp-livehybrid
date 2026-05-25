@@ -1,0 +1,7 @@
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir splunk-mcp 2>/dev/null || \
+    pip install --no-cache-dir git+https://github.com/livehybrid/splunk-mcp.git
+
+EXPOSE 8766
+CMD ["python", "-m", "splunk_mcp", "--host", "0.0.0.0", "--port", "8766"]
