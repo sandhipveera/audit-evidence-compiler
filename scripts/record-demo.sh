@@ -111,7 +111,7 @@ pause 1
 
 header "Drift Detection — Q1 vs Q2"
 
-run "aec_demo --sample soc2-cc61 --compare soc2-cc61-q2" 2
+run "aec_demo --compare soc2-cc61,soc2-cc61-q2" 2
 
 pause 1
 
