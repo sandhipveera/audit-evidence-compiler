@@ -6,6 +6,7 @@ and watch it stream live via WebSocket.
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 import json
 import os
 import time
@@ -14,7 +15,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -447,6 +448,68 @@ def get_incident_status(run_id: str):
     if run_id not in _incident_results:
         return JSONResponse(status_code=404, content={"error": "Run not found"})
     return _incident_results[run_id]
+
+
+@app.get("/verify")
+def verify_page():
+    return FileResponse(str(STATIC_DIR / "verify.html"))
+
+
+@app.post("/api/verify")
+async def verify_trail(file: UploadFile = File(...)):
+    """Accept audit_trail.jsonl, verify the hash chain, return structured result."""
+    content = await file.read()
+    try:
+        lines = content.decode("utf-8").strip().splitlines()
+        snapshots = [json.loads(line) for line in lines if line.strip()]
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        return JSONResponse({"ok": False, "error": f"Invalid file: {e}"}, status_code=400)
+
+    if not snapshots:
+        return JSONResponse({"ok": False, "error": "File contains no snapshots"}, status_code=400)
+
+    from aec.integrity.chain import compute_snapshot_hash, verify_chain
+
+    errors = verify_chain(snapshots)
+
+    failed_indices: set[int] = set()
+    for err in errors:
+        for i in range(len(snapshots)):
+            if err.startswith(f"Snapshot #{i + 1} "):
+                failed_indices.add(i)
+
+    snapshot_results = []
+    for i, s in enumerate(snapshots):
+        ok = i not in failed_indices
+        entry: dict[str, Any] = {
+            "index": i + 1,
+            "ok": ok,
+            "persona": s.get("persona"),
+            "verdict": s.get("verdict"),
+            "transport": s.get("transport"),
+            "timestamp": s.get("timestamp"),
+            "hash": (s.get("this_hash", "") or "")[:20] + "...",
+        }
+        if not ok:
+            expected = compute_snapshot_hash(s)
+            entry["expected_hash"] = expected[:20] + "..."
+        snapshot_results.append(entry)
+
+    chain_root = snapshots[-1].get("this_hash", "") if snapshots else ""
+
+    return {
+        "ok": len(errors) == 0,
+        "total": len(snapshots),
+        "verified": len(snapshots) - len(failed_indices),
+        "errors": errors,
+        "chain_root": chain_root,
+        "run_id": snapshots[0].get("run_id"),
+        "control_id": snapshots[0].get("control_id"),
+        "collected_at": snapshots[0].get("timestamp"),
+        "snapshots": snapshot_results,
+    }
+
+
 @app.get("/api/artifact/{filename}")
 def get_artifact(filename: str):
     """Serve an artifact file for download."""
