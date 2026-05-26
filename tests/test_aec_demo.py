@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 from unittest.mock import patch
 
 import pytest
@@ -101,6 +102,32 @@ def test_invalid_mcp_env_fails(monkeypatch):
             assert exc.code == 2
         else:
             raise AssertionError("Expected invalid AEC_SPLUNK_MCP_SERVER to fail")
+
+
+def test_incident_mode_requires_alert_json():
+    with patch("sys.argv", ["aec_demo", "--mode", "incident"]):
+        with pytest.raises(SystemExit) as exc:
+            aec_demo.main()
+
+    assert exc.value.code == 2
+
+
+def test_incident_mode_stdin_writes_report(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("AEC_SAMPLE", raising=False)
+    monkeypatch.setattr("sys.stdin", io.StringIO('{"alert_name":"Brute Force"}'))
+
+    with patch(
+        "sys.argv",
+        ["aec_demo", "--mode", "incident", "--alert-json", "-", "--no-llm"],
+    ):
+        aec_demo.main()
+
+    reports = list((tmp_path / "out").glob("incident_*.md"))
+    assert len(reports) == 1
+    assert "**Controls evaluated:** CC6.1, CC7.2" in reports[0].read_text(
+        encoding="utf-8"
+    )
 
 
 @pytest.mark.asyncio

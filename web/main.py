@@ -14,7 +14,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -303,6 +303,150 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
     })
 
 
+_incident_results: dict[str, dict] = {}
+
+
+@app.post("/api/incident")
+async def handle_incident(
+    payload: dict,
+    background_tasks: BackgroundTasks,
+    request: Request,
+):
+    """Splunk alert action webhook. Maps alert to controls and queues a panel run."""
+    import threading
+
+    from aec.agent.incident_mapper import alert_fields_from_payload, map_alert_to_controls
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": (
+                    f"Rate limit exceeded — max {RATE_LIMIT} requests per {RATE_WINDOW}s"
+                )
+            },
+        )
+
+    alert_name, alert_body = alert_fields_from_payload(payload)
+    controls = map_alert_to_controls(alert_name, alert_body)
+
+    run_id = str(uuid.uuid4())
+    _incident_results[run_id] = {"status": "queued", "controls": controls}
+
+    def _queue_bg():
+        thread = threading.Thread(
+            target=_run_incident_panel_thread,
+            args=(run_id, controls, payload),
+            daemon=True,
+        )
+        thread.start()
+
+    background_tasks.add_task(_queue_bg)
+
+    return {"run_id": run_id, "controls": controls, "status": "queued"}
+
+
+def _run_incident_panel_thread(rid: str, ctrls: list[str], alert: dict) -> None:
+    loop = asyncio.new_event_loop()
+    try:
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(_run_incident_panel(rid, ctrls, alert))
+    finally:
+        loop.close()
+
+
+async def _run_incident_panel(rid: str, ctrls: list[str], alert: dict):
+    from aec.agent.incident_mapper import (
+        build_incident_report,
+        control_text_for_incident,
+        sample_for_control,
+    )
+
+    try:
+        _incident_results[rid]["status"] = "running"
+        panel_results = []
+        for control_id in ctrls:
+            sample_key = sample_for_control(control_id)
+            if not sample_key:
+                panel_results.append({
+                    "control_id": control_id,
+                    "verdict": "INSUFFICIENT",
+                    "confidence": 0.0,
+                    "rationale": f"No evidence source for {control_id}.",
+                    "recommendations": [],
+                })
+                continue
+
+            sample_path = SAMPLES_DIR / f"{sample_key}.json"
+            if not sample_path.exists():
+                panel_results.append({
+                    "control_id": control_id,
+                    "verdict": "INSUFFICIENT",
+                    "confidence": 0.0,
+                    "rationale": f"Sample {sample_key} not found.",
+                    "recommendations": [],
+                })
+                continue
+
+            snapshot = json.loads(sample_path.read_text(encoding="utf-8"))
+            snapshot["control_id"] = control_id
+
+            control_text = control_text_for_incident(control_id)
+
+            try:
+                from aec.agent.panel import run_panel
+                result = await run_panel(
+                    snapshot=snapshot,
+                    control_text=control_text,
+                    spl_executed=snapshot.get("search", ""),
+                    splunk_snapshot=snapshot,
+                )
+                panel_results.append({
+                    "control_id": control_id,
+                    "verdict": result.final_verdict,
+                    "confidence": (
+                        sum(c.confidence for c in result.critiques) / len(result.critiques)
+                        if result.critiques else 0.0
+                    ),
+                    "rationale": result.critiques[0].rationale if result.critiques else "",
+                    "recommendations": [],
+                })
+            except Exception:
+                panel_results.append({
+                    "control_id": control_id,
+                    "verdict": "INSUFFICIENT",
+                    "confidence": 0.0,
+                    "rationale": "Panel execution failed.",
+                    "recommendations": [],
+                })
+
+        report = build_incident_report(alert, ctrls, panel_results, 0.0)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+        report_path = OUT_DIR / f"incident_{rid[:8]}_{ts}.md"
+        report_path.write_text(report, encoding="utf-8")
+
+        _incident_results[rid] = {
+            "status": "complete",
+            "controls": ctrls,
+            "panel_results": panel_results,
+            "report_path": str(report_path.name),
+        }
+    except Exception as exc:
+        _incident_results[rid] = {
+            "status": "error",
+            "controls": ctrls,
+            "error": str(exc),
+        }
+
+
+@app.get("/api/incident/{run_id}")
+def get_incident_status(run_id: str):
+    """Poll for incident run status."""
+    if run_id not in _incident_results:
+        return JSONResponse(status_code=404, content={"error": "Run not found"})
+    return _incident_results[run_id]
 @app.get("/api/artifact/{filename}")
 def get_artifact(filename: str):
     """Serve an artifact file for download."""
