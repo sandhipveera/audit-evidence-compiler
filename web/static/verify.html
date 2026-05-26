@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Audit Trail — AEC</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .verify-box {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 2rem;
+    }
+    .verify-box.dragover {
+      border-color: var(--accent);
+      background: rgba(88, 166, 255, 0.05);
+    }
+    .verify-box p { color: var(--text-muted); margin-top: 0.5rem; font-size: 0.85rem; }
+    .verify-box .cta { color: var(--accent); font-weight: 600; font-size: 1rem; }
+    .verify-box input { display: none; }
+
+    .banner {
+      text-align: center;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .banner.verified {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid var(--pass);
+      color: var(--pass);
+    }
+    .banner.tampered {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid var(--fail);
+      color: var(--fail);
+    }
+    .banner .sub { font-weight: 400; font-size: 0.85rem; margin-top: 0.25rem; }
+
+    .meta-table {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+    .meta-table .row { display: flex; padding: 0.3rem 0; }
+    .meta-table .label { color: var(--text-muted); min-width: 120px; }
+
+    .snap-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+    }
+    .snap-table th {
+      text-align: left;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+    }
+    .snap-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .snap-table tr.fail td { color: var(--fail); }
+    .check { color: var(--pass); }
+    .cross { color: var(--fail); }
+
+    .cert-btn {
+      display: inline-block;
+      margin-top: 0.5rem;
+    }
+    .back-link {
+      display: inline-block;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">&larr; Back to dashboard</a>
+  <div class="hero">
+    <h1>Verify Audit Trail</h1>
+    <p>Upload an <code>audit_trail.jsonl</code> file to cryptographically verify the evidence chain.</p>
+  </div>
+
+  <div class="verify-box" id="drop-zone">
+    <div class="cta">Drop audit_trail.jsonl here or click to upload</div>
+    <p>SHA-256 Merkle chain verification — no data leaves this page unencrypted</p>
+    <input type="file" id="file-input" accept=".jsonl,.json,.txt">
+  </div>
+
+  <div id="result" class="hidden">
+    <div id="banner" class="banner"></div>
+    <div id="meta" class="meta-table"></div>
+    <table class="snap-table">
+      <thead><tr><th>#</th><th>Status</th><th>Persona</th><th>Verdict</th><th>Hash</th></tr></thead>
+      <tbody id="snap-body"></tbody>
+    </table>
+    <div style="text-align:center">
+      <button class="cert-btn" id="cert-btn">Download verification certificate</button>
+    </div>
+  </div>
+
+  <div id="error-bar" class="error-bar hidden"></div>
+
+  <footer>
+    <p>Built for the Splunk SOAR AI Agents Hackathon &mdash; <a href="https://github.com/sandhipveera/audit-evidence-compiler">GitHub</a></p>
+  </footer>
+
+  <script>
+  (function() {
+    var dropZone = document.getElementById('drop-zone');
+    var fileInput = document.getElementById('file-input');
+    var resultDiv = document.getElementById('result');
+    var errorBar = document.getElementById('error-bar');
+    var lastResult = null;
+
+    dropZone.addEventListener('click', function() { fileInput.click(); });
+    dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+    dropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) upload(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', function() {
+      if (fileInput.files.length) upload(fileInput.files[0]);
+    });
+
+    function upload(file) {
+      resultDiv.classList.add('hidden');
+      errorBar.classList.add('hidden');
+      var fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/verify', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) { showError(data.error); return; }
+          lastResult = data;
+          render(data);
+        })
+        .catch(function(err) { showError('Upload failed: ' + err.message); });
+    }
+
+    function showError(msg) {
+      errorBar.textContent = msg;
+      errorBar.classList.remove('hidden');
+    }
+
+    function render(d) {
+      var banner = document.getElementById('banner');
+      if (d.ok) {
+        banner.className = 'banner verified';
+        banner.innerHTML = '✓  AUDIT TRAIL VERIFIED — ' + d.verified + ' of ' + d.total + ' snapshots intact' +
+          '<div class="sub">No modifications detected since collection</div>';
+      } else {
+        banner.className = 'banner tampered';
+        banner.innerHTML = '✗  TAMPERED — ' + (d.total - d.verified) + ' of ' + d.total + ' snapshots failed verification' +
+          '<div class="sub">' + d.errors.join('<br>') + '</div>';
+      }
+
+      var meta = document.getElementById('meta');
+      meta.innerHTML =
+        row('Run ID', d.run_id || '—') +
+        row('Collected', d.collected_at || '—') +
+        row('Control', d.control_id || '—') +
+        row('Chain root', d.chain_root || '—');
+
+      var tbody = document.getElementById('snap-body');
+      tbody.innerHTML = '';
+      d.snapshots.forEach(function(s) {
+        var tr = document.createElement('tr');
+        if (!s.ok) tr.className = 'fail';
+        tr.innerHTML =
+          '<td>' + s.index + '</td>' +
+          '<td>' + (s.ok ? '<span class="check">✓</span>' : '<span class="cross">✗</span>') + '</td>' +
+          '<td>' + esc(s.persona || '—') + '</td>' +
+          '<td>' + esc(s.verdict || '—') + '</td>' +
+          '<td>' + esc(s.hash) + ((!s.ok && s.expected_hash) ? '<br>expected: ' + esc(s.expected_hash) : '') + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      resultDiv.classList.remove('hidden');
+    }
+
+    function row(label, value) {
+      return '<div class="row"><span class="label">' + esc(label) + '</span><span>' + esc(value) + '</span></div>';
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    document.getElementById('cert-btn').addEventListener('click', function() {
+      if (!lastResult) return;
+      var d = lastResult;
+      var now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+      var status = d.ok ? 'VERIFIED' : 'TAMPERED';
+      var lines = [
+        'AUDIT EVIDENCE VERIFICATION CERTIFICATE',
+        '========================================',
+        'Generated:   ' + now,
+        'Portal:      https://aec.accessquint.com/verify',
+        '',
+        'Result:      ' + status + (d.ok ? ' ✓' : ' ✗'),
+        'Run ID:      ' + (d.run_id || 'N/A'),
+        'Control:     ' + (d.control_id || 'N/A'),
+        'Collected:   ' + (d.collected_at || 'N/A'),
+        '',
+        'Chain root:  ' + (d.chain_root || 'N/A'),
+        'Snapshots:   ' + d.verified + ' of ' + d.total + ' verified intact',
+        '',
+      ];
+      if (d.ok) {
+        lines.push(
+          'This certificate confirms that the audit_trail.jsonl file',
+          'submitted to aec.accessquint.com/verify on ' + now,
+          'passed SHA-256 Merkle chain verification. No modifications were',
+          'detected between evidence collection and verification.',
+        );
+      } else {
+        lines.push('VERIFICATION FAILED. The following errors were detected:', '');
+        d.errors.forEach(function(e) { lines.push('  - ' + e); });
+        lines.push('');
+      }
+      lines.push(
+        '',
+        'Verification is cryptographic. Any post-collection edit to any',
+        'snapshot changes its hash and breaks the chain.',
+        '========================================',
+      );
+      var blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'verification_certificate_' + now.replace(/[:.]/g, '') + '.txt';
+      a.click();
+    });
+  })();
+  </script>
+</body>
+</html>
