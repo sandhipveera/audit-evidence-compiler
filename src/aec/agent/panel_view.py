@@ -9,18 +9,20 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
-PersonaName = Literal["auditor", "engineer", "adversary"]
+PersonaName = Literal["auditor", "engineer", "adversary", "security_model"]
 
 PERSONA_COLORS: dict[PersonaName, str] = {
     "auditor": "cyan",
     "engineer": "green",
     "adversary": "red",
+    "security_model": "magenta",
 }
 
 PERSONA_LABELS: dict[PersonaName, str] = {
     "auditor": "AUDITOR (Claude)",
     "engineer": "ENGINEER (GPT)",
     "adversary": "ADVERSARY (Gemini)",
+    "security_model": "SECURITY MODEL (Foundation-Sec-8B)",
 }
 
 
@@ -33,18 +35,20 @@ class PanelView:
             "auditor": "waiting...",
             "engineer": "waiting...",
             "adversary": "waiting...",
+            "security_model": "waiting...",
         }
         self._verdicts: dict[PersonaName, str | None] = {
             "auditor": None,
             "engineer": None,
             "adversary": None,
+            "security_model": None,
         }
         self._live: Live | None = None
 
     def _build_layout(self) -> Layout:
         layout = Layout()
         panels: list[Layout] = []
-        for persona in ("auditor", "engineer", "adversary"):
+        for persona in ("auditor", "engineer", "adversary", "security_model"):
             color = PERSONA_COLORS[persona]
             label = PERSONA_LABELS[persona]
             body = Text(self._states[persona])

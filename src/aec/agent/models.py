@@ -12,15 +12,18 @@ class TransportSpec(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict)
 
 
+PersonaName = Literal["auditor", "engineer", "adversary", "security_model"]
+
+
 class PersonaSpec(BaseModel):
-    persona: Literal["auditor", "engineer", "adversary"]
+    persona: PersonaName
     transports: list[TransportSpec]
     temperature: float = 0.5
     system_prompt: str = ""
 
 
 class Critique(BaseModel):
-    persona: Literal["auditor", "engineer", "adversary"]
+    persona: PersonaName
     model: str
     transport: str
     verdict: Literal["PASS", "PARTIAL", "FAIL", "INSUFFICIENT"]

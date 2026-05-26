@@ -25,6 +25,7 @@ dependencies = [
 panel-api = [
     "openai>=1.0.0",
     "google-generativeai>=0.8.0",
+    "huggingface-hub>=0.23.0",
 ]
 web = [
     "fastapi>=0.115.0",

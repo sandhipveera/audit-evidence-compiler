@@ -1,4 +1,4 @@
-"""Panel debate orchestrator — three personas, parallel execution, conservative consensus."""
+"""Panel debate orchestrator — four personas, parallel execution, conservative consensus."""
 from __future__ import annotations
 
 import asyncio
@@ -27,7 +27,7 @@ from aec.agent.models import (
 log = logging.getLogger(__name__)
 
 PERSONA_DIR = files("aec.agent") / "personas"
-PERSONA_NAMES = ("auditor", "engineer", "adversary")
+PERSONA_NAMES = ("auditor", "engineer", "adversary", "security_model")
 SINGLE_VENDOR_FALLBACK_CHAIN = (
     TransportSpec(name="anthropic-cli"),
     TransportSpec(name="anthropic-api", config={"model": "claude-sonnet-4-6"}),
@@ -190,7 +190,8 @@ def _render_transcript(
                 lines.append(f"- `{spl}`")
         lines.append(f"*Latency: {c.latency_ms}ms | Fallback: {c.fallback_used}*")
         lines.append("")
-    lines.append(f"## Consensus: **{final_verdict}** (lowest-of-three)")
+    n = len(critiques)
+    lines.append(f"## Consensus: **{final_verdict}** (lowest-of-{n})")
     followup_section = _format_followup_section(followups or [])
     if followup_section:
         lines.append("")
@@ -308,7 +309,7 @@ async def run_panel(
             used_single_vendor_fallback = True
 
     final_verdict = _compute_consensus(critiques)
-    degraded = len(critiques) < 3 or used_single_vendor_fallback
+    degraded = len(critiques) < len(personas) or used_single_vendor_fallback
     mode = _mode_for(critiques, used_single_vendor_fallback)
 
     followups: list[dict[str, Any]] = []
@@ -393,7 +394,10 @@ def _render_recurrence_transcript(
         lines.append("### What changed")
         r1_map = {c.persona: c.verdict for c in round_1.critiques}
         r2_map = {c.persona: c.verdict for c in round_2.critiques}
-        for persona in ("auditor", "engineer", "adversary"):
+        all_personas = list(dict.fromkeys(
+            c.persona for c in round_1.critiques + round_2.critiques
+        ))
+        for persona in all_personas:
             v1 = r1_map.get(persona, "N/A")
             v2 = r2_map.get(persona, "N/A")
             change = "no change" if v1 == v2 else f"{v1} → {v2}"
@@ -605,8 +609,9 @@ def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name:
         lines.append("")
 
     lines.append("## Consensus")
+    n = len(result.critiques)
     lines.append(
-        f"Most conservative verdict from the three personas: {result.final_verdict}"
+        f"Most conservative verdict from the {n} personas: {result.final_verdict}"
     )
     lines.append(
         f"Rationale: {result.consensus_method} — the highest-severity verdict dominates."
