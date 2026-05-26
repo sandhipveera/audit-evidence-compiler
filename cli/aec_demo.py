@@ -807,7 +807,13 @@ async def _run_incident(args: argparse.Namespace) -> None:
     import sys
     import uuid
 
-    from aec.agent.incident_mapper import build_incident_report, map_alert_to_controls
+    from aec.agent.incident_mapper import (
+        alert_fields_from_payload,
+        build_incident_report,
+        control_text_for_incident,
+        map_alert_to_controls,
+        sample_for_control,
+    )
 
     start = time.monotonic()
 
@@ -817,8 +823,7 @@ async def _run_incident(args: argparse.Namespace) -> None:
         raw = Path(args.alert_json).read_text(encoding="utf-8")
 
     alert_payload = json.loads(raw)
-    alert_name = alert_payload.get("alert_name", "")
-    alert_body = alert_payload.get("result", {}).get("message", "")
+    alert_name, alert_body = alert_fields_from_payload(alert_payload)
 
     controls = map_alert_to_controls(alert_name, alert_body)
     alert_id = str(uuid.uuid4())[:8]
@@ -842,7 +847,7 @@ async def _run_incident(args: argparse.Namespace) -> None:
             snapshot = _load_sample(sample_name)
             snapshot["control_id"] = control_id
         else:
-            sample_key = _sample_for_control(control_id)
+            sample_key = sample_for_control(control_id)
             if sample_key:
                 snapshot = _load_sample(sample_key)
             else:
@@ -860,7 +865,7 @@ async def _run_incident(args: argparse.Namespace) -> None:
                 })
                 continue
 
-        control_text = _control_text_for(control_id)
+        control_text = control_text_for_incident(control_id)
 
         if getattr(args, "no_llm", False):
             panel_results.append({
@@ -927,18 +932,6 @@ async def _run_incident(args: argparse.Namespace) -> None:
 
     console.print(f"\n[bold green]Incident report: {report_path}[/]")
     console.print(f"[bold green]Done in {elapsed:.0f}s.[/]")
-
-
-def _sample_for_control(control_id: str) -> str | None:
-    """Return the best sample file name for a given control ID."""
-    mapping = {
-        "CC6.1": "soc2-cc61",
-        "CC7.2": "soc2-cc72",
-        "A.9.2.1": "iso27001-a921",
-        "A.9.2.3": "iso27001-a921",
-    }
-    return mapping.get(control_id)
-
 
 async def _run_json_stream(args: argparse.Namespace) -> None:
     """Run the pipeline emitting structured JSON events to stdout."""

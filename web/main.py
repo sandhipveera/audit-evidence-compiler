@@ -14,7 +14,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -307,36 +307,67 @@ _incident_results: dict[str, dict] = {}
 
 
 @app.post("/api/incident")
-async def handle_incident(payload: dict):
+async def handle_incident(
+    payload: dict,
+    background_tasks: BackgroundTasks,
+    request: Request,
+):
     """Splunk alert action webhook. Maps alert to controls and queues a panel run."""
     import threading
 
-    from aec.agent.incident_mapper import map_alert_to_controls
+    from aec.agent.incident_mapper import alert_fields_from_payload, map_alert_to_controls
 
-    alert_name = payload.get("alert_name", "")
-    alert_body = payload.get("result", {}).get("message", "")
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": (
+                    f"Rate limit exceeded — max {RATE_LIMIT} requests per {RATE_WINDOW}s"
+                )
+            },
+        )
+
+    alert_name, alert_body = alert_fields_from_payload(payload)
     controls = map_alert_to_controls(alert_name, alert_body)
 
     run_id = str(uuid.uuid4())
     _incident_results[run_id] = {"status": "queued", "controls": controls}
 
-    def _bg():
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(_run_incident_panel(run_id, controls, payload))
-        loop.close()
+    def _queue_bg():
+        thread = threading.Thread(
+            target=_run_incident_panel_thread,
+            args=(run_id, controls, payload),
+            daemon=True,
+        )
+        thread.start()
 
-    thread = threading.Thread(target=_bg, daemon=True)
-    thread.start()
+    background_tasks.add_task(_queue_bg)
 
     return {"run_id": run_id, "controls": controls, "status": "queued"}
 
 
+def _run_incident_panel_thread(rid: str, ctrls: list[str], alert: dict) -> None:
+    loop = asyncio.new_event_loop()
+    try:
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(_run_incident_panel(rid, ctrls, alert))
+    finally:
+        loop.close()
+
+
 async def _run_incident_panel(rid: str, ctrls: list[str], alert: dict):
+    from aec.agent.incident_mapper import (
+        build_incident_report,
+        control_text_for_incident,
+        sample_for_control,
+    )
+
     try:
         _incident_results[rid]["status"] = "running"
         panel_results = []
         for control_id in ctrls:
-            sample_key = _incident_sample_for_control(control_id)
+            sample_key = sample_for_control(control_id)
             if not sample_key:
                 panel_results.append({
                     "control_id": control_id,
@@ -361,13 +392,7 @@ async def _run_incident_panel(rid: str, ctrls: list[str], alert: dict):
             snapshot = json.loads(sample_path.read_text(encoding="utf-8"))
             snapshot["control_id"] = control_id
 
-            control_texts = {
-                "CC6.1": "CC6.1: Logical and physical access controls.",
-                "CC7.2": "CC7.2: Monitoring for anomalies and security events.",
-                "A.9.2.3": "A.9.2.3: Management of privileged access rights.",
-                "PR.AC-1": "PR.AC-1: Identities and credentials are managed.",
-            }
-            control_text = control_texts.get(control_id, f"Control {control_id}")
+            control_text = control_text_for_incident(control_id)
 
             try:
                 from aec.agent.panel import run_panel
@@ -396,8 +421,6 @@ async def _run_incident_panel(rid: str, ctrls: list[str], alert: dict):
                     "recommendations": [],
                 })
 
-        from aec.agent.incident_mapper import build_incident_report
-
         report = build_incident_report(alert, ctrls, panel_results, 0.0)
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
@@ -424,18 +447,6 @@ def get_incident_status(run_id: str):
     if run_id not in _incident_results:
         return JSONResponse(status_code=404, content={"error": "Run not found"})
     return _incident_results[run_id]
-
-
-def _incident_sample_for_control(control_id: str) -> str | None:
-    mapping = {
-        "CC6.1": "soc2-cc61",
-        "CC7.2": "soc2-cc72",
-        "A.9.2.1": "iso27001-a921",
-        "A.9.2.3": "iso27001-a921",
-    }
-    return mapping.get(control_id)
-
-
 @app.get("/api/artifact/{filename}")
 def get_artifact(filename: str):
     """Serve an artifact file for download."""

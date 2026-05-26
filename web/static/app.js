@@ -283,20 +283,36 @@
           if (data.status === "complete") {
             clearInterval(interval);
             incidentStatus.textContent = "Assessment complete.";
-            var html = "<h3>Results</h3>";
+            incidentResult.textContent = "";
+            var heading = document.createElement("h3");
+            heading.textContent = "Results";
+            incidentResult.appendChild(heading);
             if (data.panel_results) {
               data.panel_results.forEach(function (pr) {
-                html += "<div class='incident-verdict " + pr.verdict + "'>" +
-                  "<strong>" + pr.control_id + ":</strong> " + pr.verdict +
-                  " (confidence: " + Math.round(pr.confidence * 100) + "%)" +
-                  "<br>" + pr.rationale + "</div>";
+                var verdict = String(pr.verdict || "INSUFFICIENT");
+                var safeVerdictClass = verdict.replace(/[^A-Z_]/g, "");
+                var item = document.createElement("div");
+                item.className = "incident-verdict " + safeVerdictClass;
+
+                var label = document.createElement("strong");
+                label.textContent = (pr.control_id || "Control") + ":";
+                item.appendChild(label);
+                item.appendChild(document.createTextNode(
+                  " " + verdict + " (confidence: " +
+                  Math.round((pr.confidence || 0) * 100) + "%)"
+                ));
+                item.appendChild(document.createElement("br"));
+                item.appendChild(document.createTextNode(pr.rationale || ""));
+                incidentResult.appendChild(item);
               });
             }
             if (data.report_path) {
-              html += "<a href='/api/artifact/" + encodeURIComponent(data.report_path) +
-                "' download>Download incident report</a>";
+              var link = document.createElement("a");
+              link.href = "/api/artifact/" + encodeURIComponent(data.report_path);
+              link.download = "";
+              link.textContent = "Download incident report";
+              incidentResult.appendChild(link);
             }
-            incidentResult.innerHTML = html;
             show(incidentResult);
             incidentBtn.disabled = false;
             incidentBtn.textContent = "Run incident assessment";

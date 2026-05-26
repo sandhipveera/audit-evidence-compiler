@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 from aec.agent.incident_mapper import (
+    alert_fields_from_payload,
     build_incident_report,
     map_alert_to_controls,
+    sample_for_control,
 )
 
 
 class TestMapAlertToControls:
-    def test_brute_force_maps_to_cc61(self):
+    def test_brute_force_maps_to_access_and_incident_response(self):
         controls = map_alert_to_controls("Brute Force Detected", "")
-        assert "CC6.1" in controls
+        assert controls == ["CC6.1", "CC7.2"]
 
     def test_mfa_maps_to_multiple_controls(self):
         controls = map_alert_to_controls("MFA Bypass Detected — 23 accounts", "")
@@ -55,9 +57,9 @@ class TestMapAlertToControls:
         controls = map_alert_to_controls("Unknown Event Type", "something else")
         assert controls == ["CC6.1"]
 
-    def test_returns_sorted_list(self):
+    def test_returns_deterministic_mapping_order(self):
         controls = map_alert_to_controls("MFA bypass with brute force", "")
-        assert controls == sorted(controls)
+        assert controls == ["CC6.1", "A.9.2.3", "PR.AC-1", "CC7.2"]
 
     def test_anomaly_maps_to_cc72(self):
         controls = map_alert_to_controls("Anomalous Activity Detected", "")
@@ -67,6 +69,19 @@ class TestMapAlertToControls:
         controls = map_alert_to_controls("Lateral Movement Detected", "")
         assert "CC6.1" in controls
         assert "CC7.2" in controls
+
+    def test_extracts_non_message_result_fields(self):
+        alert_name, alert_body = alert_fields_from_payload({
+            "alert_name": "Security Alert",
+            "result": {"signature": "failed login spike", "user": "svc_account"},
+        })
+        assert alert_name == "Security Alert"
+        assert "failed login spike" in alert_body
+        assert map_alert_to_controls(alert_name, alert_body) == ["CC6.1", "CC7.2"]
+
+    def test_mapped_controls_have_sample_fallbacks(self):
+        assert sample_for_control("PR.AC-1") == "soc2-cc61"
+        assert sample_for_control("RC.RP-1") == "soc2-cc72"
 
 
 class TestBuildIncidentReport:
@@ -152,3 +167,19 @@ class TestBuildIncidentReport:
         ]
         report = build_incident_report(alert, controls, panel_results, 1.0)
         assert "svc_account" in report
+
+    def test_report_tolerates_string_result(self):
+        alert = {"search_name": "String Result Alert", "result": "failed login spike"}
+        controls = ["CC6.1"]
+        panel_results = [
+            {
+                "control_id": "CC6.1",
+                "verdict": "INSUFFICIENT",
+                "confidence": 0.0,
+                "rationale": "Panel skipped.",
+                "recommendations": [],
+            }
+        ]
+        report = build_incident_report(alert, controls, panel_results, 1.0)
+        assert "String Result Alert" in report
+        assert "N/A events" in report
