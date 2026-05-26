@@ -1,4 +1,4 @@
-"""Panel debate orchestrator — three personas, parallel execution, conservative consensus."""
+"""Panel debate orchestrator — four personas, parallel execution, conservative consensus."""
 from __future__ import annotations
 
 import asyncio
@@ -27,7 +27,7 @@ from aec.agent.models import (
 log = logging.getLogger(__name__)
 
 PERSONA_DIR = files("aec.agent") / "personas"
-PERSONA_NAMES = ("auditor", "engineer", "adversary")
+PERSONA_NAMES = ("auditor", "engineer", "adversary", "security_model")
 SINGLE_VENDOR_FALLBACK_CHAIN = (
     TransportSpec(name="anthropic-cli"),
     TransportSpec(name="anthropic-api", config={"model": "claude-sonnet-4-6"}),
@@ -72,7 +72,7 @@ def _build_user_prompt(
     splunk_snapshot: dict[str, Any] | None = None,
     drift: DriftAnalysis | None = None,
 ) -> str:
-    """Build the user prompt sent to all three personas."""
+    """Build the user prompt sent to all personas."""
     snapshot_json = json.dumps(snapshot, indent=2, ensure_ascii=False)
     parts = [
         f"## Control requirement\n\n{control_text}\n\n",
@@ -139,6 +139,16 @@ def _compute_consensus(critiques: list[Critique]) -> str:
     return max(critiques, key=lambda c: VERDICT_SEVERITY[c.verdict]).verdict
 
 
+def _consensus_method_for(critiques: list[Critique]) -> str:
+    """Return the method label recorded in artifacts for the active panel size."""
+    return {
+        1: "lowest_of_one",
+        2: "lowest_of_two",
+        3: "lowest_of_three",
+        4: "lowest_of_four",
+    }.get(len(critiques), "lowest_of_four")
+
+
 def _format_followup_section(followups: list[dict[str, Any]]) -> str:
     """Render adversary follow-up searches for transcript output."""
     if not followups:
@@ -190,7 +200,8 @@ def _render_transcript(
                 lines.append(f"- `{spl}`")
         lines.append(f"*Latency: {c.latency_ms}ms | Fallback: {c.fallback_used}*")
         lines.append("")
-    lines.append(f"## Consensus: **{final_verdict}** (lowest-of-three)")
+    n = len(critiques)
+    lines.append(f"## Consensus: **{final_verdict}** (lowest-of-{n})")
     followup_section = _format_followup_section(followups or [])
     if followup_section:
         lines.append("")
@@ -237,12 +248,13 @@ async def run_panel(
     time_window: str = "30d",
     drift: DriftAnalysis | None = None,
 ) -> PanelResult:
-    """Run the three-persona panel debate and return the result.
+    """Run the panel debate and return the result.
 
     Falls back gracefully:
-      - 3 personas → multi-vendor (ideal)
+      - 4 personas → multi-vendor + Foundation-Sec-8B (ideal)
+      - 3 personas → degraded multi-vendor, usually missing Foundation-Sec-8B
       - 2 personas → degraded multi-vendor
-      - 1 persona  → rerun all three prompts through Claude single-vendor mode
+      - 1 persona  → rerun all loaded prompts through Claude single-vendor mode
       - 0 personas → raises RuntimeError
     """
     personas: list[PersonaSpec] = []
@@ -308,7 +320,7 @@ async def run_panel(
             used_single_vendor_fallback = True
 
     final_verdict = _compute_consensus(critiques)
-    degraded = len(critiques) < 3 or used_single_vendor_fallback
+    degraded = len(critiques) < len(personas) or used_single_vendor_fallback
     mode = _mode_for(critiques, used_single_vendor_fallback)
 
     followups: list[dict[str, Any]] = []
@@ -331,11 +343,12 @@ async def run_panel(
             followups.append({"query": query, **result})
 
     transcript = _render_transcript(critiques, final_verdict, splunk_snapshot, followups)
+    consensus_method = _consensus_method_for(critiques)
 
     panel_result = PanelResult(
         critiques=critiques,
         final_verdict=final_verdict,
-        consensus_method="lowest_of_three",
+        consensus_method=consensus_method,
         transcript=transcript,
         degraded=degraded,
         mode=mode,
@@ -344,7 +357,7 @@ async def run_panel(
     )
 
     if view:
-        view.finish(final_verdict, "lowest_of_three")
+        view.finish(final_verdict, consensus_method)
 
     return panel_result
 
@@ -393,7 +406,10 @@ def _render_recurrence_transcript(
         lines.append("### What changed")
         r1_map = {c.persona: c.verdict for c in round_1.critiques}
         r2_map = {c.persona: c.verdict for c in round_2.critiques}
-        for persona in ("auditor", "engineer", "adversary"):
+        all_personas = list(dict.fromkeys(
+            c.persona for c in round_1.critiques + round_2.critiques
+        ))
+        for persona in all_personas:
             v1 = r1_map.get(persona, "N/A")
             v2 = r2_map.get(persona, "N/A")
             change = "no change" if v1 == v2 else f"{v1} → {v2}"
@@ -605,8 +621,9 @@ def _format_transcript_file(result: PanelResult, control_id: str, snapshot_name:
         lines.append("")
 
     lines.append("## Consensus")
+    n = len(result.critiques)
     lines.append(
-        f"Most conservative verdict from the three personas: {result.final_verdict}"
+        f"Most conservative verdict from the {n} personas: {result.final_verdict}"
     )
     lines.append(
         f"Rationale: {result.consensus_method} — the highest-severity verdict dominates."
@@ -622,7 +639,7 @@ async def main() -> None:
     import argparse
     from datetime import datetime, timezone
 
-    parser = argparse.ArgumentParser(description="Run three-agent panel debate")
+    parser = argparse.ArgumentParser(description="Run four-agent panel debate")
     parser.add_argument("--snapshot", required=True, help="Path to snapshot JSON file")
     parser.add_argument("--control", required=True, help="Control ID (e.g., CC6.1)")
     parser.add_argument("--control-text", default="", help="Full control requirement text")

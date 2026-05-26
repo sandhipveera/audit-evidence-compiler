@@ -5,9 +5,9 @@ AI-powered audit evidence compilation inside Splunk's search pipeline.
 ## What it does
 
 `| auditcompiler` is a custom Splunk search command that pipes your search results
-through a three-agent AI panel debate. Three independently-trained AI models
-(Claude, GPT, Gemini) evaluate the evidence against compliance controls and
-return enriched rows with verdict, severity, and root cause columns.
+through a four-voice AI panel debate. Claude, GPT, Gemini, and Foundation-Sec-8B
+evaluate the evidence against compliance controls and return enriched rows with
+verdict, severity, and root cause columns.
 
 ## Usage
 
@@ -38,10 +38,11 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 # Optional for multi-vendor mode:
 export OPENAI_API_KEY="sk-..."
 export GOOGLE_API_KEY="..."
+export HF_TOKEN="hf_..."
 ```
 
-The app makes outbound HTTPS calls to LLM provider APIs only. No other external
-network access is required.
+The app makes outbound HTTPS calls to LLM provider APIs and HuggingFace Hosted
+Inference when `HF_TOKEN` is configured.
 
 ## Supported Frameworks
 
