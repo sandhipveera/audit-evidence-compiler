@@ -802,6 +802,137 @@ def _json_event(event: dict) -> None:
     print(json.dumps(event, ensure_ascii=False), flush=True)
 
 
+async def _run_incident(args: argparse.Namespace) -> None:
+    """SOC incident response mode — map a Splunk alert to controls and run panels."""
+    import sys
+    import uuid
+
+    from aec.agent.incident_mapper import (
+        alert_fields_from_payload,
+        build_incident_report,
+        control_text_for_incident,
+        map_alert_to_controls,
+        sample_for_control,
+    )
+
+    start = time.monotonic()
+
+    if args.alert_json == "-":
+        raw = sys.stdin.read()
+    else:
+        raw = Path(args.alert_json).read_text(encoding="utf-8")
+
+    alert_payload = json.loads(raw)
+    alert_name, alert_body = alert_fields_from_payload(alert_payload)
+
+    controls = map_alert_to_controls(alert_name, alert_body)
+    alert_id = str(uuid.uuid4())[:8]
+
+    console.print(
+        f"\n[bold red]INCIDENT MODE[/] — alert: {escape(alert_name)}"
+    )
+    console.print(
+        f"[bold cyan]Controls implicated:[/] {', '.join(controls)}"
+    )
+
+    sample_name = getattr(args, "sample", None)
+    panel_results: list[dict] = []
+
+    for control_id in controls:
+        console.print(
+            f"\n[bold cyan]Evaluating {control_id}...[/]"
+        )
+
+        if sample_name:
+            snapshot = _load_sample(sample_name)
+            snapshot["control_id"] = control_id
+        else:
+            sample_key = sample_for_control(control_id)
+            if sample_key:
+                snapshot = _load_sample(sample_key)
+            else:
+                console.print(
+                    f"  [yellow]No sample available for {control_id}, skipping panel[/]"
+                )
+                panel_results.append({
+                    "control_id": control_id,
+                    "verdict": "INSUFFICIENT",
+                    "confidence": 0.0,
+                    "rationale": f"No evidence source available for {control_id}.",
+                    "recommendations": [
+                        f"Configure evidence collection for {control_id}",
+                    ],
+                })
+                continue
+
+        control_text = control_text_for_incident(control_id)
+
+        if getattr(args, "no_llm", False):
+            panel_results.append({
+                "control_id": control_id,
+                "verdict": "INSUFFICIENT",
+                "confidence": 0.0,
+                "rationale": "Panel skipped (--no-llm).",
+                "recommendations": [],
+            })
+            continue
+
+        from aec.agent.panel import run_panel
+        from aec.agent.panel_view import PanelView
+
+        view = PanelView(console=console)
+        view.start()
+        try:
+            panel_result = await run_panel(
+                snapshot=snapshot,
+                control_text=control_text,
+                spl_executed=snapshot.get("search", ""),
+                splunk_snapshot=snapshot,
+                view=view,
+            )
+        finally:
+            view.stop()
+
+        recommendations = []
+        for c in panel_result.critiques:
+            if c.verdict in ("FAIL", "PARTIAL") and c.concerns:
+                recommendations.extend(c.concerns)
+
+        panel_results.append({
+            "control_id": control_id,
+            "verdict": panel_result.final_verdict,
+            "confidence": (
+                sum(c.confidence for c in panel_result.critiques) / len(panel_result.critiques)
+                if panel_result.critiques
+                else 0.0
+            ),
+            "rationale": (
+                panel_result.critiques[0].rationale if panel_result.critiques else ""
+            ),
+            "recommendations": recommendations,
+        })
+
+        verdict_style = (
+            "green" if panel_result.final_verdict == "PASS"
+            else "yellow" if panel_result.final_verdict == "PARTIAL"
+            else "red"
+        )
+        console.print(
+            f"  [{verdict_style}]{control_id}: {panel_result.final_verdict}[/]"
+        )
+
+    elapsed = time.monotonic() - start
+
+    report = build_incident_report(alert_payload, controls, panel_results, elapsed)
+    out_dir = Path("out")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+    report_path = out_dir / f"incident_{alert_id}_{ts}.md"
+    report_path.write_text(report, encoding="utf-8")
+
+    console.print(f"\n[bold green]Incident report: {report_path}[/]")
+    console.print(f"[bold green]Done in {elapsed:.0f}s.[/]")
+
 async def _run_json_stream(args: argparse.Namespace) -> None:
     """Run the pipeline emitting structured JSON events to stdout."""
     start = time.monotonic()
@@ -1446,6 +1577,20 @@ def main() -> None:
         action="store_true",
         help="Emit structured JSON events to stdout (for web dashboard integration)",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["default", "incident"],
+        default="default",
+        help="Operating mode: default (normal audit) or incident (SOC alert response)",
+    )
+    parser.add_argument(
+        "--alert-json",
+        default=None,
+        help=(
+            "Path to Splunk alert JSON payload for incident mode. "
+            "Use '-' to read from stdin."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -1480,6 +1625,12 @@ def main() -> None:
         args.mcp = _resolve_mcp_mode(args.mcp, live=getattr(args, "live", False))
     except ValueError as exc:
         parser.error(str(exc))
+
+    if args.mode == "incident" or args.alert_json:
+        if not args.alert_json:
+            parser.error("--alert-json is required for incident mode")
+        asyncio.run(_run_incident(args))
+        return
 
     if args.json_stream:
         asyncio.run(_run_json_stream(args))

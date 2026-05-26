@@ -49,6 +49,18 @@
   <div id="downloads" class="downloads hidden"></div>
   <div id="error-bar" class="error-bar hidden"></div>
 
+  <div class="incident-section">
+    <h2>SOC Incident Response</h2>
+    <p>Paste a Splunk alert JSON payload to map it to compliance controls and run an incident assessment.</p>
+    <form id="incident-form">
+      <textarea id="incident-payload" rows="5" placeholder='{"alert_name": "Brute Force Detected", "severity": "high"}'></textarea>
+      <button type="submit" id="incident-btn">Run incident assessment</button>
+    </form>
+    <div id="incident-status" class="hidden"></div>
+    <div id="incident-controls" class="hidden"></div>
+    <div id="incident-result" class="hidden"></div>
+  </div>
+
   <footer>
     <p>Built for the Splunk SOAR AI Agents Hackathon &mdash; <a href="https://github.com/sandhipveera/audit-evidence-compiler">GitHub</a></p>
   </footer>

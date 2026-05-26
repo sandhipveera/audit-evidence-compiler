@@ -5,15 +5,17 @@ import time
 
 import pytest
 
-from web.main import _check_rate_limit, _ip_timestamps, app
+from web.main import _check_rate_limit, _incident_results, _ip_timestamps, app
 
 
 @pytest.fixture(autouse=True)
 def _clear_rate_limits():
     """Reset rate limiter state between tests."""
     _ip_timestamps.clear()
+    _incident_results.clear()
     yield
     _ip_timestamps.clear()
+    _incident_results.clear()
 
 
 class TestRateLimiter:
@@ -115,6 +117,67 @@ class TestWebSocketMessageShape:
             msg = ws.receive_json()
             assert msg["type"] == "error"
             assert "Rate limit" in msg["message"]
+
+
+class TestIncidentEndpoint:
+    @pytest.fixture(autouse=True)
+    def stub_incident_runner(self, monkeypatch):
+        def fake_runner(run_id, controls, payload):
+            _incident_results[run_id] = {
+                "status": "complete",
+                "controls": controls,
+                "panel_results": [],
+                "report_path": "incident_test.md",
+            }
+
+        monkeypatch.setattr("web.main._run_incident_panel_thread", fake_runner)
+
+    @pytest.fixture
+    def client(self):
+        from starlette.testclient import TestClient
+        return TestClient(app)
+
+    def test_post_incident_returns_controls(self, client):
+        resp = client.post("/api/incident", json={
+            "alert_name": "Brute Force Detected",
+            "severity": "high",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "queued"
+        assert "CC6.1" in data["controls"]
+        assert "run_id" in data
+
+    def test_post_incident_mfa_multi_control(self, client):
+        resp = client.post("/api/incident", json={
+            "alert_name": "MFA Bypass Detected",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "CC6.1" in data["controls"]
+        assert "A.9.2.3" in data["controls"]
+        assert "PR.AC-1" in data["controls"]
+
+    def test_post_incident_searches_structured_result_fields(self, client):
+        resp = client.post("/api/incident", json={
+            "alert_name": "Security Alert",
+            "result": {"signature": "failed login spike", "user": "svc_account"},
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["controls"] == ["CC6.1", "CC7.2"]
+
+    def test_post_incident_rate_limited(self, client):
+        for _ in range(3):
+            resp = client.post("/api/incident", json={"alert_name": "MFA"})
+            assert resp.status_code == 200
+
+        resp = client.post("/api/incident", json={"alert_name": "MFA"})
+        assert resp.status_code == 429
+
+    def test_get_incident_not_found(self, client):
+        resp = client.get("/api/incident/nonexistent-id")
+        assert resp.status_code == 404
 
 
 class TestArtifactPathTraversal:
