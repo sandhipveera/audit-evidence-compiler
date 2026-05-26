@@ -117,6 +117,38 @@ class TestWebSocketMessageShape:
             assert "Rate limit" in msg["message"]
 
 
+class TestIncidentEndpoint:
+    @pytest.fixture
+    def client(self):
+        from starlette.testclient import TestClient
+        return TestClient(app)
+
+    def test_post_incident_returns_controls(self, client):
+        resp = client.post("/api/incident", json={
+            "alert_name": "Brute Force Detected",
+            "severity": "high",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "queued"
+        assert "CC6.1" in data["controls"]
+        assert "run_id" in data
+
+    def test_post_incident_mfa_multi_control(self, client):
+        resp = client.post("/api/incident", json={
+            "alert_name": "MFA Bypass Detected",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "CC6.1" in data["controls"]
+        assert "A.9.2.3" in data["controls"]
+        assert "PR.AC-1" in data["controls"]
+
+    def test_get_incident_not_found(self, client):
+        resp = client.get("/api/incident/nonexistent-id")
+        assert resp.status_code == 404
+
+
 class TestArtifactPathTraversal:
     """Verify that artifact endpoint prevents path traversal."""
 

@@ -221,4 +221,106 @@
   });
 
   loadControls();
+
+  // --- Incident Response Mode ---
+  var incidentForm = document.getElementById("incident-form");
+  var incidentPayload = document.getElementById("incident-payload");
+  var incidentBtn = document.getElementById("incident-btn");
+  var incidentStatus = document.getElementById("incident-status");
+  var incidentControls = document.getElementById("incident-controls");
+  var incidentResult = document.getElementById("incident-result");
+
+  if (incidentForm) {
+    incidentForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var raw = incidentPayload.value.trim();
+      if (!raw) return;
+
+      var payload;
+      try { payload = JSON.parse(raw); } catch (err) {
+        incidentStatus.textContent = "Invalid JSON: " + err.message;
+        incidentStatus.className = "incident-error";
+        show(incidentStatus);
+        return;
+      }
+
+      incidentBtn.disabled = true;
+      incidentBtn.textContent = "Running...";
+      hide(incidentResult);
+      incidentStatus.textContent = "Submitting alert to incident endpoint...";
+      incidentStatus.className = "";
+      show(incidentStatus);
+
+      fetch("/api/incident", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          incidentControls.textContent = "Controls implicated: " + data.controls.join(", ");
+          show(incidentControls);
+          incidentStatus.textContent = "Queued as " + data.run_id.slice(0, 8) + " — polling for results...";
+          pollIncident(data.run_id);
+        })
+        .catch(function (err) {
+          incidentStatus.textContent = "Error: " + err.message;
+          incidentStatus.className = "incident-error";
+          incidentBtn.disabled = false;
+          incidentBtn.textContent = "Run incident assessment";
+        });
+    });
+  }
+
+  function pollIncident(runId) {
+    var attempts = 0;
+    var maxAttempts = 60;
+    var interval = setInterval(function () {
+      attempts++;
+      fetch("/api/incident/" + runId)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.status === "complete") {
+            clearInterval(interval);
+            incidentStatus.textContent = "Assessment complete.";
+            var html = "<h3>Results</h3>";
+            if (data.panel_results) {
+              data.panel_results.forEach(function (pr) {
+                html += "<div class='incident-verdict " + pr.verdict + "'>" +
+                  "<strong>" + pr.control_id + ":</strong> " + pr.verdict +
+                  " (confidence: " + Math.round(pr.confidence * 100) + "%)" +
+                  "<br>" + pr.rationale + "</div>";
+              });
+            }
+            if (data.report_path) {
+              html += "<a href='/api/artifact/" + encodeURIComponent(data.report_path) +
+                "' download>Download incident report</a>";
+            }
+            incidentResult.innerHTML = html;
+            show(incidentResult);
+            incidentBtn.disabled = false;
+            incidentBtn.textContent = "Run incident assessment";
+          } else if (data.status === "error") {
+            clearInterval(interval);
+            incidentStatus.textContent = "Error: " + (data.error || "unknown");
+            incidentStatus.className = "incident-error";
+            incidentBtn.disabled = false;
+            incidentBtn.textContent = "Run incident assessment";
+          } else if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            incidentStatus.textContent = "Timed out waiting for results.";
+            incidentBtn.disabled = false;
+            incidentBtn.textContent = "Run incident assessment";
+          }
+        })
+        .catch(function () {
+          if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            incidentStatus.textContent = "Polling failed.";
+            incidentBtn.disabled = false;
+            incidentBtn.textContent = "Run incident assessment";
+          }
+        });
+    }, 2000);
+  }
 })();
