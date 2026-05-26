@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Splunk custom search command: | auditcompiler
 
-Pipes Splunk search results through the AEC three-agent panel debate
-and returns rows enriched with verdict, severity, and root cause.
+Pipes Splunk search results through the AEC panel debate and returns rows
+enriched with verdict, severity, and root cause.
 """
 from __future__ import annotations
 
@@ -142,6 +142,9 @@ def _run_panel_sync(
     adversary = next((c for c in result.critiques if c.persona == "adversary"), None)
     auditor = next((c for c in result.critiques if c.persona == "auditor"), None)
     engineer = next((c for c in result.critiques if c.persona == "engineer"), None)
+    security_model = next(
+        (c for c in result.critiques if c.persona == "security_model"), None
+    )
 
     consensus_rationale = _build_consensus_rationale(result.critiques)
 
@@ -155,6 +158,7 @@ def _run_panel_sync(
         "auditor_verdict": auditor.verdict if auditor else "N/A",
         "engineer_verdict": engineer.verdict if engineer else "N/A",
         "adversary_verdict": adversary.verdict if adversary else "N/A",
+        "security_model_verdict": security_model.verdict if security_model else "N/A",
         "critiques": json.dumps(critiques_summary),
     }
 
@@ -171,8 +175,8 @@ def _build_consensus_rationale(critiques: list) -> str:
 class AuditCompilerCommand(EventingCommand):
     """Evaluate Splunk evidence against compliance controls using AI panel debate.
 
-    Three AI models (Auditor, Engineer, Adversary) independently evaluate the
-    evidence and produce a consensus verdict via lowest-of-three rule.
+    Four AI voices (Auditor, Engineer, Adversary, Security Model) independently
+    evaluate the evidence and produce a consensus verdict via lowest-of-panel rule.
 
     Usage:
         | auditcompiler control=CC6.1
@@ -222,6 +226,7 @@ class AuditCompilerCommand(EventingCommand):
                 "auditor_verdict": panel_result.get("auditor_verdict", "N/A"),
                 "engineer_verdict": panel_result.get("engineer_verdict", "N/A"),
                 "adversary_verdict": panel_result.get("adversary_verdict", "N/A"),
+                "security_model_verdict": panel_result.get("security_model_verdict", "N/A"),
                 "root_cause": panel_result["root_cause"],
                 "event_count": str(len(rows)),
                 "panel_mode": panel_result.get("panel_mode", "unknown"),

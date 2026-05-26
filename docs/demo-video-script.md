@@ -48,14 +48,16 @@ Hit Enter.
 
 ## SHOT 2 — The panel debate runs (0:20–1:10)
 
-**[Watch the Rich TUI render — 3 columns appear]**
+**[Watch the Rich TUI render — 4 columns appear]**
 
 Let it run. Don't narrate over the persona reasoning streaming in — let the judges read it.
 
-When all three verdicts appear, **voice-over:**
-> "Three vendors. Claude plays the Auditor — reads the control language literally.
+When all four verdicts appear, **voice-over:**
+> "Four model voices. Claude plays the Auditor — reads the control language literally.
 > GPT plays the Engineer — checks the SPL for statistical soundness.
-> Gemini plays the Adversary — tries to disprove the PASS verdict."
+> Gemini plays the Adversary — tries to disprove the PASS verdict.
+> Foundation-Sec-8B plays the Security Model — trained on security data,
+> it asks whether the control actually stops attackers."
 
 When consensus line appears (`Consensus → FAIL`):
 > "Lowest verdict wins. One dissenting voice is enough to force a FAIL.

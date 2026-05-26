@@ -1123,7 +1123,7 @@ async def _run(args: argparse.Namespace) -> None:
     max_counter = getattr(args, "max_counter_searches", 3)
     round_label = "with recurrence" if enable_recurrence else "single round"
     console.print(
-        f"[bold cyan][2/5][/] Running panel debate (3 personas, parallel, {round_label})..."
+        f"[bold cyan][2/5][/] Running panel debate (4 personas, parallel, {round_label})..."
     )
 
     from aec.agent.panel import run_panel_with_recurrence
@@ -1391,7 +1391,7 @@ async def _run_drift(args: argparse.Namespace) -> None:
         return
 
     console.print(
-        "[bold cyan][4/6][/] Panel debate (drift-aware, 3 personas)..."
+        "[bold cyan][4/6][/] Panel debate (drift-aware, 4 personas)..."
     )
 
     from aec.agent.panel import run_panel_with_recurrence

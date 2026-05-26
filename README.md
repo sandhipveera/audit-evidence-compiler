@@ -81,7 +81,7 @@ index=botsv3 sourcetype=o365:management:activity action=Login
 | auditcompiler control=CC6.1 mode=summary
 ```
 
-Every other entry calls Splunk from the outside. This one is a custom search command registered inside Splunk — you type `| auditcompiler` in any search bar and the three-vendor panel debate runs inline, returning enriched columns in the results table. Deployable via `Settings → Apps → Install from file` or Splunkbase.
+Every other entry calls Splunk from the outside. This one is a custom search command registered inside Splunk — you type `| auditcompiler` in any search bar and the four-model panel debate runs inline, returning enriched columns in the results table. Deployable via `Settings → Apps → Install from file` or Splunkbase.
 
 ### 5. SOC incident response — alert fires, compliance evidence auto-generates
 
@@ -121,10 +121,11 @@ aec_demo --sample soc2-cc61
 Output:
 ```
 [1/4] Snapshot: 1,247 events, SOC 2 CC6.1 — MFA enforcement
-[2/4] Panel debate (3 vendors, parallel)…
-      Auditor  → PARTIAL (83% MFA compliance, 30s)
-      Engineer → FAIL    (17% bypass rate, 28s)
-      Adversary→ FAIL    (3 privileged accounts, 0 MFA events, 32s)
+[2/4] Panel debate (4 personas, parallel)…
+      Auditor        → PARTIAL (83% MFA compliance, 30s)
+      Engineer       → FAIL    (17% bypass rate, 28s)
+      Adversary      → FAIL    (3 privileged accounts, 0 MFA events, 32s)
+      Security Model → FAIL    (service accounts are an attacker pivot point, 4s)
 [3/4] Consensus: FAIL
 [4/4] Artifacts written to out/
       gap_report_2026-05-25T144320Z.xlsx   (6 findings, Merkle-sealed)
@@ -186,10 +187,11 @@ graph TD
       S4[REST API]
     end
 
-    subgraph "Panel (3 vendors)"
+    subgraph "Panel (4 vendors)"
       P1[Auditor<br/>Claude Sonnet 4]
       P2[Engineer<br/>GPT-5.5 via Codex]
       P3[Adversary<br/>Gemini 2.5 Pro]
+      P4[Security Model<br/>Foundation-Sec-8B]
     end
 
     subgraph "Outputs"
@@ -201,11 +203,11 @@ graph TD
 
     N5 --> S2 & S3 & S4
     S1 --- S2 & S3 & S4
-    N7 & N10 --> P1 & P2 & P3
+    N7 & N10 --> P1 & P2 & P3 & P4
     N14 --> O1 & O2 & O3 & O4
 ```
 
-**Transport hierarchy:** Every vendor uses OAuth-authenticated CLIs first (Claude Max, Codex/ChatGPT Team, Gemini CLI), falling back to API keys. Three different companies' models on three different billing accounts — zero per-call cost, maximum independence.
+**Transport hierarchy:** Commercial vendors use OAuth-authenticated CLIs first (Claude Max, Codex/ChatGPT Team, Gemini CLI), falling back to API keys. The Security Model uses HuggingFace Hosted Inference first, with local Ollama fallback. Four different model lineages provide maximum independence.
 
 **Splunk transport:** `AEC_SPLUNK_MCP_SERVER=official|livehybrid|rest` selects the MCP server at runtime. Both official and community MCP servers sit behind a uniform interface.
 
@@ -247,7 +249,7 @@ Estimated event count: ~47
 ```
 
 **Splunk search command (30 seconds):**  
-Open Splunk Web. Type `| auditcompiler control=CC6.1`. Hit search. Three vendor models debate. Verdicts appear as columns in the results table.
+Open Splunk Web. Type `| auditcompiler control=CC6.1`. Hit search. Four model voices debate. Verdicts appear as columns in the results table.
 
 ---
 
