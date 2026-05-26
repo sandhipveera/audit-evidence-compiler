@@ -1,4 +1,4 @@
-"""Rich TUI for the three-panel debate view during `aec ask`."""
+"""Rich TUI for the panel debate view during `aec ask`."""
 from __future__ import annotations
 
 from typing import Literal
@@ -27,7 +27,7 @@ PERSONA_LABELS: dict[PersonaName, str] = {
 
 
 class PanelView:
-    """Three-column live display for the panel debate."""
+    """Live display for the panel debate."""
 
     def __init__(self, console: Console | None = None) -> None:
         self._console = console or Console()

@@ -53,7 +53,13 @@ VERDICT_SEVERITY: dict[str, int] = _build_severity_order()
 class PanelResult(BaseModel):
     critiques: list[Critique]
     final_verdict: Literal["PASS", "PARTIAL", "FAIL", "INSUFFICIENT"]
-    consensus_method: Literal["lowest_of_three", "moderator_llm"] = "lowest_of_three"
+    consensus_method: Literal[
+        "lowest_of_one",
+        "lowest_of_two",
+        "lowest_of_three",
+        "lowest_of_four",
+        "moderator_llm",
+    ] = "lowest_of_three"
     transcript: str = ""
     degraded: bool = False
     mode: str = "multi-vendor"

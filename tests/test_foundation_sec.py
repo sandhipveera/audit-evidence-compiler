@@ -6,13 +6,17 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+import httpx
 import pytest
 
 from aec.agent.models import Critique, PersonaSpec
 from aec.agent.panel import _compute_consensus, load_persona, run_panel
 from aec.agent.transports import CompletionResult
 from aec.agent.transports.foundation_sec_api import FoundationSecAPITransport
-from aec.agent.transports.foundation_sec_local import FoundationSecLocalTransport
+from aec.agent.transports.foundation_sec_local import (
+    FoundationSecLocalTransport,
+    _ollama_openai_base_url,
+)
 
 
 FIXTURE_SNAPSHOT: dict[str, Any] = {
@@ -58,8 +62,16 @@ def persona_dir_with_security_model(tmp_path: Path) -> Path:
             "You are the adversary persona. Respond with JSON.\n"
         ),
         "security_model": (
-            "---\npersona: security_model\ntransports:\n  - foundation-sec-api\n"
-            "  - foundation-sec-local\ntemperature: 0.3\n---\n"
+            "---\npersona: security_model\n"
+            "display_name: \"Security Model (Foundation-Sec-8B)\"\n"
+            "role: security_intelligence\n"
+            "model: fdtn-ai/Foundation-Sec-8B-Instruct\n"
+            "transports:\n"
+            "  - foundation-sec-api:\n"
+            "      model: fdtn-ai/Foundation-Sec-8B-Instruct\n"
+            "  - foundation-sec-local:\n"
+            "      model: hf.co/roadus/Foundation-Sec-8B-Q4_K_M-GGUF:Q4_K_M\n"
+            "temperature: 0.3\n---\n"
             "You are the security model persona. Respond with JSON.\n"
         ),
     }
@@ -91,8 +103,27 @@ class TestFoundationSecLocalTransport:
         t = FoundationSecLocalTransport()
         assert t.name == "foundation-sec-local"
 
+    def test_normalizes_ollama_base_url(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        assert _ollama_openai_base_url() == "http://localhost:11434/v1"
+
+        monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/v1/")
+        assert _ollama_openai_base_url() == "http://localhost:11434/v1"
+
     @pytest.mark.asyncio
-    async def test_unavailable_when_no_server(self):
+    async def test_unavailable_when_server_probe_fails(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(503)
+
+        transport = httpx.MockTransport(handler)
+        async_client = httpx.AsyncClient
+        monkeypatch.setattr(
+            httpx,
+            "AsyncClient",
+            lambda **kwargs: async_client(transport=transport, **kwargs),
+        )
         t = FoundationSecLocalTransport()
         assert not await t.available()
 
@@ -103,7 +134,12 @@ class TestLoadSecurityModelPersona:
         assert spec.persona == "security_model"
         assert len(spec.transports) == 2
         assert spec.transports[0].name == "foundation-sec-api"
+        assert spec.transports[0].config["model"] == "fdtn-ai/Foundation-Sec-8B-Instruct"
         assert spec.transports[1].name == "foundation-sec-local"
+        assert (
+            spec.transports[1].config["model"]
+            == "hf.co/roadus/Foundation-Sec-8B-Q4_K_M-GGUF:Q4_K_M"
+        )
         assert spec.temperature == 0.3
         assert "security model" in spec.system_prompt.lower()
 
@@ -168,6 +204,7 @@ class TestFourPersonaPanel:
 
         assert len(result.critiques) == 4
         assert result.final_verdict == "FAIL"
+        assert result.consensus_method == "lowest_of_four"
         personas_present = {c.persona for c in result.critiques}
         assert personas_present == {"auditor", "engineer", "adversary", "security_model"}
         assert "SECURITY_MODEL" in result.transcript
@@ -206,5 +243,6 @@ class TestFourPersonaPanel:
         assert len(result.critiques) == 3
         assert result.degraded
         assert result.final_verdict == "PASS"
+        assert result.consensus_method == "lowest_of_three"
         personas_present = {c.persona for c in result.critiques}
         assert "security_model" not in personas_present

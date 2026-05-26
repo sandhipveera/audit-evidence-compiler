@@ -36,7 +36,7 @@ operator prompt
 6. Panel Debate        → 4 personas (Auditor / Engineer / Adversary / Security Model) in parallel
       │                  Adversary may emit counter-searches → loop back to (4) once
       ▼
-7. Consensus           → lowest-of-three verdict + transcript
+7. Consensus           → lowest-of-panel verdict + transcript
       │
       ▼
 8. Evidence Formatter  → passed-evidence row OR gap finding (severity-scored)

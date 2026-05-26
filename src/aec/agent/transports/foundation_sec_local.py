@@ -9,13 +9,21 @@ DEFAULT_MODEL = "hf.co/roadus/Foundation-Sec-8B-Q4_K_M-GGUF:Q4_K_M"
 DEFAULT_BASE_URL = "http://localhost:11434/v1"
 
 
+def _ollama_openai_base_url() -> str:
+    """Return an OpenAI-compatible base URL for Ollama."""
+    base_url = os.environ.get("OLLAMA_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+    if base_url.endswith("/v1"):
+        return base_url
+    return f"{base_url}/v1"
+
+
 class FoundationSecLocalTransport(Transport):
     name = "foundation-sec-local"
 
     async def available(self) -> bool:
         import httpx
 
-        base_url = os.environ.get("OLLAMA_BASE_URL", DEFAULT_BASE_URL)
+        base_url = _ollama_openai_base_url()
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:
                 resp = await client.get(f"{base_url}/models")
@@ -32,7 +40,7 @@ class FoundationSecLocalTransport(Transport):
     ) -> CompletionResult:
         import httpx
 
-        base_url = os.environ.get("OLLAMA_BASE_URL", DEFAULT_BASE_URL)
+        base_url = _ollama_openai_base_url()
         used_model = model or DEFAULT_MODEL
 
         async with httpx.AsyncClient(timeout=120.0) as client:
