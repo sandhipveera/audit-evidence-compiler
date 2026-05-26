@@ -1,33 +1,77 @@
 # Audit Evidence Auto-Compiler
 
-> **Splunk Agentic Ops Hackathon 2026 — Security Track**  
-> An AI agent that converts a compliance question into Splunk evidence, runs a three-vendor panel debate, and produces tamper-evident audit artifacts — all in under 30 seconds.
+> **Splunk Agentic Ops Hackathon 2026 — Security Track**
 
-**Live demo:** [https://aec.accessquint.com](https://aec.accessquint.com) — pick a control, hit Run, watch three AI vendors argue about your compliance posture in real time.
+## The problem nobody has solved yet
+
+Every security vendor is rushing to add AI. CISOs know it. Auditors know it. And everyone is asking the same question:
+
+> *"How do I know I can trust AI-generated compliance evidence? What stops it from hallucinating a PASS when a control is failing? If an auditor challenges my findings, what do I show them?"*
+
+That's not a tooling gap. That's a **trust gap**. And it's burning.
 
 ---
 
-## The five things no other entry has
+## What this is
 
-### 1. Three different AI vendors debate every finding
+A **trust engine for AI-generated compliance evidence** — not just another compliance tool.
 
-Claude (Auditor), GPT (Engineer), and Gemini (Adversary) critique the evidence simultaneously from different angles. These are independently-trained models from three competing labs — disagreement is meaningful, not theatrical. Consensus rule: lowest verdict wins. A single dissenting voice forces PARTIAL or FAIL. The full transcript ships with the report.
+When you ask "give me SOC 2 CC6.1 evidence from this Splunk instance," you get back four things other tools can't give you:
+
+1. **Adversarial truth-seeking** — three independently-trained AI models from competing companies debate the evidence and challenge each other's conclusions. If Claude hallucinates a PASS, Gemini's Adversary persona will catch it. Single-model AI has no checks on itself. We do.
+
+2. **Chain-of-custody proof** — every evidence snapshot is SHA-256-chained to the previous one. Any post-collection modification — in Excel, a shell script, or a database — is mathematically detectable. External auditors verify the full chain at a URL.
+
+3. **Real data, not generated text** — every verdict links to specific SPL queries and real Splunk events. The agent can't hallucinate what the data shows; it runs the query and reads the result.
+
+4. **Self-correction on record** — mid-debate, the Auditor persona caught its own setup error (wrong time window against a 2018 dataset), recommended the fix, and the corrected run returned 1,247 real events. That transcript ships with the repo.
+
+**Live demo:** [https://aec.accessquint.com](https://aec.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time.  
+**Auditor verification:** [https://aec.accessquint.com/verify](https://aec.accessquint.com/verify) — upload `audit_trail.jsonl`, verify the evidence chain hasn't been tampered with.
+
+---
+
+## The panel: four vendors, one verdict
 
 ```
-Auditor  (Claude Sonnet 4):    PARTIAL — MFA enforced for 83% of users
-Engineer (GPT-5.5 via Codex):  FAIL    — SPL confirms 17% bypass rate is statistically significant
-Adversary (Gemini 2.5 Pro):    FAIL    — counter-search: 3 privileged accounts have 0 MFA events
+Auditor        (Claude Sonnet 4)           → PARTIAL  [30s]  compliance lens
+Engineer       (GPT-5.5 via Codex)         → FAIL     [28s]  statistical lens
+Adversary      (Gemini 2.5 Pro)            → FAIL     [32s]  red-team lens
+Security Model (Foundation-Sec-8B)         → FAIL     [ 4s]  threat-intel lens ← Splunk's own model
 
-Consensus → FAIL  (lowest-of-three)
+Consensus → FAIL  (lowest-of-four)
+```
+
+Four independently-trained models from four different organizations. If all four agree, you can defend the verdict. If they disagree, you know exactly where the ambiguity is.
+
+---
+
+## The six things no other entry has
+
+### 1. Four different AI vendors — including Splunk's own security model
+
+Claude (Auditor), GPT-5.5 (Engineer), Gemini (Adversary), and Cisco/Splunk's Foundation-Sec-8B (Security Model) critique the evidence from four independent angles — four different organizations, four different training sets, four different threat models. Consensus: lowest verdict wins. A single dissenting voice forces PARTIAL or FAIL.
+
+Foundation-Sec-8B is Splunk's own open-source security model trained specifically on cybersecurity data. It brings a threat-intelligence lens: not "does this satisfy the control language?" but "does this control actually stop real attackers?"
+
+```
+Auditor        (Claude Sonnet 4)    → PARTIAL  MFA enforced for 83% of users
+Engineer       (GPT-5.5 via Codex)  → FAIL     17% bypass rate is statistically significant
+Adversary      (Gemini 2.5 Pro)     → FAIL     3 privileged accounts, 0 MFA events in 90d
+Security Model (Foundation-Sec-8B)  → FAIL     service accounts are the primary pivot point
+
+Consensus → FAIL  (lowest-of-four)
 ```
 
 ### 2. The Adversary auto-runs counter-searches
 
 The Adversary persona proposes follow-up SPL queries to disprove its own initial verdict. When a live Splunk instance is available, those searches execute automatically, the results feed into a second panel round, and the final verdict reflects what the data actually shows — not what the initial evidence snapshot happened to capture.
 
-### 3. The audit trail is tamper-evident
+### 3. The audit trail is tamper-evident — and externally verifiable
 
 Every evidence snapshot is SHA-256-chained to the previous one. The xlsx report carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` runs in under 2 seconds and flags any post-collection edit — whether it happened in Excel, a shell script, or a database.
+
+External auditors verify the chain without installing anything: upload `audit_trail.jsonl` to [aec.accessquint.com/verify](https://aec.accessquint.com/verify) and the page shows exactly which snapshots are intact, when they were collected, and which model produced each one.
 
 ### 4. It lives inside Splunk's query pipeline
 
@@ -39,7 +83,22 @@ index=botsv3 sourcetype=o365:management:activity action=Login
 
 Every other entry calls Splunk from the outside. This one is a custom search command registered inside Splunk — you type `| auditcompiler` in any search bar and the three-vendor panel debate runs inline, returning enriched columns in the results table. Deployable via `Settings → Apps → Install from file` or Splunkbase.
 
-### 5. One prompt covers multiple compliance frameworks simultaneously
+### 5. SOC incident response — alert fires, compliance evidence auto-generates
+
+When a Splunk alert fires (brute force, MFA bypass, privilege escalation), the agent maps the alert to affected compliance controls, runs the four-vendor debate on the relevant evidence, and produces an incident-linked audit report — automatically, in the same 30-second window the SOC analyst is triaging.
+
+```bash
+# Splunk alert action webhook triggers:
+echo '{"alert_name": "MFA Bypass Detected — 23 accounts", "severity": "high"}' \
+  | aec_demo --mode incident --alert-json -
+# → Controls implicated: CC6.1, A.9.2.3, PR.AC-1
+# → Four-vendor panel debate running...
+# → Incident compliance report: out/incident_<id>.md
+```
+
+Wired to Splunk's native alert action system via webhook. When Splunk fires, the agent responds.
+
+### 6. One prompt covers multiple compliance frameworks simultaneously
 
 ```bash
 aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"
@@ -85,14 +144,17 @@ Done in 29s.
 | Live Splunk via splunk-official MCP | `aec_demo --control CC6.1 --mcp official` |
 | Live Splunk via livehybrid MCP | `aec_demo --control CC6.1 --mcp livehybrid` |
 | Live Splunk via REST API | `aec_demo --control CC6.1 --mcp rest` |
+| **Four-vendor debate incl. Foundation-Sec-8B** | **enabled by default (set `HF_TOKEN`)** |
 | Counter-evidence loop (2-round debate) | enabled by default; `--no-recurrence` to skip |
 | Drift detection (two audit windows) | `aec_demo --control CC6.1 --compare soc2-cc61-q2` |
 | LangGraph orchestration + HITL gates | `aec_demo --control CC6.1 --review interactive` |
 | Multi-framework mapping | `aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3"` |
 | Natural-language control resolution | `aec_demo --ask "access control evidence for SOC 2 and ISO"` |
+| **SOC incident response mode** | **`aec_demo --mode incident --alert-json alert.json`** |
 | Resume after crash | `aec_demo --resume <run_id>` |
 | Splunk custom search command | `\| auditcompiler control=CC6.1 mode=summary` |
-| Tamper-evident verification | `aec verify gap_report.xlsx --trail audit_trail.jsonl` |
+| Tamper-evident verification (CLI) | `aec verify gap_report.xlsx --trail audit_trail.jsonl` |
+| **Auditor verification portal** | **[aec.accessquint.com/verify](https://aec.accessquint.com/verify)** |
 | Live web dashboard | [https://aec.accessquint.com](https://aec.accessquint.com) |
 
 ---
