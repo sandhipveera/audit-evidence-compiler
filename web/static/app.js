@@ -120,7 +120,7 @@
             msg.event_count + " events"
           );
         } else if (msg.name === "panel_debate" && msg.status === "start") {
-          setStatus("Panel debate running — 3 personas analyzing evidence...");
+          setStatus("Panel debate running — 4 personas analyzing evidence...");
         } else if (msg.name === "artifacts" && msg.status === "start") {
           setStatus("Writing artifacts...");
         }

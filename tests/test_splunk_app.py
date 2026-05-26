@@ -1,11 +1,9 @@
 """Tests for the Splunk custom search command auditcompiler.py."""
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -164,6 +162,7 @@ class TestAuditCompilerCommand:
             "auditor_verdict": "PASS",
             "engineer_verdict": "PARTIAL",
             "adversary_verdict": "PARTIAL",
+            "security_model_verdict": "PARTIAL",
             "critiques": "[]",
         }
 
@@ -196,6 +195,7 @@ class TestAuditCompilerCommand:
             "auditor_verdict": "PASS",
             "engineer_verdict": "PARTIAL",
             "adversary_verdict": "FAIL",
+            "security_model_verdict": "FAIL",
             "critiques": "[]",
         }
 
@@ -209,6 +209,7 @@ class TestAuditCompilerCommand:
         assert row["consensus"] == "FAIL"
         assert row["auditor_verdict"] == "PASS"
         assert row["adversary_verdict"] == "FAIL"
+        assert row["security_model_verdict"] == "FAIL"
         assert row["event_count"] == "3"
 
     def test_transform_empty_events(self, _mock_splunklib):
@@ -240,6 +241,7 @@ class TestAuditCompilerCommand:
             "auditor_verdict": "PASS",
             "engineer_verdict": "PASS",
             "adversary_verdict": "PASS",
+            "security_model_verdict": "PASS",
             "critiques": "[]",
         }
 

@@ -164,7 +164,7 @@ cat <<'LANGGRAPH'
 
 [graph] node: mcp_executor          (2280ms  via splunk-official)
 [graph] node: evidence_normalizer   (8ms)
-[graph] node: panel_round_1         (28400ms — 3 personas parallel)
+[graph] node: panel_round_1         (28400ms — 4 personas parallel)
 [graph] node: consensus             (4ms)
 
 ⏸  HITL gate: review verdict before sealing artifacts

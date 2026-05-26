@@ -12,15 +12,18 @@ class TransportSpec(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict)
 
 
+PersonaName = Literal["auditor", "engineer", "adversary", "security_model"]
+
+
 class PersonaSpec(BaseModel):
-    persona: Literal["auditor", "engineer", "adversary"]
+    persona: PersonaName
     transports: list[TransportSpec]
     temperature: float = 0.5
     system_prompt: str = ""
 
 
 class Critique(BaseModel):
-    persona: Literal["auditor", "engineer", "adversary"]
+    persona: PersonaName
     model: str
     transport: str
     verdict: Literal["PASS", "PARTIAL", "FAIL", "INSUFFICIENT"]
@@ -50,7 +53,13 @@ VERDICT_SEVERITY: dict[str, int] = _build_severity_order()
 class PanelResult(BaseModel):
     critiques: list[Critique]
     final_verdict: Literal["PASS", "PARTIAL", "FAIL", "INSUFFICIENT"]
-    consensus_method: Literal["lowest_of_three", "moderator_llm"] = "lowest_of_three"
+    consensus_method: Literal[
+        "lowest_of_one",
+        "lowest_of_two",
+        "lowest_of_three",
+        "lowest_of_four",
+        "moderator_llm",
+    ] = "lowest_of_three"
     transcript: str = ""
     degraded: bool = False
     mode: str = "multi-vendor"

@@ -7,6 +7,8 @@ from aec.agent.models import PersonaSpec
 from aec.agent.transports import CompletionResult, Transport
 from aec.agent.transports.anthropic_api import AnthropicAPITransport
 from aec.agent.transports.anthropic_cli import AnthropicCLITransport
+from aec.agent.transports.foundation_sec_api import FoundationSecAPITransport
+from aec.agent.transports.foundation_sec_local import FoundationSecLocalTransport
 from aec.agent.transports.gemini_api import GeminiAPITransport
 from aec.agent.transports.gemini_cli import GeminiCLITransport
 from aec.agent.transports.openai_api import OpenAIAPITransport
@@ -23,6 +25,8 @@ TRANSPORT_REGISTRY: dict[str, type[Transport]] = {
     "gemini-cli": GeminiCLITransport,
     "gemini-api": GeminiAPITransport,
     "openrouter-api": OpenRouterAPITransport,
+    "foundation-sec-api": FoundationSecAPITransport,
+    "foundation-sec-local": FoundationSecLocalTransport,
 }
 
 _transport_cache: dict[str, Transport] = {}

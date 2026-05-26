@@ -1,7 +1,7 @@
 {
   "name": "audit-evidence-compiler",
   "version": "0.1.0",
-  "description": "Splunk Agentic Ops Hackathon 2026 — three-vendor AI panel for SOC 2 evidence collection",
+  "description": "Splunk Agentic Ops Hackathon 2026 — four-model AI panel for SOC 2 evidence collection",
   "private": true,
   "license": "Apache-2.0",
   "scripts": {

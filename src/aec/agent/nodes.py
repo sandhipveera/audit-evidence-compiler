@@ -207,7 +207,7 @@ def _control_text_for(control_id: str) -> str:
 
 
 async def panel_round_1(state: dict) -> dict:
-    """Run the three-persona panel debate (round 1)."""
+    """Run the panel debate (round 1)."""
     t0 = time.monotonic()
     snapshot = state.get("splunk_snapshot") or {}
     control_id = state["control_id"]
@@ -226,7 +226,7 @@ async def panel_round_1(state: dict) -> dict:
     elapsed = int((time.monotonic() - t0) * 1000)
     console.print(
         f"[dim]\\[graph][/] node: panel_round_1"
-        f"        ({elapsed}ms — 3 personas parallel)"
+        f"        ({elapsed}ms — 4 personas parallel)"
     )
     return _timed("panel_round_1", state, {
         "panel_round_1": result.model_dump(),
@@ -323,7 +323,7 @@ async def panel_round_2(state: dict) -> dict:
     elapsed = int((time.monotonic() - t0) * 1000)
     console.print(
         f"[dim]\\[graph][/] node: panel_round_2"
-        f"        ({elapsed}ms — 3 personas parallel)"
+        f"        ({elapsed}ms — 4 personas parallel)"
     )
     return _timed("panel_round_2", state, {
         "panel_round_2": result.model_dump(),

@@ -3,9 +3,9 @@
 ## Overview
 
 The `auditcompiler` Splunk app adds a custom search command `| auditcompiler`
-to Splunk's search pipeline. It sends your search results through a three-agent
-AI panel debate (Auditor, Engineer, Adversary) and returns rows enriched with
-compliance verdicts.
+to Splunk's search pipeline. It sends your search results through a four-voice
+AI panel debate (Auditor, Engineer, Adversary, Security Model) and returns rows
+enriched with compliance verdicts.
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ functionality you also need the LLM SDK dependencies vendored:
 
 ```bash
 pip install -t splunk-app/auditcompiler/bin/lib/ \
-    anthropic openai google-generativeai \
+    anthropic openai google-generativeai huggingface-hub httpx \
     pydantic pyyaml requests python-dotenv
 ```
 
@@ -74,6 +74,7 @@ Set environment variables before starting Splunk. Add to
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...        # optional
 GOOGLE_API_KEY=...            # optional
+HF_TOKEN=hf_...               # optional Foundation-Sec-8B hosted inference
 ```
 
 Or export them in the shell before launching Splunk:
@@ -84,15 +85,15 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
 **Important:** The app makes outbound HTTPS calls to LLM provider APIs
-(api.anthropic.com, api.openai.com, generativelanguage.googleapis.com).
-No other external network access is required. If your Splunk instance
-is air-gapped, the panel debate will fail — document this in your
-deployment plan.
+(api.anthropic.com, api.openai.com, generativelanguage.googleapis.com) and
+HuggingFace Hosted Inference for Foundation-Sec-8B when `HF_TOKEN` is set.
+If your Splunk instance is air-gapped, configure the local Ollama fallback or
+document the degraded panel in your deployment plan.
 
 ### Single-vendor fallback
 
 If only one LLM provider key is available, the app automatically runs
-all three personas through that single provider (Claude by default).
+the loaded personas through that single provider (Claude by default).
 Set `AEC_PANEL_SINGLE_VENDOR_FALLBACK=true` (default) to enable this.
 
 ## Usage

@@ -93,12 +93,12 @@ def recurrence_result_to_snapshots(
     control_id: str,
     timestamp: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Convert a 2-round PanelResultWithRecurrence into 9 chained EvidenceSnapshot dicts.
+    """Convert a 2-round PanelResultWithRecurrence into chained EvidenceSnapshot dicts.
 
-    Layout: 3 persona critiques (round 1) + 1 consensus (round 1)
-          + 3 persona critiques (round 2) + 1 consensus (round 2)
+    Layout: persona critiques (round 1) + 1 consensus (round 1)
+          + persona critiques (round 2) + 1 consensus (round 2)
           + 1 final verdict snapshot.
-    When round 2 is None, returns only the round 1 snapshots + final (5 total).
+    When round 2 is None, returns only the round 1 snapshots + final.
     """
     ts = timestamp or datetime.now(timezone.utc).isoformat()
 

@@ -10,13 +10,14 @@ flowchart TD
 
         EN --> PANEL
 
-        subgraph PANEL[6. Three-Agent Panel Debate · 3 vendors in parallel]
+        subgraph PANEL[6. Four-Agent Panel Debate · 4 vendors in parallel]
             direction LR
             AUD[Auditor<br/>Claude Sonnet 4<br/>control language] -.parallel.- ENG[Engineer<br/>GPT-5<br/>SPL soundness]
             ENG -.parallel.- ADV[Adversary<br/>Gemini 2.5 Pro<br/>counter-evidence]
+            ADV -.parallel.- SEC[Security Model<br/>Foundation-Sec-8B<br/>threat intelligence]
         end
 
-        PANEL --> CON[7. Consensus<br/>lowest-of-three rule]
+        PANEL --> CON[7. Consensus<br/>lowest-of-panel rule]
         CON --> FM[8. Evidence Formatter<br/>verdict · gap · remediation]
     end
 
@@ -58,4 +59,4 @@ flowchart TD
     class SPL,SAMPLES accent
     class CAT,HINT,POLICY,OUT,LOG,MD accent
     class SV,REVIEW,MERKLE,VER guard
-    class AUD,ENG,ADV,CON panel
+    class AUD,ENG,ADV,SEC,CON panel
