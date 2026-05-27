@@ -66,6 +66,9 @@ fi
 if ! command -v python3 &>/dev/null; then
   ok "Installing Python..."
   sudo apt-get update -qq && sudo apt-get install -y -qq python3 python3-pip python3-venv
+else
+  # Ensure venv and pip are present even if python3 is already installed
+  sudo apt-get install -y -qq python3-venv python3-pip 2>/dev/null || true
 fi
 
 if ! command -v git &>/dev/null; then
