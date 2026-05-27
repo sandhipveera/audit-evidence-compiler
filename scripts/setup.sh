@@ -13,29 +13,27 @@
 #   --password <password>                Splunk admin password (default: changeme123)
 #   --domain   <hostname>                Public hostname (default: aec3.accessquint.com)
 #   --hf-token <token>                   HuggingFace token for Foundation-Sec-8B
-#   --cf-token <token>                   Cloudflare Tunnel token (optional — skipped if
-#                                        cloudflared is already running or token is invalid)
+#   --cf-token <token>                   Cloudflare Tunnel token (skipped if already running)
+#   --gh-user  <username>                GitHub username (avoids interactive prompt)
+#   --gh-token <token>                   GitHub personal access token (repo scope)
+#
+# Config file (takes effect before args, args override):
+#   Create ~/.aec-config with any of:
+#     GH_USER=sandhipveera
+#     GH_TOKEN=ghp_xxx
+#     HF_TOKEN=hf_xxx
+#     CF_TOKEN=eyJ...
+#     SPLUNK_PASSWORD=changeme123
+#     PUBLIC_DOMAIN=aec3.accessquint.com
+#     LICENSE_FILE=/home/veera/Splunk.License
 #
 # After setup, manage the stack with:
-#   bash scripts/manage.sh status|start|stop|restart|logs|update
+#   bash scripts/manage.sh status|start|stop|restart|logs|update|verify
 # =============================================================================
 
 set -euo pipefail
 
-# ── Config (overridable via args) ──────────────────────────────────────────────
-REPO_URL="https://github.com/sandhipveera/audit-evidence-compiler"
-REPO_DIR="${HOME}/audit-evidence-compiler"
-SPLUNK_PASSWORD="${SPLUNK_PASSWORD:-changeme123}"
-SPLUNK_PORT_WEB=8001
-SPLUNK_PORT_MGMT=8089
-SPLUNK_PORT_HEC=8088
-AEC_PORT=8000
-PUBLIC_DOMAIN="aec3.accessquint.com"
-LICENSE_FILE=""
-CF_TOKEN=""
-HF_TOKEN="${HF_TOKEN:-}"
-
-# ── Colours ───────────────────────────────────────────────────────────────────
+# ── Colours (defined early so config-load warnings can use them) ───────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; CYAN='\033[0;36m'; NC='\033[0m'
 ok()    { echo -e "${GREEN}✓${NC} $*"; }
 warn()  { echo -e "${YELLOW}⚠${NC}  $*"; }
@@ -44,7 +42,30 @@ die()   { echo -e "${RED}✗  FATAL:${NC} $*"; exit 1; }
 h1()    { echo; echo -e "\033[1;36m━━━  $*  ━━━\033[0m"; echo; }
 skip()  { echo -e "  ${YELLOW}(skipped)${NC} $*"; }
 
-# ── Args ──────────────────────────────────────────────────────────────────────
+# ── Config file (~/.aec-config) ───────────────────────────────────────────────
+AEC_CONFIG="${HOME}/.aec-config"
+if [[ -f "$AEC_CONFIG" ]]; then
+  # shellcheck disable=SC1090
+  source "$AEC_CONFIG"
+  ok "Loaded config from $AEC_CONFIG"
+fi
+
+# ── Defaults (config file values take precedence over these) ──────────────────
+REPO_URL="https://github.com/sandhipveera/audit-evidence-compiler"
+REPO_DIR="${HOME}/audit-evidence-compiler"
+SPLUNK_PASSWORD="${SPLUNK_PASSWORD:-changeme123}"
+SPLUNK_PORT_WEB=8001
+SPLUNK_PORT_MGMT=8089
+SPLUNK_PORT_HEC=8088
+AEC_PORT=8000
+PUBLIC_DOMAIN="${PUBLIC_DOMAIN:-aec3.accessquint.com}"
+LICENSE_FILE="${LICENSE_FILE:-}"
+CF_TOKEN="${CF_TOKEN:-}"
+HF_TOKEN="${HF_TOKEN:-}"
+GH_USER="${GH_USER:-}"
+GH_TOKEN="${GH_TOKEN:-}"
+
+# ── Args (override config file values) ────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case $1 in
     --license)  LICENSE_FILE="$2";    shift 2 ;;
@@ -52,12 +73,48 @@ while [[ $# -gt 0 ]]; do
     --domain)   PUBLIC_DOMAIN="$2";   shift 2 ;;
     --hf-token) HF_TOKEN="$2";        shift 2 ;;
     --cf-token) CF_TOKEN="$2";        shift 2 ;;
+    --gh-user)  GH_USER="$2";         shift 2 ;;
+    --gh-token) GH_TOKEN="$2";        shift 2 ;;
     -h|--help)
       grep '^#' "$0" | grep -v '#!/' | sed 's/^# \{0,2\}//'
       exit 0 ;;
     *) warn "Unknown argument: $1 (ignored)"; shift ;;
   esac
 done
+
+# ── Wire GitHub credentials into git so no prompts ever appear ────────────────
+if [[ -n "$GH_TOKEN" ]]; then
+  # Store credentials in git's credential store (survives re-runs)
+  git config --global credential.helper store
+  GH_USER_EFFECTIVE="${GH_USER:-git}"
+  # Write to credential store
+  echo "https://${GH_USER_EFFECTIVE}:${GH_TOKEN}@github.com" > "${HOME}/.git-credentials"
+  chmod 600 "${HOME}/.git-credentials"
+  # Also embed in REPO_URL for the initial clone (belt + suspenders)
+  REPO_URL="https://${GH_USER_EFFECTIVE}:${GH_TOKEN}@github.com/sandhipveera/audit-evidence-compiler"
+  ok "GitHub credentials configured (no prompts)"
+elif [[ -z "$GH_USER" ]]; then
+  warn "No GitHub credentials in config — git clone/pull may prompt for username/password"
+  warn "Add to ~/.aec-config:  GH_USER=sandhipveera  GH_TOKEN=ghp_xxx"
+fi
+
+# ── Save current config to ~/.aec-config (update with any new values) ─────────
+save_config() {
+  cat > "$AEC_CONFIG" << CONF
+# AEC config — auto-updated by setup.sh on $(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Edit this file to avoid re-entering credentials on every run.
+GH_USER=${GH_USER:-}
+GH_TOKEN=${GH_TOKEN:-}
+HF_TOKEN=${HF_TOKEN:-}
+CF_TOKEN=${CF_TOKEN:-}
+SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
+PUBLIC_DOMAIN=${PUBLIC_DOMAIN}
+LICENSE_FILE=${LICENSE_FILE:-}
+CONF
+  chmod 600 "$AEC_CONFIG"
+  ok "Saved config to $AEC_CONFIG"
+}
+save_config
 
 AEC_WEBHOOK_URL="https://${PUBLIC_DOMAIN}/api/incident"
 

@@ -31,8 +31,10 @@ info() { echo -e "${CYAN}→${NC} $*"; }
 err()  { echo -e "${RED}✗${NC} $*"; }
 h1()   { echo; echo -e "\033[1;36m━━━  $*  ━━━\033[0m"; echo; }
 
-# ── Load env ──────────────────────────────────────────────────────────────────
-[[ -f "$ENV_FILE" ]] && export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs) 2>/dev/null || true
+# ── Load config + env (config file first, .env overrides) ─────────────────────
+AEC_CONFIG="${HOME}/.aec-config"
+[[ -f "$AEC_CONFIG" ]] && source "$AEC_CONFIG" 2>/dev/null || true
+[[ -f "$ENV_FILE"   ]] && export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs) 2>/dev/null || true
 SPLUNK_PASSWORD="${SPLUNK_PASSWORD:-changeme123}"
 SPLUNK_PORT_MGMT="${SPLUNK_PORT_MGMT:-8089}"
 AEC_PORT="${AEC_PORT:-8000}"
