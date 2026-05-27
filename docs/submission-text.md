@@ -13,7 +13,7 @@ Audit Evidence Auto-Compiler
 
 ## One-Line Description (tweet-length)
 
-An AI agent that converts a compliance question into Splunk evidence, runs a four-model debate including Splunk's Foundation-Sec-8B, and produces tamper-evident audit artifacts.
+An AI trust engine that converts a compliance question into Splunk evidence, runs a four-vendor adversarial panel debate — including Splunk's own Foundation-Sec-8B — and produces externally-verifiable, tamper-evident audit artifacts in under 30 seconds.
 
 ---
 
@@ -23,23 +23,25 @@ An AI agent that converts a compliance question into Splunk evidence, runs a fou
 
 **What it does:** The Audit Evidence Auto-Compiler is an agentic pipeline that takes a compliance question ("Give me SOC 2 CC6.1 evidence from this Splunk instance") and returns a complete audit package: xlsx findings tracker, debate transcript, executive memo, and a tamper-evident evidence chain — all in under 30 seconds.
 
-**The core differentiator — four AI voices debate every finding:**
+**The core differentiator — four vendors from four organizations debate every finding:**
 
-Claude Sonnet 4 plays the Auditor, reading the control language literally. GPT-5.5 plays the Engineer, checking the SPL for statistical soundness. Gemini 2.5 Pro plays the Adversary, trying to disprove the PASS verdict and proposing counter-searches. Cisco/Splunk's Foundation-Sec-8B plays the Security Model, asking whether the evidence reduces real attacker success against relevant MITRE ATT&CK techniques. These are independently-trained models from four organizations — their disagreement is meaningful, not theatrical. Consensus rule: lowest verdict wins. One dissenting voice is enough to force a FAIL.
+Claude Sonnet 4 plays the Auditor (compliance lens). GPT-5.5 plays the Engineer (statistical lens). Gemini 2.5 Pro plays the Adversary (red-team lens). And **Foundation-Sec-8B** — Splunk/Cisco's own open-source security model trained specifically on cybersecurity data — plays the Security Model, applying a threat-intelligence lens: not "does this satisfy the control language?" but "does this control actually stop real attackers?" These are independently-trained models from four competing organizations. Consensus rule: lowest verdict wins. One dissenting voice forces PARTIAL or FAIL.
 
 The Adversary doesn't just critique — it proposes follow-up SPL queries. Those execute automatically against live Splunk via MCP. A second panel round runs with the new evidence. The final verdict reflects what the data actually shows, not what the initial snapshot happened to capture.
 
-**Five capabilities no other entry has:**
+**Six capabilities no other entry has:**
 
-1. **Four-model independence + Hosted Models bonus** — Claude, GPT, Gemini, and Foundation-Sec-8B review the same evidence from different training sets and threat models. Foundation-Sec-8B runs through HuggingFace Hosted Inference on the Featherless.ai backend (`foundation-sec-api`), with local Ollama fallback.
+1. **Four-vendor independence including Splunk's own model** — Claude, GPT, Gemini, and Foundation-Sec-8B from four different organizations, four different training sets. Zero per-call API cost (OAuth subscriptions + HuggingFace hosted inference).
 
 2. **Counter-evidence loop** — Adversary auto-runs follow-up SPL; Round 2 verdict supersedes Round 1 if new evidence changes the picture.
 
-3. **Tamper-evident audit trail** — SHA-256 Merkle chain on every evidence snapshot. The xlsx carries the chain root. `aec verify` detects any post-collection edit in under 2 seconds.
+3. **Tamper-evident audit trail + external verifier** — SHA-256 Merkle chain on every evidence snapshot. The xlsx carries the chain root. `aec verify` detects any post-collection edit in under 2 seconds. External auditors verify the chain without installing anything at [aec.accessquint.com/verify](https://aec.accessquint.com/verify).
 
-4. **Native Splunk search command** — `| auditcompiler control=CC6.1` runs the panel debate inline, returning `verdict`, `severity`, and `root_cause` as columns in Splunk's results table. Deployable as a Splunkbase app.
+4. **Native Splunk search command** — `| auditcompiler control=CC6.1` runs the four-vendor debate inline, returning `verdict`, `severity`, and `root_cause` as columns in Splunk's results table. Deployable as a Splunkbase app.
 
 5. **Multi-framework efficiency** — `--control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"` in one prompt. The agent finds the minimal SPL set that covers all three frameworks simultaneously and produces a cross-framework gap report.
+
+6. **SOC incident response integration** — When a Splunk alert fires (brute force, MFA bypass, privilege escalation), the agent maps the alert to affected compliance controls, runs the four-vendor panel debate, and produces an incident-linked audit report automatically in the same window the SOC analyst is triaging.
 
 Additional capabilities: LangGraph orchestration with human-in-the-loop approval gates at SPL execution and verdict; drift detection comparing two audit windows; natural-language control resolution; checkpoint/resume after failures; live web dashboard at https://aec.accessquint.com.
 
@@ -78,9 +80,11 @@ Security
 - Claude Sonnet 4 (Anthropic) — via OAuth CLI + API fallback
 - GPT-5.5 (OpenAI) — via Codex OAuth CLI + API fallback
 - Gemini 2.5 Pro (Google) — via CLI + API fallback
-- Foundation-Sec-8B-Instruct (Cisco Foundation AI / Splunk) — via HuggingFace Hosted Inference (`fdtn-ai/Foundation-Sec-8B-Instruct`, Featherless.ai backend)
+- **Foundation-Sec-8B (Cisco/Splunk)** — via HuggingFace Inference API (Featherless.ai provider), `fdtn-ai/Foundation-Sec-8B-Instruct`
 - LangGraph (orchestration + HITL checkpointing)
-- FastAPI + WebSocket (live web dashboard)
+- FastAPI + WebSocket (live web dashboard + auditor verification portal)
+- SHA-256 Merkle chaining (tamper-evident evidence trail)
+- Cloudflare Tunnel (zero-open-ports HTTPS deployment)
 - Python 3.11
 
 ---
@@ -102,7 +106,13 @@ Solo submission. The vCISO priors catalog was derived from production consulting
 1. Go to https://aec.accessquint.com
 2. Select "SOC 2 CC6.1 — MFA enforcement"
 3. Click Run
-4. Watch Claude, GPT, Gemini, and Foundation-Sec-8B debate in real time
+4. Watch four AI vendors debate in real time (Claude + GPT + Gemini + Foundation-Sec-8B)
+
+**Option 1b — Auditor verification portal (30 seconds):**
+1. Go to https://aec.accessquint.com/verify
+2. Download the `audit_trail.jsonl` from a completed run (available in the repo at `out/`)
+3. Drag-and-drop the file onto the verification page
+4. See the green VERIFIED banner + per-snapshot chain-of-custody proof
 
 **Option 2 — Local run with sample data (5 minutes):**
 ```bash
