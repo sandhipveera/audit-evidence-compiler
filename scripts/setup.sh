@@ -2,20 +2,28 @@
 # =============================================================================
 # Audit Evidence Auto-Compiler — One-Shot VM Setup Script
 #
-# Tested on: Ubuntu 22.04 / 24.04 (Vultr, DigitalOcean, AWS)
-# Run as:    bash scripts/setup.sh [--license /path/to/Splunk.License]
+# Tested on: Ubuntu 22.04 / 24.04 / 26.04 (Vultr, DigitalOcean, AWS)
+# Run as:    bash scripts/setup.sh [OPTIONS]
+#
+# Options:
+#   --license  /path/to/Splunk.License   Apply Splunk developer license
+#   --password <splunk-password>         Splunk admin password (default: changeme123)
+#   --webhook  <url>                     AEC incident webhook URL
+#   --cf-token <token>                   Cloudflare Tunnel token (from dash.cloudflare.com)
+#   --hf-token <token>                   HuggingFace token for Foundation-Sec-8B
 #
 # What it does:
-#   1. Installs Docker, Python 3.12, git
-#   2. Clones / updates the repo
-#   3. Creates Python venv + installs AEC
-#   4. Starts Splunk Enterprise (developer license)
-#   5. Applies license file if provided
-#   6. Creates botsv3 index + ingests synthetic MFA data via HEC
-#   7. Creates Splunk REST token + wires into .env
-#   8. Creates MFA bypass scheduled alert → AEC webhook
-#   9. Starts AEC web service (systemd)
-#  10. Runs a smoke test
+#   1.  Installs Docker, Python, git
+#   2.  Clones / updates the repo
+#   3.  Creates Python venv + installs AEC
+#   4.  Starts Splunk Enterprise
+#   5.  Applies developer license (if provided)
+#   6.  Creates botsv3 index + ingests synthetic MFA data via HEC
+#   7.  Creates Splunk REST token + wires into .env
+#   8.  Creates MFA bypass scheduled alert → AEC webhook
+#   9.  Starts AEC web service (systemd)
+#   10. Sets up Cloudflare Tunnel (if --cf-token provided)
+#   11. Runs smoke test
 # =============================================================================
 
 set -euo pipefail
@@ -30,6 +38,8 @@ SPLUNK_PORT_HEC=8088
 AEC_PORT=8000
 AEC_WEBHOOK_URL="${AEC_WEBHOOK_URL:-https://aec.accessquint.com/api/incident}"
 LICENSE_FILE=""
+CF_TOKEN=""
+HF_TOKEN=""
 
 # ── Colours ───────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -41,9 +51,11 @@ h1()   { echo; echo -e "\033[1;36m━━━  $*  ━━━\033[0m"; echo; }
 # ── Args ──────────────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --license) LICENSE_FILE="$2"; shift 2 ;;
+    --license)  LICENSE_FILE="$2";    shift 2 ;;
     --password) SPLUNK_PASSWORD="$2"; shift 2 ;;
-    --webhook) AEC_WEBHOOK_URL="$2"; shift 2 ;;
+    --webhook)  AEC_WEBHOOK_URL="$2"; shift 2 ;;
+    --cf-token) CF_TOKEN="$2";        shift 2 ;;
+    --hf-token) HF_TOKEN="$2";        shift 2 ;;
     *) warn "Unknown arg: $1"; shift ;;
   esac
 done
@@ -293,6 +305,7 @@ SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
 SPLUNK_VERIFY_SSL=false
 AEC_SPLUNK_MCP_SERVER=rest
 HEC_TOKEN=${HEC_TOKEN:-}
+HF_TOKEN=${HF_TOKEN:-}
 PYTHONWARNINGS=ignore::urllib3.exceptions.InsecureRequestWarning
 ENV
 
@@ -353,7 +366,44 @@ else
   warn "AEC web not responding yet — check: sudo journalctl -u aec-web -n 20"
 fi
 
-# ── Smoke test ────────────────────────────────────────────────────────────────
+# ── 10. Cloudflare Tunnel ─────────────────────────────────────────────────────
+h1 "10 / 11  Cloudflare Tunnel"
+
+if [[ -z "$CF_TOKEN" ]]; then
+  warn "No --cf-token provided — skipping Cloudflare Tunnel setup"
+  warn "To add later: bash scripts/setup.sh --cf-token <token>"
+  warn "Get token from: https://one.dash.cloudflare.com → Networks → Tunnels"
+else
+  # Install cloudflared if not present
+  if ! command -v cloudflared &>/dev/null; then
+    ok "Installing cloudflared..."
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+      | sudo tee /usr/share/keyrings/cloudflare-main.gpg > /dev/null
+    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' \
+      | sudo tee /etc/apt/sources.list.d/cloudflared.list
+    sudo apt-get update -qq && sudo apt-get install -y -qq cloudflared
+    ok "cloudflared installed: $(cloudflared --version 2>&1 | head -1)"
+  else
+    ok "cloudflared already installed: $(cloudflared --version 2>&1 | head -1)"
+  fi
+
+  # Remove any existing tunnel service
+  sudo cloudflared service uninstall 2>/dev/null || true
+
+  # Install tunnel as systemd service using token
+  sudo cloudflared service install "$CF_TOKEN"
+  sudo systemctl enable cloudflared
+  sudo systemctl restart cloudflared
+  sleep 5
+
+  if sudo systemctl is-active --quiet cloudflared; then
+    ok "Cloudflare Tunnel active — aec.accessquint.com → localhost:${AEC_PORT}"
+  else
+    warn "Tunnel service not running — check: sudo journalctl -u cloudflared -n 20"
+  fi
+fi
+
+# ── 11. Smoke test ────────────────────────────────────────────────────────────
 h1 "Smoke test"
 
 source .venv/bin/activate
@@ -374,6 +424,9 @@ echo
 echo "  Splunk Web:      http://$(hostname -I | awk '{print $1}'):${SPLUNK_PORT_WEB}  (admin / ${SPLUNK_PASSWORD})"
 echo "  AEC Dashboard:   http://$(hostname -I | awk '{print $1}'):${AEC_PORT}"
 echo "  Splunk REST API: https://localhost:${SPLUNK_PORT_MGMT}"
+if [[ -n "$CF_TOKEN" ]]; then
+echo "  Public URL:      https://aec.accessquint.com  (via Cloudflare Tunnel)"
+fi
 echo
 echo "  Quick test:"
 echo "    source ${REPO_DIR}/.venv/bin/activate"
