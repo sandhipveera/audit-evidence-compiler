@@ -1,0 +1,44 @@
+# AEC VM Configuration File
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy to ~/.aec-config and fill in your values.
+# This file is NEVER committed — it lives in $HOME, outside the repo.
+#
+#   cp .aec-config.example ~/.aec-config
+#   chmod 600 ~/.aec-config
+#   # edit with your values
+#   bash scripts/setup.sh        # no prompts, no typing
+#
+# To copy to a new VM:
+#   scp ~/.aec-config veera@<NEW-VM-IP>:~/.aec-config
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── GitHub ────────────────────────────────────────────────────────────────────
+# Personal access token with 'repo' scope.
+# Create at: https://github.com/settings/tokens → Tokens (classic) → repo
+GH_USER=sandhipveera
+GH_TOKEN=ghp_your_token_here
+
+# ── HuggingFace ───────────────────────────────────────────────────────────────
+# Required for Foundation-Sec-8B (4th panel vendor / $1K Hosted Models bonus).
+# Create at: https://huggingface.co/settings/tokens
+# Permission required: "Make calls to serverless Inference Providers"
+HF_TOKEN=hf_your_token_here
+
+# ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
+# Token from: Zero Trust → Networks → Tunnels → your tunnel → Configure
+# → Install connector → Linux → copy the long string after "service install"
+# Leave empty if tunnel is already running or set up manually.
+CF_TOKEN=
+
+# ── Splunk ────────────────────────────────────────────────────────────────────
+SPLUNK_PASSWORD=changeme123
+
+# ── Public hostname ───────────────────────────────────────────────────────────
+# The domain Cloudflare Tunnel routes to this VM.
+PUBLIC_DOMAIN=aec3.accessquint.com
+
+# ── Splunk developer license ──────────────────────────────────────────────────
+# Absolute path to the .License file on this VM.
+# Download from: https://www.splunk.com/en_us/download/splunk-enterprise.html
+# (requires free Splunk developer account)
+LICENSE_FILE=/home/veera/Splunk.License
