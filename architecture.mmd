@@ -1,5 +1,7 @@
 flowchart TD
     O([Operator prompt:<br/>'SOC 2 CC6.1 evidence']) --> CM
+    ALERT([Splunk Alert webhook<br/>brute force / MFA bypass]) --> INC[Incident Mapper<br/>alert → controls]
+    INC --> CM
 
     subgraph Agent[LangGraph Evidence Agent]
         CM[1. Control Mapper<br/>request → framework controls] --> SG[2. SPL Generator<br/>draft evidence queries]
@@ -10,53 +12,55 @@ flowchart TD
 
         EN --> PANEL
 
-        subgraph PANEL[6. Four-Agent Panel Debate · 4 vendors in parallel]
+        subgraph PANEL[6. Four-Vendor Panel Debate · parallel]
             direction LR
-            AUD[Auditor<br/>Claude Sonnet 4<br/>control language] -.parallel.- ENG[Engineer<br/>GPT-5<br/>SPL soundness]
-            ENG -.parallel.- ADV[Adversary<br/>Gemini 2.5 Pro<br/>counter-evidence]
-            ADV -.parallel.- SEC[Security Model<br/>Foundation-Sec-8B<br/>threat intelligence]
+            AUD[Auditor<br/>Claude Sonnet 4<br/>compliance lens] -.parallel.- ENG[Engineer<br/>GPT-5.5 via Codex<br/>statistical lens]
+            ENG -.parallel.- ADV[Adversary<br/>Gemini 2.5 Pro<br/>red-team lens]
+            ADV -.parallel.- SEC[Security Model<br/>Foundation-Sec-8B<br/>threat-intel / ATT&CK]
         end
 
-        PANEL --> CON[7. Consensus<br/>lowest-of-panel rule]
+        PANEL --> CON[7. Consensus<br/>lowest-of-four rule]
         CON --> FM[8. Evidence Formatter<br/>verdict · gap · remediation]
     end
 
-    CAT[(Control Evidence Catalog<br/>SOC 2 / NIST / ISO mappings)] -.lookup.-> CM
+    CAT[(Control Evidence Catalog<br/>SOC 2 / NIST / ISO / COBIT<br/>36 controls × 5 frameworks)] -.lookup.-> CM
     HINT[(SPL Hints<br/>by control category)] -.lookup.-> SG
     POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds)] -.validate.-> SV
 
     MCPR -->|primary| MCP_OFF[(splunk-official<br/>MCP Server)]
     MCPR -->|fallback| MCP_LH[(livehybrid<br/>MCP Server)]
-    MCP_OFF <-->|MCP tool calls| SPL[(Splunk Enterprise<br/>BOTS v3 dataset)]
+    MCP_OFF <-->|MCP tool calls| SPL[(Splunk Enterprise<br/>BOTS v3 dataset<br/>1.7M events)]
     MCP_LH <-->|MCP tool calls| SPL
     SE -.->|REST API fallback| SPL
     SE -.->|sample fallback| SAMPLES[(Sample JSON files<br/>samples/*.json)]
-    SPL --- O365[(o365:management:activity)]
-    SPL --- WEVT[(wineventlog)]
-    SPL --- CT[(aws:cloudtrail)]
-    SPL --- IIS[(iis)]
-    SPL --- DNS[(stream:dns)]
 
     ADV -.recommended counter-search.-> SE
 
     FM --> REVIEW{Human Review Gate<br/>auto / interactive}
     REVIEW -->|approve| MERKLE[Merkle Chain Sealer<br/>SHA-256 chained]
     MERKLE --> OUT([gap_report.xlsx<br/>+ Manifest sheet w/ root hash])
-    MERKLE --> LOG([audit_trail.jsonl<br/>panel transcripts + prev_hash])
-    MERKLE --> MD([audit_package.md])
+    MERKLE --> JSONL([audit_trail.jsonl<br/>panel transcripts + prev_hash])
+    MERKLE --> MD([audit_memo.md + transcript.md])
 
-    LOG -.verify.-> VER[aec verify<br/>recompute chain]
-    OUT -.verify.-> VER
+    JSONL -.CLI verify.-> VER[aec verify<br/>recompute chain]
+    OUT -.CLI verify.-> VER
+    JSONL -.web upload.-> PORTAL[Auditor Verification Portal<br/>aec.accessquint.com/verify<br/>VERIFIED / TAMPERED banner]
 
     LLM_PIPE[Claude Sonnet 4<br/>pipeline reasoning] <-.control reasoning.-> CM
     LLM_PIPE <-.SPL synthesis.-> SG
     LLM_PIPE <-.formatter narrative.-> FM
 
+    SEC -.->|HuggingFace Inference API<br/>Featherless.ai provider| HF[(fdtn-ai/<br/>Foundation-Sec-8B-Instruct)]
+
     classDef accent fill:#fde68a,stroke:#92400e,stroke-width:2px;
     classDef data fill:#dbeafe,stroke:#1e40af;
     classDef guard fill:#dcfce7,stroke:#166534,stroke-width:2px;
     classDef panel fill:#fce7f3,stroke:#9d174d,stroke-width:2px;
+    classDef incident fill:#fee2e2,stroke:#991b1b,stroke-width:2px;
+    classDef portal fill:#ede9fe,stroke:#5b21b6,stroke-width:2px;
     class SPL,SAMPLES accent
-    class CAT,HINT,POLICY,OUT,LOG,MD accent
+    class CAT,HINT,POLICY,OUT,JSONL,MD accent
     class SV,REVIEW,MERKLE,VER guard
     class AUD,ENG,ADV,SEC,CON panel
+    class ALERT,INC incident
+    class PORTAL,HF portal
