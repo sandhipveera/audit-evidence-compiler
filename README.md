@@ -201,15 +201,23 @@ graph TD
       O4[audit_trail.jsonl]
     end
 
+    subgraph "Verification"
+      V1[aec verify CLI]
+      V2[aec.accessquint.com/verify<br/>Auditor Portal]
+    end
+
     N5 --> S2 & S3 & S4
     S1 --- S2 & S3 & S4
     N7 & N10 --> P1 & P2 & P3 & P4
     N14 --> O1 & O2 & O3 & O4
+    O4 --> V1 & V2
 ```
 
-**Transport hierarchy:** Commercial vendors use OAuth-authenticated CLIs first (Claude Max, Codex/ChatGPT Team, Gemini CLI), falling back to API keys. The Security Model uses HuggingFace Hosted Inference first, with local Ollama fallback. Four different model lineages provide maximum independence.
+**Transport hierarchy:** Every vendor uses OAuth-authenticated CLIs first (Claude Max, Codex/ChatGPT Team, Gemini CLI), falling back to API keys. Foundation-Sec-8B runs via HuggingFace Inference API (Featherless.ai). Four different organizations, four different training sets, four different billing accounts — zero per-call cost, maximum independence.
 
 **Splunk transport:** `AEC_SPLUNK_MCP_SERVER=official|livehybrid|rest` selects the MCP server at runtime. Both official and community MCP servers sit behind a uniform interface.
+
+**SOC incident mode:** Splunk alert webhooks (`POST /api/incident`) map to affected compliance controls via keyword analysis, then run the full four-vendor debate automatically in the background.
 
 ---
 

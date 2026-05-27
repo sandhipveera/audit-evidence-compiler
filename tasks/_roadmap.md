@@ -20,17 +20,32 @@
 | **017 — Differential framework mapping** | ✅ merged | One prompt → 3 frameworks, minimal SPL set |
 | **018 — Splunk app package** | ✅ merged | `\| auditcompiler` custom search command, .spl |
 | **019 — Web dashboard** | ✅ merged | FastAPI + WebSocket, aec.accessquint.com |
-| Architecture diagram refresh | ⏳ end | Match final shipped reality |
-| README rewrite | ⏳ end | Front-load the differentiators |
-| 3-min demo video | ⏳ end | Tmux split + iterative takes |
-| Submission ceremony | ⏳ end | Hackathon portal form |
+| **020 — Foundation-Sec-8B (4th persona)** | ✅ merged (PR #18) | HuggingFace Featherless.ai, threat-intel lens, $1K Hosted Models bonus |
+| **021 — SOC Incident Response mode** | ✅ merged (PR #16) | Alert→controls mapping, `/api/incident` webhook, `--mode incident` CLI |
+| **022 — Compliance Posture Dashboard** | ⏳ not started | Splunk Dashboard Studio JSON, 36-control scorecard |
+| **023 — Auditor Verification Portal** | ✅ merged (PR #19) | `/verify` page, drag-and-drop JSONL upload, VERIFIED/TAMPERED banner |
+| Architecture diagram refresh | ⏳ end | Add 4th vendor, verification portal, SOC incident mode, Cloudflare Tunnel |
+| README rewrite | ✅ done | Trust-engine framing, 6 differentiators, Foundation-Sec panel |
+| 3-min demo video | ⏳ end | Re-record with lowest_of_four after GPT quota reset |
+| Submission ceremony | ⏳ end | Devpost form using docs/submission-text.md |
 
-## ✅ ALL TIERS COMPLETE — Day 1 of 23
+## ✅ STRETCH TIER COMPLETE — Day 2 of 23 (2026-05-26)
 
-YuktiCastle shipped all 9 remaining tasks in a single overnight run on 2026-05-25.
-Actual merge order: 014 → 016 → 015 → 017 → 018 → 019 (matched the planned sequence).
+Prize-targeting additions merged overnight:
+- PR #16: SOC Incident Response mode (alert webhook + incident compliance report)
+- PR #18: Foundation-Sec-8B as 4th panel persona (HuggingFace / Featherless.ai) — wins $1K Hosted Models bonus
+- PR #19: Auditor Verification Portal at aec.accessquint.com/verify — external chain-of-custody proof
 
-Remaining work: architecture refresh → README → demo video → submission.
+Remaining: task 022 (Compliance Posture Dashboard), architecture diagram refresh, demo re-record (4-vendor), submission.
+
+## Current panel status (2026-05-26)
+
+- Claude Sonnet 4 (Auditor) ✅ — anthropic-cli, OAuth
+- GPT-5.5 (Engineer) ⚠️ — ChatGPT Team quota resets at 08:48 AM PT daily; currently `lowest_of_three` until reset
+- Gemini 2.5 Pro (Adversary) ✅ — gemini-cli, OAuth
+- Foundation-Sec-8B (Security Model) ✅ — foundation-sec-api, HF_TOKEN required, gives PARTIAL (ATT&CK lens)
+
+After quota reset: `rm -f out/* && aec_demo --sample soc2-cc61` to confirm `lowest_of_four`.
 
 ## Critical path (most pessimistic)
 
