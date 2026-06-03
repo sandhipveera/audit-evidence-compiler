@@ -133,7 +133,7 @@ Hit search. Results table populates with `verdict`, `severity`, `root_cause` col
 **Voice-over:**
 > "Every other entry calls Splunk from the outside.
 > This one is a search command registered inside Splunk's query pipeline.
-> You type auditcompiler in any search — three vendors debate — results appear as columns."
+> You type auditcompiler in any search — four vendors debate — results appear as columns."
 
 ---
 
@@ -143,7 +143,7 @@ Hit search. Results table populates with `verdict`, `severity`, `root_cause` col
 
 Select "SOC 2 CC6.1 — MFA enforcement" from dropdown. Click **Run debate**.
 
-Watch the three persona columns stream live.
+Watch the four persona columns stream live.
 
 **Voice-over:**
 > "Judges can run this themselves. No clone, no install, no setup.

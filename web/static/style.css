@@ -12,6 +12,7 @@
   --auditor: #58a6ff;
   --engineer: #3fb950;
   --adversary: #f85149;
+  --security_model: #39c5cf;
 }
 
 * {
@@ -103,9 +104,9 @@ button:disabled {
   margin-bottom: 1rem;
 }
 
-.panel-3col {
+.panel-4col {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -129,6 +130,9 @@ button:disabled {
 .persona[data-name="adversary"] {
   border-top: 3px solid var(--adversary);
 }
+.persona[data-name="security_model"] {
+  border-top: 3px solid var(--security_model);
+}
 
 .persona h3 {
   font-size: 0.85rem;
@@ -140,6 +144,7 @@ button:disabled {
 .persona[data-name="auditor"] h3 { color: var(--auditor); }
 .persona[data-name="engineer"] h3 { color: var(--engineer); }
 .persona[data-name="adversary"] h3 { color: var(--adversary); }
+.persona[data-name="security_model"] h3 { color: var(--security_model); }
 
 .model-tag {
   font-size: 0.7rem;
@@ -269,8 +274,8 @@ footer a:hover {
 }
 
 @media (max-width: 800px) {
-  .panel-3col {
-    grid-template-columns: 1fr;
+  .panel-4col {
+    grid-template-columns: 1fr 1fr;
   }
 
   .form-row {
