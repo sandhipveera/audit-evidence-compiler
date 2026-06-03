@@ -9,7 +9,7 @@
 <body>
   <div class="hero">
     <h1>Audit Evidence Auto-Compiler</h1>
-    <p>Three AI vendors debate compliance evidence from Splunk in real time.</p>
+    <p>Four AI vendors debate compliance evidence from Splunk in real time.</p>
     <p style="margin-top: 0.75rem"><a href="/verify" style="color: var(--accent); text-decoration: none; font-size: 0.9rem">Verify an audit trail &rarr;</a></p>
   </div>
 
@@ -22,7 +22,7 @@
 
   <div id="status-bar" class="status-bar hidden"></div>
 
-  <div id="panel" class="panel-3col hidden">
+  <div id="panel" class="panel-4col hidden">
     <div class="persona" data-name="auditor">
       <h3>Auditor <span class="model-tag">Claude Sonnet 4</span></h3>
       <div class="status">idle</div>
@@ -31,7 +31,7 @@
       <div class="concerns"></div>
     </div>
     <div class="persona" data-name="engineer">
-      <h3>Engineer <span class="model-tag">GPT-5</span></h3>
+      <h3>Engineer <span class="model-tag">GPT-5.5</span></h3>
       <div class="status">idle</div>
       <div class="reasoning"></div>
       <div class="verdict-pill"></div>
@@ -39,6 +39,13 @@
     </div>
     <div class="persona" data-name="adversary">
       <h3>Adversary <span class="model-tag">Gemini 2.5 Pro</span></h3>
+      <div class="status">idle</div>
+      <div class="reasoning"></div>
+      <div class="verdict-pill"></div>
+      <div class="concerns"></div>
+    </div>
+    <div class="persona" data-name="security_model">
+      <h3>Security Model <span class="model-tag">Foundation-Sec-8B</span></h3>
       <div class="status">idle</div>
       <div class="reasoning"></div>
       <div class="verdict-pill"></div>
@@ -63,7 +70,7 @@
   </div>
 
   <footer>
-    <p>Built for the Splunk SOAR AI Agents Hackathon &mdash; <a href="https://github.com/sandhipveera/audit-evidence-compiler">GitHub</a></p>
+    <p>Built for the Splunk Agentic Ops Hackathon 2026 &mdash; Security Track &mdash; <a href="https://github.com/sandhipveera/audit-evidence-compiler">GitHub</a></p>
   </footer>
 
   <script src="/static/app.js"></script>

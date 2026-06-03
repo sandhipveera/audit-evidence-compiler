@@ -18,13 +18,13 @@ A **trust engine for AI-generated compliance evidence** — not just another com
 
 When you ask "give me SOC 2 CC6.1 evidence from this Splunk instance," you get back four things other tools can't give you:
 
-1. **Adversarial truth-seeking** — three independently-trained AI models from competing companies debate the evidence and challenge each other's conclusions. If Claude hallucinates a PASS, Gemini's Adversary persona will catch it. Single-model AI has no checks on itself. We do.
+1. **Adversarial truth-seeking** — four independently-trained AI models from competing companies debate the evidence and challenge each other's conclusions. If Claude hallucinates a PASS, Gemini's Adversary persona will catch it. Single-model AI has no checks on itself. We do.
 
 2. **Chain-of-custody proof** — every evidence snapshot is SHA-256-chained to the previous one. Any post-collection modification — in Excel, a shell script, or a database — is mathematically detectable. External auditors verify the full chain at a URL.
 
 3. **Real data, not generated text** — every verdict links to specific SPL queries and real Splunk events. The agent can't hallucinate what the data shows; it runs the query and reads the result.
 
-4. **Self-correction on record** — mid-debate, the Auditor persona caught its own setup error (wrong time window against a 2018 dataset), recommended the fix, and the corrected run returned 1,247 real events. That transcript ships with the repo.
+4. **Self-correction on record** — mid-debate, the Auditor persona caught its own setup error (wrong time window against a 2018 dataset), recommended the fix, and the corrected run returned 1,247 real events. That transcript is committed at [`examples/transcript-self-correction.md`](examples/transcript-self-correction.md).
 
 **Live demo:** [https://aec.accessquint.com](https://aec.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time.  
 **Auditor verification:** [https://aec.accessquint.com/verify](https://aec.accessquint.com/verify) — upload `audit_trail.jsonl`, verify the evidence chain hasn't been tampered with.
@@ -349,7 +349,7 @@ Set `AEC_INSUFFICIENT_OVERRIDES_FAIL=false` if you want FAIL to dominate INSUFFI
 
 ## Gold artifact: the agent caught its own setup bug
 
-The demo transcript at [`out/2026-05-25T022914Z.md`](out/2026-05-25T022914Z.md) shows the Auditor persona — mid-debate — identifying that the sample time window used `-30d` relative dates against a 2018 dataset (BOTS v3). The agent recommended changing the window to `2018-08-01` through `2018-09-30` to get real results. We accepted the recommendation and the follow-up run returned 1,247 events. That's the agent self-correcting in production.
+The demo transcript at [`examples/transcript-self-correction.md`](examples/transcript-self-correction.md) shows the Auditor persona — mid-debate — identifying that the time window used `-30d` relative dates against a 2018 dataset (BOTS v3). The agent recommended changing the window to `2018-08-01` through `2018-09-30` to get real results. We accepted the recommendation and the follow-up run returned 1,247 events. That's the agent self-correcting in production.
 
 ---
 
