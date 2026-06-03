@@ -46,7 +46,7 @@
     consensusEl.textContent = "";
     downloadsEl.innerHTML = "";
 
-    ["auditor", "engineer", "adversary"].forEach(function (name) {
+    ["auditor", "engineer", "adversary", "security_model"].forEach(function (name) {
       var card = panelEl.querySelector('[data-name="' + name + '"]');
       card.querySelector(".status").textContent = "idle";
       card.querySelector(".status").classList.remove("thinking");
@@ -131,7 +131,7 @@
         break;
 
       case "consensus":
-        consensusEl.textContent = "CONSENSUS: " + msg.verdict + " (" + (msg.method || "lowest_of_three") + ")";
+        consensusEl.textContent = "CONSENSUS: " + msg.verdict + " (" + (msg.method || "lowest_of_four") + ")";
         consensusEl.className = "consensus " + msg.verdict;
         show(consensusEl);
         if (msg.degraded) {

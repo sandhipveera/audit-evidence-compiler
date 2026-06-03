@@ -204,7 +204,7 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
         loop = asyncio.get_event_loop()
         view = WebSocketPanelView(ws, loop)
 
-        for persona in ("auditor", "engineer", "adversary"):
+        for persona in ("auditor", "engineer", "adversary", "security_model"):
             await ws.send_json({
                 "type": "panel",
                 "persona": persona,

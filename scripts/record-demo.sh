@@ -128,10 +128,11 @@ cat <<'MULTIFW'
       (CTRL-003 satisfies both SOC 2 CC6.1 and ISO 27001 A.9.2.3)
 [2/6] Generated 1 SPL query (instead of 2 — saved 50% execution time)
 [3/6] Executing via MCP (splunk-official)...
-[4/6] Panel debate (CTRL-003 — Access Control Policy)...
-      Auditor  → FAIL    (MFA not enforced for all users)
-      Engineer → FAIL    (17% bypass rate confirmed)
-      Adversary→ FAIL    (3 privileged accounts: 0 MFA events)
+[4/6] Panel debate (CTRL-003 — Access Control Policy, 4 personas)...
+      Auditor        → FAIL    (MFA not enforced for all users)
+      Engineer       → FAIL    (17% bypass rate confirmed)
+      Adversary      → FAIL    (3 privileged accounts: 0 MFA events)
+      Security Model → FAIL    (service accounts are an attacker pivot point)
 [5/6] Consensus: FAIL — triggers findings in both frameworks
       SOC 2 CC6.1 → FAIL
       ISO 27001 A.9.2.3 → FAIL
@@ -216,7 +217,7 @@ header "Live Dashboard"
 echo -e "\033[1;33mhttps://aec.accessquint.com\033[0m"
 echo
 echo -e "  Pick a control. Hit Run."
-echo -e "  Three vendors debate. Results stream live."
+echo -e "  Four vendors debate. Results stream live."
 echo -e "  No install. No setup. Just a URL."
 echo
 sleep 3
@@ -226,6 +227,6 @@ sleep 3
 # ---------------------------------------------------------------------------
 
 echo
-echo -e "\033[1;32m✓ Three vendors. One command. Audit-ready in 30 seconds.\033[0m"
+echo -e "\033[1;32m✓ Four vendors. One command. Audit-ready in 30 seconds.\033[0m"
 echo
 sleep 2
