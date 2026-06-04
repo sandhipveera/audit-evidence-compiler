@@ -24,6 +24,15 @@ cd "$REPO_DIR"
 # shellcheck disable=SC1091
 source "$REPO_DIR/.venv/bin/activate"
 
+# Load .env so the panel sees HF_TOKEN (Foundation-Sec-8B) and SPLUNK_* — without
+# it the security_model vendor silently drops and the demo records only 3 vendors.
+if [ -f "$REPO_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_DIR/.env"
+  set +a
+fi
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
