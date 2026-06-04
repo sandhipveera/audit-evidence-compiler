@@ -94,8 +94,54 @@ def _build_user_prompt(
     return "".join(parts)
 
 
+def _balanced_object(text: str, start: int) -> str | None:
+    """Return the balanced {...} substring beginning at text[start], or None.
+
+    Braces inside double-quoted strings are ignored.
+    """
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Recover the first balanced {...} object in text that parses as JSON.
+
+    Smaller models (e.g. Foundation-Sec-8B) occasionally wrap their JSON verdict
+    in prose; this recovers it instead of dropping the persona from the panel.
+    """
+    idx = text.find("{")
+    while idx >= 0:
+        candidate = _balanced_object(text, idx)
+        if candidate is not None:
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                pass
+        idx = text.find("{", idx + 1)
+    return None
+
+
 def _parse_critique_json(raw_text: str) -> dict[str, Any]:
-    """Extract JSON from LLM response, handling markdown fences."""
+    """Extract JSON from LLM response, handling markdown fences and prose wrapping."""
     text = raw_text.strip()
     if text.startswith("```"):
         lines = text.split("\n")
@@ -103,7 +149,13 @@ def _parse_critique_json(raw_text: str) -> dict[str, Any]:
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         text = "\n".join(lines)
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        recovered = _extract_json_object(text)
+        if recovered is None:
+            raise
+        return recovered
 
 
 async def _run_persona(
