@@ -18,6 +18,12 @@ gap_report*.xlsx
 out/
 .aec_cache/
 
+# Demo recordings — upload to Drive, don't commit binaries
+demo.gif
+demo.mp4
+demo_small.mp4
+*.cast
+
 # Splunk
 splunk-data/
 splunk-logs/

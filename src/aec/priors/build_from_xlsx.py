@@ -8,7 +8,7 @@ blank xlsx template.
 
 Usage:
     python -m aec.priors.build_from_xlsx \
-        --source "/Users/admin/Documents/AI Projects/accessquint/core-biz" \
+        --source "/path/to/accessquint/core-biz" \
         --out src/aec/priors/catalog.json \
         --template-out src/aec/formatter/templates/audit_findings_blank.xlsx
 """
