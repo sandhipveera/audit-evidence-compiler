@@ -72,11 +72,11 @@ gap_report.xlsx  +  audit_package.md  +  audit_trail.jsonl  → all verifiable v
 
 ## Priors layer
 
-`src/aec/priors/catalog.json` is built once from `~/Documents/AI Projects/accessquint/core-biz/` (local-only path, NOT committed) by running:
+`src/aec/priors/catalog.json` is built once from the AccessQuint vCISO source templates (a local-only directory, NOT committed) by running:
 
 ```bash
 python -m aec.priors.build_from_xlsx \
-  --source "/Users/admin/Documents/AI Projects/accessquint/core-biz" \
+  --source "/path/to/accessquint/core-biz" \
   --out src/aec/priors/catalog.json
 ```
 
