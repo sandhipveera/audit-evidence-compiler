@@ -35,16 +35,35 @@ class FoundationSecAPITransport(Transport):
             {"role": "user", "content": user_prompt},
         ]
 
-        response = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: client.chat.completions.create(
+        def _call():
+            return client.chat.completions.create(
                 model=used_model,
                 messages=messages,
                 max_tokens=1024,
                 temperature=temperature,
-            ),
-        )
-        text = response.choices[0].message.content or ""
+            )
+
+        # The featherless backend occasionally returns a transient error or an
+        # empty body under concurrent load (all four personas fire at once),
+        # which would silently drop this vendor from the panel. Retry briefly so
+        # the panel stays genuinely four-vendor.
+        loop = asyncio.get_event_loop()
+        last_exc: Exception | None = None
+        text = ""
+        for attempt in range(3):
+            try:
+                response = await loop.run_in_executor(None, _call)
+                text = response.choices[0].message.content or ""
+                if text.strip():
+                    break
+            except Exception as exc:  # noqa: BLE001 — retry any transient backend failure
+                last_exc = exc
+            if attempt < 2:
+                await asyncio.sleep(0.5 * (attempt + 1))
+        else:
+            if not text.strip() and last_exc is not None:
+                raise last_exc
+
         return CompletionResult(
             text=text,
             model=used_model,
