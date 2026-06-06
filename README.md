@@ -26,8 +26,8 @@ When you ask "give me SOC 2 CC6.1 evidence from this Splunk instance," you get b
 
 4. **Self-correction on record** — mid-debate, the Auditor persona caught its own setup error (wrong time window against a 2018 dataset), recommended the fix, and the corrected run returned 1,247 real events. That transcript is committed at [`examples/transcript-self-correction.md`](examples/transcript-self-correction.md).
 
-**Live demo:** [https://aec.accessquint.com](https://aec.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time.  
-**Auditor verification:** [https://aec.accessquint.com/verify](https://aec.accessquint.com/verify) — upload `audit_trail.jsonl`, verify the evidence chain hasn't been tampered with.
+**Live demo:** [https://aec3.accessquint.com](https://aec3.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time.  
+**Auditor verification:** [https://aec3.accessquint.com/verify](https://aec3.accessquint.com/verify) — upload `audit_trail.jsonl`, verify the evidence chain hasn't been tampered with.
 
 ---
 
@@ -71,7 +71,7 @@ The Adversary persona proposes follow-up SPL queries to disprove its own initial
 
 Every evidence snapshot is SHA-256-chained to the previous one. The xlsx report carries the chain root in a `Manifest` sheet. `aec verify gap_report.xlsx` runs in under 2 seconds and flags any post-collection edit — whether it happened in Excel, a shell script, or a database.
 
-External auditors verify the chain without installing anything: upload `audit_trail.jsonl` to [aec.accessquint.com/verify](https://aec.accessquint.com/verify) and the page shows exactly which snapshots are intact, when they were collected, and which model produced each one.
+External auditors verify the chain without installing anything: upload `audit_trail.jsonl` to [aec3.accessquint.com/verify](https://aec3.accessquint.com/verify) and the page shows exactly which snapshots are intact, when they were collected, and which model produced each one.
 
 ### 4. It lives inside Splunk's query pipeline
 
@@ -155,8 +155,8 @@ Done in 29s.
 | Resume after crash | `aec_demo --resume <run_id>` |
 | Splunk custom search command | `\| auditcompiler control=CC6.1 mode=summary` |
 | Tamper-evident verification (CLI) | `aec verify gap_report.xlsx --trail audit_trail.jsonl` |
-| **Auditor verification portal** | **[aec.accessquint.com/verify](https://aec.accessquint.com/verify)** |
-| Live web dashboard | [https://aec.accessquint.com](https://aec.accessquint.com) |
+| **Auditor verification portal** | **[aec3.accessquint.com/verify](https://aec3.accessquint.com/verify)** |
+| Live web dashboard | [https://aec3.accessquint.com](https://aec3.accessquint.com) |
 
 ---
 

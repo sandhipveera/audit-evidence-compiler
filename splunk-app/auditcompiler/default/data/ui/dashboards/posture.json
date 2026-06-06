@@ -1,0 +1,251 @@
+{
+  "title": "Compliance Posture",
+  "description": "Live PASS/FAIL/PARTIAL/INSUFFICIENT status across all 36 controls, updated every 4 hours by the AEC scheduled saved searches. Powered by the four-vendor AI panel (Claude · GPT · Gemini · Foundation-Sec-8B).",
+  "version": 2,
+  "dataSources": {
+    "ds_summary_counts": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id | stats count by verdict | appendcols [| makeresults | eval verdict=\"TOTAL\", count=36]",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_latest_verdicts": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict, latest(_time) as last_run_epoch, latest(event_count) as events, latest(root_cause) as root_cause by control_id, framework | eval last_run=strftime(last_run_epoch, \"%Y-%m-%d %H:%M\") | eval verdict_icon=case(verdict=\"PASS\",\"✅ PASS\",verdict=\"PARTIAL\",\"⚠️ PARTIAL\",verdict=\"FAIL\",\"❌ FAIL\",1=1,\"⚫ INSUFFICIENT\") | sort control_id",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_pass_count": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id | where verdict=\"PASS\" | stats count",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_fail_count": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id | where verdict=\"FAIL\" | stats count",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_partial_count": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id | where verdict=\"PARTIAL\" | stats count",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_insufficient_count": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id | where verdict=\"INSUFFICIENT\" | stats count",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_trend": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | timechart span=1d count by consensus useother=f",
+        "queryParameters": {
+          "earliest": "-30d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_framework_coverage": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | stats latest(consensus) as verdict by control_id, framework | stats count as total, count(eval(verdict=\"PASS\")) as passing by framework | eval pct=round(passing/total*100,0).\"% passing\" | table framework, total, passing, pct",
+        "queryParameters": {
+          "earliest": "-90d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_recent_runs": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=auditcompiler_posture | sort -_time | head 20 | eval when=strftime(_time,\"%m/%d %H:%M\") | table when, control_id, framework, consensus, event_count, panel_mode",
+        "queryParameters": {
+          "earliest": "-7d",
+          "latest": "now"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_pass_count": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_pass_count" },
+      "title": "Controls Passing",
+      "options": {
+        "majorColor": "#22c55e",
+        "backgroundColor": "#f0fdf4",
+        "unit": "/ 36",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_fail_count": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_fail_count" },
+      "title": "Controls Failing",
+      "options": {
+        "majorColor": "#ef4444",
+        "backgroundColor": "#fef2f2",
+        "unit": "/ 36",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_partial_count": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_partial_count" },
+      "title": "Partial",
+      "options": {
+        "majorColor": "#f59e0b",
+        "backgroundColor": "#fffbeb",
+        "unit": "/ 36",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_insufficient_count": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_insufficient_count" },
+      "title": "Insufficient Evidence",
+      "options": {
+        "majorColor": "#8b5cf6",
+        "backgroundColor": "#faf5ff",
+        "unit": "/ 36",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_verdict_table": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_latest_verdicts" },
+      "title": "All 36 Controls — Latest Verdicts",
+      "options": {
+        "columnFormat": {
+          "verdict_icon": {
+            "data": "> table | seriesByName('verdict_icon')",
+            "render": "text"
+          }
+        },
+        "tableFormat": {
+          "rowBackgroundColors": "> table | seriesByName('verdict') | matchValue('FAIL', '#fef2f2', 'PARTIAL', '#fffbeb', 'PASS', '#f0fdf4', '#faf5ff')"
+        },
+        "fields": ["control_id", "framework", "verdict_icon", "events", "last_run", "root_cause"],
+        "count": 36
+      }
+    },
+    "viz_trend": {
+      "type": "splunk.line",
+      "dataSources": { "primary": "ds_trend" },
+      "title": "Verdict Trend — Last 30 Days",
+      "options": {
+        "seriesColors": {
+          "PASS": "#22c55e",
+          "PARTIAL": "#f59e0b",
+          "FAIL": "#ef4444",
+          "INSUFFICIENT": "#8b5cf6"
+        },
+        "nullValueDisplay": "zero",
+        "xAxisVisibility": "show",
+        "yAxisVisibility": "show",
+        "legendDisplay": "bottom"
+      }
+    },
+    "viz_framework_coverage": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_framework_coverage" },
+      "title": "Framework Coverage",
+      "options": {
+        "fields": ["framework", "total", "passing", "pct"],
+        "count": 10
+      }
+    },
+    "viz_recent_runs": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_recent_runs" },
+      "title": "Recent Panel Runs",
+      "options": {
+        "fields": ["when", "control_id", "framework", "consensus", "event_count", "panel_mode"],
+        "count": 20
+      }
+    }
+  },
+  "layout": {
+    "type": "absolute",
+    "options": {
+      "width": 1440,
+      "height": 960,
+      "display": "auto-scale"
+    },
+    "structure": [
+      {
+        "item": "viz_pass_count",
+        "type": "block",
+        "position": { "x": 0,   "y": 0,   "w": 340, "h": 130 }
+      },
+      {
+        "item": "viz_fail_count",
+        "type": "block",
+        "position": { "x": 360, "y": 0,   "w": 340, "h": 130 }
+      },
+      {
+        "item": "viz_partial_count",
+        "type": "block",
+        "position": { "x": 720, "y": 0,   "w": 340, "h": 130 }
+      },
+      {
+        "item": "viz_insufficient_count",
+        "type": "block",
+        "position": { "x": 1080,"y": 0,   "w": 340, "h": 130 }
+      },
+      {
+        "item": "viz_verdict_table",
+        "type": "block",
+        "position": { "x": 0,   "y": 150, "w": 900, "h": 480 }
+      },
+      {
+        "item": "viz_trend",
+        "type": "block",
+        "position": { "x": 920, "y": 150, "w": 500, "h": 240 }
+      },
+      {
+        "item": "viz_framework_coverage",
+        "type": "block",
+        "position": { "x": 920, "y": 410, "w": 500, "h": 220 }
+      },
+      {
+        "item": "viz_recent_runs",
+        "type": "block",
+        "position": { "x": 0,   "y": 650, "w": 1420, "h": 280 }
+      }
+    ],
+    "globalInputs": []
+  }
+}

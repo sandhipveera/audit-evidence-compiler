@@ -22,9 +22,9 @@
 | **019 — Web dashboard** | ✅ merged | FastAPI + WebSocket, aec.accessquint.com |
 | **020 — Foundation-Sec-8B (4th persona)** | ✅ merged (PR #18) | HuggingFace Featherless.ai, threat-intel lens, $1K Hosted Models bonus |
 | **021 — SOC Incident Response mode** | ✅ merged (PR #16) | Alert→controls mapping, `/api/incident` webhook, `--mode incident` CLI |
-| **022 — Compliance Posture Dashboard** | ⏳ not started | Splunk Dashboard Studio JSON, 36-control scorecard |
+| **022 — Compliance Posture Dashboard** | ✅ done | Splunk Dashboard Studio JSON, 36 control tiles, trend chart, framework coverage, savedsearches.conf (generated) |
 | **023 — Auditor Verification Portal** | ✅ merged (PR #19) | `/verify` page, drag-and-drop JSONL upload, VERIFIED/TAMPERED banner |
-| Architecture diagram refresh | ⏳ end | Add 4th vendor, verification portal, SOC incident mode, Cloudflare Tunnel |
+| Architecture diagram refresh | ✅ done | 4th vendor, verification portal, SOC incident mode, aec3.accessquint.com URL |
 | README rewrite | ✅ done | Trust-engine framing, 6 differentiators, Foundation-Sec panel |
 | 3-min demo video | ⏳ end | Re-record with lowest_of_four after GPT quota reset |
 | Submission ceremony | ⏳ end | Devpost form using docs/submission-text.md |
