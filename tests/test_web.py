@@ -155,7 +155,7 @@ class TestIncidentEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         assert "CC6.1" in data["controls"]
-        assert "A.9.2.3" in data["controls"]
+        assert "A.8.2" in data["controls"]
         assert "PR.AC-1" in data["controls"]
 
     def test_post_incident_searches_structured_result_fields(self, client):

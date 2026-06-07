@@ -41,7 +41,7 @@ class TestExpandFindingsMultiFramework:
         parsed_refs = [
             {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
              "catalog_fw": "SOC 2", "category": "Access Control"},
-            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+            {"input": "ISO:A.8.2", "display_fw": "ISO 27001", "control_id": "A.8.2",
              "catalog_fw": "ISO 27001", "category": "Access Control"},
             {"input": "NIST-CSF:PR.AC-1", "display_fw": "NIST CSF", "control_id": "PR.AC-1",
              "catalog_fw": "NIST 800-53", "category": "Access Control"},
@@ -56,7 +56,7 @@ class TestExpandFindingsMultiFramework:
 
         refs = [f.audit_reference for f in expanded]
         assert "CC6.1" in refs
-        assert "A.9.2.3" in refs
+        assert "A.8.2" in refs
         assert "PR.AC-1" in refs
 
     def test_finding_ids_unique(self):
@@ -64,7 +64,7 @@ class TestExpandFindingsMultiFramework:
         parsed_refs = [
             {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
              "catalog_fw": "SOC 2", "category": "Access Control"},
-            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+            {"input": "ISO:A.8.2", "display_fw": "ISO 27001", "control_id": "A.8.2",
              "catalog_fw": "ISO 27001", "category": "Access Control"},
         ]
         expanded = expand_findings_multi_framework([base], parsed_refs)
@@ -76,7 +76,7 @@ class TestExpandFindingsMultiFramework:
         parsed_refs = [
             {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
              "catalog_fw": "SOC 2", "category": "Access Control"},
-            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+            {"input": "ISO:A.8.2", "display_fw": "ISO 27001", "control_id": "A.8.2",
              "catalog_fw": "ISO 27001", "category": "Access Control"},
         ]
         expanded = expand_findings_multi_framework([base], parsed_refs)
@@ -88,14 +88,14 @@ class TestExpandFindingsMultiFramework:
         parsed_refs = [
             {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
              "catalog_fw": "SOC 2", "category": "Access Control"},
-            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+            {"input": "ISO:A.8.2", "display_fw": "ISO 27001", "control_id": "A.8.2",
              "catalog_fw": "ISO 27001", "category": "Access Control"},
             {"input": "NIST-CSF:PR.AC-1", "display_fw": "NIST CSF", "control_id": "PR.AC-1",
              "catalog_fw": "NIST CSF", "category": "Access Control"},
         ]
         coverage = {
             "SOC2:CC6.1": ["CTRL-002", "CTRL-003"],
-            "ISO:A.9.2.3": ["CTRL-003", "CTRL-007"],
+            "ISO:A.8.2": ["CTRL-003", "CTRL-007"],
             "NIST-CSF:PR.AC-1": ["CTRL-002", "CTRL-003", "CTRL-007"],
         }
         expanded = expand_findings_multi_framework([base], parsed_refs, coverage)
@@ -108,7 +108,7 @@ class TestMultiFrameworkXlsx:
         parsed_refs = [
             {"input": "SOC2:CC6.1", "display_fw": "SOC 2", "control_id": "CC6.1",
              "catalog_fw": "SOC 2", "category": "Access Control"},
-            {"input": "ISO:A.9.2.3", "display_fw": "ISO 27001", "control_id": "A.9.2.3",
+            {"input": "ISO:A.8.2", "display_fw": "ISO 27001", "control_id": "A.8.2",
              "catalog_fw": "ISO 27001", "category": "Access Control"},
             {"input": "NIST-CSF:PR.AC-1", "display_fw": "NIST CSF", "control_id": "PR.AC-1",
              "catalog_fw": "NIST 800-53", "category": "Access Control"},

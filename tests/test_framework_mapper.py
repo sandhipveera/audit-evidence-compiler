@@ -97,10 +97,10 @@ class TestParseControlRef:
         assert ctrl == "CC6.1"
 
     def test_iso_a923(self):
-        cat_fw, disp_fw, ctrl = parse_control_ref("ISO:A.9.2.3")
+        cat_fw, disp_fw, ctrl = parse_control_ref("ISO:A.8.2")
         assert cat_fw == "ISO 27001"
         assert disp_fw == "ISO 27001"
-        assert ctrl == "A.9.2.3"
+        assert ctrl == "A.8.2"
 
     def test_nist_csf_prac1(self):
         cat_fw, disp_fw, ctrl = parse_control_ref("NIST-CSF:PR.AC-1")
@@ -125,14 +125,14 @@ class TestMapControlsSingleControl:
         assert "SOC2:CC6.1" in result["framework_coverage"]
 
     def test_single_iso_resolves(self):
-        result = map_controls(["ISO:A.9.2.3"], catalog=CATALOG)
+        result = map_controls(["ISO:A.8.2"], catalog=CATALOG)
         assert "CTRL-003" in result["internal_controls"]
         assert "CTRL-007" in result["internal_controls"]
 
 
 class TestMapControlsNoOverlap:
     def test_two_different_categories(self):
-        result = map_controls(["SOC2:CC6.1", "ISO:A.12.4.1"], catalog=CATALOG)
+        result = map_controls(["SOC2:CC6.1", "ISO:A.8.15"], catalog=CATALOG)
         assert "CTRL-003" in result["internal_controls"]
         assert "CTRL-013" in result["internal_controls"]
         assert len(result["shared_controls"]) == 0
@@ -141,7 +141,7 @@ class TestMapControlsNoOverlap:
 class TestMapControlsSharedInternal:
     def test_three_controls_with_shared(self):
         result = map_controls(
-            ["SOC2:CC6.1", "ISO:A.9.2.3", "NIST-CSF:PR.AC-1"],
+            ["SOC2:CC6.1", "ISO:A.8.2", "NIST-CSF:PR.AC-1"],
             catalog=CATALOG,
         )
         assert "CTRL-003" in result["shared_controls"]
@@ -149,7 +149,7 @@ class TestMapControlsSharedInternal:
 
     def test_minimal_spl_fewer_than_controls(self):
         result = map_controls(
-            ["SOC2:CC6.1", "ISO:A.9.2.3", "NIST-CSF:PR.AC-1"],
+            ["SOC2:CC6.1", "ISO:A.8.2", "NIST-CSF:PR.AC-1"],
             catalog=CATALOG,
         )
         total_covered = sum(len(s["covers"]) for s in result["minimal_spl_set"])
@@ -174,7 +174,7 @@ class TestMapConcept:
         assert len(result["minimal_spl_set"]) >= 1
         assert [ref["control_id"] for ref in result["parsed_refs"]] == [
             "CC6.1",
-            "A.9.2.3",
+            "A.8.2",
             "PR.AC-1",
         ]
 
@@ -192,7 +192,7 @@ class TestMapAsk:
         )
         assert [ref["input"] for ref in result["parsed_refs"]] == [
             "SOC2:CC6.1",
-            "ISO:A.9.2.3",
+            "ISO:A.8.2",
             "NIST-CSF:PR.AC-1",
         ]
         assert "CTRL-003" in result["shared_controls"]

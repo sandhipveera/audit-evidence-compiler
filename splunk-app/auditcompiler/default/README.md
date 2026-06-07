@@ -24,7 +24,7 @@ index=botsv3 sourcetype=o365:management:activity action=Login
 
 | Argument    | Required | Default | Description                                  |
 |-------------|----------|---------|----------------------------------------------|
-| `control`   | Yes      | —       | Framework control ID (e.g., CC6.1, A.9.2.1)  |
+| `control`   | Yes      | —       | Framework control ID (e.g., CC6.1, A.5.16)  |
 | `framework` | No       | SOC2    | Framework: SOC2, ISO27001, NIST_CSF           |
 | `mode`      | No       | enrich  | `enrich` (per-row) or `summary` (single row)  |
 

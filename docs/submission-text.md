@@ -39,7 +39,7 @@ The Adversary doesn't just critique — it proposes follow-up SPL queries. Those
 
 4. **Native Splunk search command** — `| auditcompiler control=CC6.1` runs the four-vendor debate inline, returning `verdict`, `severity`, and `root_cause` as columns in Splunk's results table. Deployable as a Splunkbase app.
 
-5. **Multi-framework efficiency** — `--control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"` in one prompt. The agent finds the minimal SPL set that covers all three frameworks simultaneously and produces a cross-framework gap report.
+5. **Multi-framework efficiency** — `--control "SOC2:CC6.1+ISO:A.8.2+NIST-CSF:PR.AC-1"` in one prompt. The agent finds the minimal SPL set that covers all three frameworks simultaneously and produces a cross-framework gap report.
 
 6. **SOC incident response integration** — When a Splunk alert fires (brute force, MFA bypass, privilege escalation), the agent maps the alert to affected compliance controls, runs the four-vendor panel debate, and produces an incident-linked audit report automatically in the same window the SOC analyst is triaging.
 

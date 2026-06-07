@@ -1,7 +1,7 @@
 {
-  "control_id": "A.9.2.1",
+  "control_id": "A.5.16",
   "framework": "ISO27001",
-  "snapshot_name": "iso27001-a921",
+  "snapshot_name": "iso27001-a516",
   "fetched_at": "2026-05-24T12:00:00Z",
   "time_range": { "earliest": "-30d", "latest": "now" },
   "search": "index=botsv3 sourcetype=wineventlog EventCode=4720 OR EventCode=4722 OR EventCode=4728 | stats count by action, approver, department | eval approved=if(isnotnull(approver),\"yes\",\"no\")",
