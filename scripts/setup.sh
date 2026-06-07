@@ -275,7 +275,9 @@ if [[ -n "$LICENSE_FILE" && -f "$LICENSE_FILE" ]]; then
     docker cp "$LICENSE_FILE" aec-splunk:/tmp/splunk.lic
     sp add licenses /tmp/splunk.lic -auth "admin:${SPLUNK_PASSWORD}" | grep -i "license\|error" || true
     ok "License applied — restarting Splunk..."
-    sp restart -auth "admin:${SPLUNK_PASSWORD}" > /dev/null 2>&1 &
+    # NB: `splunk restart` rejects -auth on Splunk 10.x (prints usage, stops
+    # splunkd without restarting). Restart without it.
+    sp restart > /dev/null 2>&1 &
     sleep 20
     wait_for_splunk 120 || warn "Splunk slow to restart — continuing anyway"
     ok "Splunk restarted with developer license"
