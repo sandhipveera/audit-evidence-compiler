@@ -402,7 +402,7 @@ _CURATED_SCENARIOS = {
         "grade": "A-", "vq": "Can a board trust AI-generated evidence — and prove it wasn't altered?",
         "posture": [
             {"fw": "SOC 2", "id": "CC4.1", "coverage": 100, "strength": "Strong", "verdict": "PASS"},
-            {"fw": "ISO 27001", "id": "A.12.4.1", "coverage": 98, "strength": "Strong", "verdict": "PASS"},
+            {"fw": "ISO 27001", "id": "A.8.15", "coverage": 98, "strength": "Strong", "verdict": "PASS"},
             {"fw": "NIST 800-53", "id": "AU-9", "coverage": 97, "strength": "Established", "verdict": "PASS"},
             {"fw": "COBIT", "id": "MEA03", "coverage": 95, "strength": "Established", "verdict": "PASS"},
         ],
@@ -414,7 +414,7 @@ _CURATED_SCENARIOS = {
              "refs": "SOC 2 CC4.1 · NIST 800-53 AU-9",
              "rem": "Maintain the four-vendor panel; single-vendor fallback is logged and flagged."},
             {"title": "Tampering is provable — any edit breaks the SHA-256 chain", "impact": "Medium",
-             "refs": "ISO 27001 A.12.4.1",
+             "refs": "ISO 27001 A.8.15",
              "rem": "Publish the chain root with each report; auditors re-verify at /verify."},
         ],
         "_source": "curated — not yet in GRC sheets",
