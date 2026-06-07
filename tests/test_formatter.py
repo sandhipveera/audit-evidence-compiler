@@ -56,7 +56,7 @@ def _make_fixtures() -> list[GapFinding]:
             finding_id="FIND-002",
             severity="High",
             framework="ISO 27001",
-            audit_reference="A.12.4.1",
+            audit_reference="A.8.15",
             finding_description="Audit logs not retained for 12 months",
             finding_category="Logging & Monitoring",
             root_cause="Retention policy set to 30 days",

@@ -65,10 +65,10 @@ def list_controls():
     label_map = {
         "soc2-cc61": {"control_id": "CC6.1", "framework": "SOC 2", "label": "CC6.1 — MFA enforcement"},
         "soc2-cc72": {"control_id": "CC7.2", "framework": "SOC 2", "label": "CC7.2 — Incident response"},
-        "iso27001-a921": {
-            "control_id": "A.9.2.1",
+        "iso27001-a516": {
+            "control_id": "A.5.16",
             "framework": "ISO 27001",
-            "label": "A.9.2.1 — User registration",
+            "label": "A.5.16 — Identity management",
         },
         "soc2-cc61-q2": {
             "control_id": "CC6.1",
@@ -155,9 +155,9 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
             "CC7.2: The entity monitors system components for anomalies indicative "
             "of malicious acts, natural disasters, and errors."
         ),
-        "A.9.2.1": (
-            "A.9.2.1: User registration and de-registration — a formal process "
-            "shall be implemented to enable assignment of access rights."
+        "A.5.16": (
+            "A.5.16: Identity management — the full life cycle of identities shall "
+            "be managed to enable assignment of access rights and accountability."
         ),
     }
     control_text = control_texts.get(control_id, f"Control {control_id}")

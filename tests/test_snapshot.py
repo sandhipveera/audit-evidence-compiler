@@ -73,7 +73,7 @@ class TestFetchSnapshotLive:
         assert mock_client.search.call_args.kwargs["latest"] == "2018-08-15"
 
     def test_live_iso_control_inferred(self, mock_client):
-        result = fetch_snapshot("A.9.2.1", client=mock_client, live=True, use_cache=False)
+        result = fetch_snapshot("A.5.16", client=mock_client, live=True, use_cache=False)
         assert result["framework"] == "ISO27001"
 
     def test_live_nist_csf_control_inferred(self, mock_client):
@@ -98,7 +98,7 @@ class TestFetchSnapshotSample:
             fetch_snapshot("XX.99", live=False)
 
     def test_all_sample_controls_load(self):
-        for control_id in ["CC6.1", "CC7.2", "A.9.2.1"]:
+        for control_id in ["CC6.1", "CC7.2", "A.5.16"]:
             result = fetch_snapshot(control_id, live=False)
             assert result["control_id"] == control_id
 

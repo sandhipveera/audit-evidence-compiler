@@ -28,7 +28,7 @@ SPL_BY_CONTROL: dict[str, str] = {
         "| stats count by severity, status, time_to_respond "
         '| eval response_sla=if(time_to_respond<=240,"met","breached")'
     ),
-    "A.9.2.1": (
+    "A.5.16": (
         "index=botsv3 sourcetype=wineventlog EventCode=4720 OR EventCode=4722 OR EventCode=4728 "
         "| stats count by action, approver, department "
         '| eval approved=if(isnotnull(approver),"yes","no")'
@@ -38,7 +38,7 @@ SPL_BY_CONTROL: dict[str, str] = {
 SAMPLE_NAME_BY_CONTROL: dict[str, str] = {
     "CC6.1": "soc2-cc61",
     "CC7.2": "soc2-cc72",
-    "A.9.2.1": "iso27001-a921",
+    "A.5.16": "iso27001-a516",
 }
 
 

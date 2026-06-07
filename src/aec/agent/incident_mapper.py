@@ -10,25 +10,25 @@ from datetime import datetime, timezone
 from typing import Any
 
 ALERT_TO_CONTROLS: dict[str, list[str]] = {
-    "mfa": ["CC6.1", "A.9.2.3", "PR.AC-1"],
+    "mfa": ["CC6.1", "A.8.2", "PR.AC-1"],
     "login": ["CC6.1", "CC7.2"],
-    "privilege": ["CC6.1", "A.9.2.3"],
+    "privilege": ["CC6.1", "A.8.2"],
     "ransomware": ["CC7.2", "RC.RP-1"],
-    "data_exfil": ["CC6.1", "A.9.2.3"],
-    "data exfil": ["CC6.1", "A.9.2.3"],
+    "data_exfil": ["CC6.1", "A.8.2"],
+    "data exfil": ["CC6.1", "A.8.2"],
     "anomal": ["CC7.2"],
     "brute": ["CC6.1", "CC7.2"],
     "lateral": ["CC6.1", "CC7.2"],
     "phish": ["CC6.1", "CC7.2"],
-    "exfiltrat": ["CC6.1", "A.9.2.3"],
+    "exfiltrat": ["CC6.1", "A.8.2"],
     "unauthori": ["CC6.1", "CC7.2"],
 }
 
 CONTROL_TO_SAMPLE: dict[str, str] = {
     "CC6.1": "soc2-cc61",
     "CC7.2": "soc2-cc72",
-    "A.9.2.1": "iso27001-a921",
-    "A.9.2.3": "iso27001-a921",
+    "A.5.16": "iso27001-a516",
+    "A.8.2": "iso27001-a516",
     "PR.AC-1": "soc2-cc61",
     "RC.RP-1": "soc2-cc72",
 }
@@ -43,11 +43,11 @@ CONTROL_TEXTS: dict[str, str] = {
         "CC7.2: The entity monitors system components for anomalies indicative "
         "of malicious acts, natural disasters, and errors."
     ),
-    "A.9.2.1": (
-        "A.9.2.1: User registration and de-registration — a formal process "
-        "shall be implemented to enable assignment of access rights."
+    "A.5.16": (
+        "A.5.16: Identity management — the full life cycle of identities shall "
+        "be managed to enable assignment of access rights and accountability."
     ),
-    "A.9.2.3": "A.9.2.3: Management of privileged access rights.",
+    "A.8.2": "A.8.2: Privileged access rights — allocation and use shall be restricted and managed.",
     "PR.AC-1": "PR.AC-1: Identities and credentials are managed.",
     "RC.RP-1": "RC.RP-1: Response plans are executed during or after an incident.",
 }
