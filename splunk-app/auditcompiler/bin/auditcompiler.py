@@ -185,7 +185,7 @@ class AuditCompilerCommand(EventingCommand):
 
     control = Option(
         require=True,
-        doc="Framework control ID (e.g., CC6.1, A.9.2.1, DE.CM-1)",
+        doc="Framework control ID (e.g., CC6.1, A.5.16, DE.CM-1)",
     )
     framework = Option(
         default="SOC2",

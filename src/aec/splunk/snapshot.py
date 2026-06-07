@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,7 @@ SPL_BY_CONTROL: dict[str, str] = {
         "| stats count by severity, status, time_to_respond "
         '| eval response_sla=if(time_to_respond<=240,"met","breached")'
     ),
-    "A.9.2.1": (
+    "A.5.16": (
         "index=botsv3 sourcetype=wineventlog EventCode=4720 OR EventCode=4722 OR EventCode=4728 "
         "| stats count by action, approver, department "
         '| eval approved=if(isnotnull(approver),"yes","no")'
@@ -37,7 +38,7 @@ SPL_BY_CONTROL: dict[str, str] = {
 SAMPLE_NAME_BY_CONTROL: dict[str, str] = {
     "CC6.1": "soc2-cc61",
     "CC7.2": "soc2-cc72",
-    "A.9.2.1": "iso27001-a921",
+    "A.5.16": "iso27001-a516",
 }
 
 
@@ -195,11 +196,26 @@ def derive_aggregations(result: dict[str, Any]) -> dict[str, float | int]:
     return aggregations
 
 
+
+# NIST CSF 2.0 functions (incl. the new Govern) → these prefixes are CSF, not 800-53.
+_CSF_PREFIXES = ("GV.", "ID.", "PR.", "DE.", "RS.", "RC.")
+# COBIT 2019 objective domains.
+_COBIT_PREFIXES = ("APO", "BAI", "DSS", "MEA", "EDM")
+
+
 def _infer_framework(control_id: str) -> str:
-    if control_id.startswith("CC"):
+    cid = control_id.strip().upper()
+    # SOC 2 Trust Services Criteria: CC1.x–CC9.x plus A1.x/C1.x/PI1.x/P1.x category prefixes.
+    if cid.startswith("CC") or re.match(r"^(A1|C1|PI1|P\d)\.", cid):
         return "SOC2"
-    if control_id.startswith("A."):
+    # ISO/IEC 27001 Annex A: "A." followed by a digit (A.5.15, A.8.24) — distinct from SOC2 A1.x.
+    if re.match(r"^A\.\d", cid):
         return "ISO27001"
-    if control_id.startswith("PR.") or control_id.startswith("DE.") or control_id.startswith("RS."):
+    if cid.startswith(_CSF_PREFIXES):
         return "NIST_CSF"
+    if cid.startswith(_COBIT_PREFIXES):
+        return "COBIT"
+    # NIST 800-53 Rev 5: family abbreviation + hyphen + number (AC-2, IA-2, AU-6, SC-13).
+    if re.match(r"^[A-Z]{2}-\d", cid):
+        return "NIST_800_53"
     return "UNKNOWN"

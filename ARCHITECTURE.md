@@ -11,7 +11,59 @@ Together: the agent shows its work, and the work can't be silently rewritten.
 
 ## Pipeline (8 nodes + 2 guards, 1 graph)
 
-See [`architecture.mmd`](architecture.mmd) for the rendered diagram.
+```mermaid
+flowchart TD
+    O([Operator prompt:<br/>'SOC 2 CC6.1 evidence']) --> CM
+    ALERT([Splunk Alert webhook<br/>brute force / MFA bypass]) --> INC[Incident Mapper<br/>alert → controls]
+    INC --> CM
+
+    subgraph Agent[LangGraph Evidence Agent]
+        CM[1. Control Mapper<br/>request → framework controls] --> SG[2. SPL Generator<br/>draft evidence queries]
+        SG --> SV[3. SPL Validator<br/>policy guard]
+        SV --> MCPR[4a. MCP Router<br/>runtime transport switch]
+        MCPR --> SE[4b. Splunk Executor]
+        SE --> EN[5. Evidence Normalizer<br/>raw rows → EvidenceSnapshot]
+
+        EN --> PANEL
+
+        subgraph PANEL[6. Four-Vendor Panel Debate · parallel]
+            direction LR
+            AUD[Auditor<br/>Claude Sonnet 4<br/>compliance lens] -.parallel.- ENG[Engineer<br/>GPT-5.5 via Codex<br/>statistical lens]
+            ENG -.parallel.- ADV[Adversary<br/>Gemini 2.5 Pro<br/>red-team lens]
+            ADV -.parallel.- SEC[Security Model<br/>Foundation-Sec-8B<br/>threat-intel / ATT&CK]
+        end
+
+        PANEL --> CON[7. Consensus<br/>lowest-of-four rule]
+        CON --> FM[8. Evidence Formatter<br/>verdict · gap · remediation]
+    end
+
+    CAT[(Control Evidence Catalog<br/>SOC 2 / NIST / ISO / COBIT<br/>36 controls × 5 frameworks)] -.lookup.-> CM
+    HINT[(SPL Hints<br/>by control category)] -.lookup.-> SG
+    POLICY[(Execution Policy<br/>allowed indexes · forbidden cmds)] -.validate.-> SV
+
+    MCPR -->|primary| MCP_OFF[(splunk-official<br/>MCP Server)]
+    MCPR -->|fallback| MCP_LH[(livehybrid<br/>MCP Server)]
+    MCP_OFF <-->|MCP tool calls| SPL[(Splunk Enterprise<br/>BOTS v3 dataset<br/>1.7M events)]
+    MCP_LH <-->|MCP tool calls| SPL
+    SE -.->|REST API fallback| SPL
+    SE -.->|sample fallback| SAMPLES[(Sample JSON files<br/>samples/*.json)]
+
+    ADV -.recommended counter-search.-> SE
+
+    FM --> REVIEW{Human Review Gate<br/>auto / interactive}
+    REVIEW -->|approve| MERKLE[Merkle Chain Sealer<br/>SHA-256 chained]
+    MERKLE --> OUT([gap_report.xlsx<br/>+ Manifest sheet w/ root hash])
+    MERKLE --> JSONL([audit_trail.jsonl<br/>panel transcripts + prev_hash])
+    MERKLE --> MD([audit_memo.md + transcript.md])
+
+    JSONL -.CLI verify.-> VER[aec verify<br/>recompute chain]
+    OUT -.CLI verify.-> VER
+    JSONL -.web upload.-> PORTAL[Auditor Verification Portal<br/>aec3.accessquint.com/verify<br/>VERIFIED / TAMPERED banner]
+
+    SEC -.->|HuggingFace Inference API<br/>Featherless.ai provider| HF[(fdtn-ai/<br/>Foundation-Sec-8B-Instruct)]
+```
+
+A linear text view of the same pipeline:
 
 ```
 operator prompt

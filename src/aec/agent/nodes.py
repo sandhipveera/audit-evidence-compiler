@@ -8,6 +8,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from rich.console import Console
 
@@ -32,13 +33,29 @@ def _timed(node_name: str, state: dict, patch: dict) -> dict:
     return patch
 
 
+@lru_cache(maxsize=1)
+def _catalog() -> dict:
+    """Load the (Excel-derived, crosswalk-applied) control catalog. Cached."""
+    try:
+        from importlib.resources import files
+        return json.loads((files("aec.priors") / "catalog.json").read_text())
+    except Exception:
+        return {}
+
+
+def _resolve_control(control_id: str) -> dict:
+    """Look up a real framework control ID (e.g. CC6.1) in the catalog crosswalk."""
+    return (_catalog().get("control_id_index") or {}).get(control_id, {})
+
+
 def control_mapper(state: dict) -> dict:
-    """Resolve control_id to framework + SPL hints."""
+    """Resolve control_id to framework + SPL hints + cross-framework mapping."""
     t0 = time.monotonic()
     control_id = state["control_id"]
 
     from aec.splunk.snapshot import SPL_BY_CONTROL, _infer_framework
 
+    resolved = _resolve_control(control_id)
     framework = _infer_framework(control_id)
     spl_hint = SPL_BY_CONTROL.get(control_id, f"index=main control_id={control_id}")
 
@@ -46,6 +63,8 @@ def control_mapper(state: dict) -> dict:
         control_id=control_id,
         framework=framework,
         spl_hint=spl_hint,
+        control_family=resolved.get("control_family", ""),
+        framework_control_ids=resolved.get("framework_control_ids", {}),
     )
     elapsed = int((time.monotonic() - t0) * 1000)
     console.print(
@@ -198,9 +217,9 @@ def _control_text_for(control_id: str) -> str:
             "CC7.2: The entity monitors system components for anomalies indicative "
             "of malicious acts, natural disasters, and errors."
         ),
-        "A.9.2.1": (
-            "A.9.2.1: User registration and de-registration — a formal process "
-            "shall be implemented to enable assignment of access rights."
+        "A.5.16": (
+            "A.5.16: Identity management — the full life cycle of identities shall "
+            "be managed to enable assignment of access rights and accountability."
         ),
     }
     return texts.get(control_id, f"Control {control_id}")

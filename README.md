@@ -91,7 +91,7 @@ When a Splunk alert fires (brute force, MFA bypass, privilege escalation), the a
 # Splunk alert action webhook triggers:
 echo '{"alert_name": "MFA Bypass Detected — 23 accounts", "severity": "high"}' \
   | aec_demo --mode incident --alert-json -
-# → Controls implicated: CC6.1, A.9.2.3, PR.AC-1
+# → Controls implicated: CC6.1, A.8.2, PR.AC-1
 # → Four-vendor panel debate running...
 # → Incident compliance report: out/incident_<id>.md
 ```
@@ -101,7 +101,7 @@ Wired to Splunk's native alert action system via webhook. When Splunk fires, the
 ### 6. One prompt covers multiple compliance frameworks simultaneously
 
 ```bash
-aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"
+aec_demo --control "SOC2:CC6.1+ISO:A.8.2+NIST-CSF:PR.AC-1"
 # [1/6] Mapping 3 framework controls → 2 unique internal controls
 #       (CTRL-003 satisfies all 3; saved 33% execution time)
 # [5/6] Consensus: FAIL on CTRL-003 → triggers findings in all 3 frameworks
@@ -149,7 +149,7 @@ Done in 29s.
 | Counter-evidence loop (2-round debate) | enabled by default; `--no-recurrence` to skip |
 | Drift detection (two audit windows) | `aec_demo --control CC6.1 --compare soc2-cc61-q2` |
 | LangGraph orchestration + HITL gates | `aec_demo --control CC6.1 --review interactive` |
-| Multi-framework mapping | `aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3"` |
+| Multi-framework mapping | `aec_demo --control "SOC2:CC6.1+ISO:A.8.2"` |
 | Natural-language control resolution | `aec_demo --ask "access control evidence for SOC 2 and ISO"` |
 | **SOC incident response mode** | **`aec_demo --mode incident --alert-json alert.json`** |
 | Resume after crash | `aec_demo --resume <run_id>` |

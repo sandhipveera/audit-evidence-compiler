@@ -1,6 +1,6 @@
 """Cross-framework control mapper — resolves mixed-framework prompts to internal controls.
 
-Given a list of framework-qualified control references (e.g. "SOC2:CC6.1", "ISO:A.9.2.3"),
+Given a list of framework-qualified control references (e.g. "SOC2:CC6.1", "ISO:A.8.2"),
 finds the minimal set of internal controls and SPL queries that cover all of them.
 """
 from __future__ import annotations
@@ -47,10 +47,10 @@ CONTROL_REF_TO_CATEGORY: dict[str, str] = {
     "CC6.3": "Access Control",
     "CC7.2": "Logging & Monitoring",
     "CC7.3": "Logging & Monitoring",
-    "A.9.2.1": "Access Control",
-    "A.9.2.3": "Access Control",
-    "A.12.4.1": "Logging & Monitoring",
-    "A.12.6.1": "Risk Management",
+    "A.5.16": "Access Control",
+    "A.8.2": "Access Control",
+    "A.8.15": "Logging & Monitoring",
+    "A.8.8": "Risk Management",
     "PR.AC-1": "Access Control",
     "PR.AC-4": "Access Control",
     "DE.CM-1": "Logging & Monitoring",
@@ -66,10 +66,10 @@ CONTROL_REF_TO_INTERNAL_IDS: dict[tuple[str, str], list[str]] = {
     ("SOC 2", "CC6.3"): ["CTRL-003", "CTRL-024"],
     ("SOC 2", "CC7.2"): ["CTRL-014", "CTRL-015"],
     ("SOC 2", "CC7.3"): ["CTRL-015", "CTRL-016"],
-    ("ISO 27001", "A.9.2.1"): ["CTRL-020", "CTRL-023"],
-    ("ISO 27001", "A.9.2.3"): ["CTRL-003", "CTRL-007"],
-    ("ISO 27001", "A.12.4.1"): ["CTRL-013", "CTRL-015"],
-    ("ISO 27001", "A.12.6.1"): ["CTRL-001", "CTRL-008"],
+    ("ISO 27001", "A.5.16"): ["CTRL-020", "CTRL-023"],
+    ("ISO 27001", "A.8.2"): ["CTRL-003", "CTRL-007"],
+    ("ISO 27001", "A.8.15"): ["CTRL-013", "CTRL-015"],
+    ("ISO 27001", "A.8.8"): ["CTRL-001", "CTRL-008"],
     ("NIST CSF", "PR.AC-1"): ["CTRL-002", "CTRL-003", "CTRL-007"],
     ("NIST CSF", "PR.AC-4"): ["CTRL-003", "CTRL-020"],
     ("NIST CSF", "DE.CM-1"): ["CTRL-014", "CTRL-015"],
@@ -99,32 +99,32 @@ CONCEPT_TO_CATEGORY: dict[str, str] = {
 CONCEPT_FRAMEWORK_DEFAULT_REFS: dict[str, dict[str, str]] = {
     "access-control": {
         "SOC 2": "CC6.1",
-        "ISO 27001": "A.9.2.3",
+        "ISO 27001": "A.8.2",
         "NIST CSF": "PR.AC-1",
         "NIST 800-53": "PR.AC-1",
         "COBIT": "DS5.3",
     },
     "logging": {
         "SOC 2": "CC7.2",
-        "ISO 27001": "A.12.4.1",
+        "ISO 27001": "A.8.15",
         "NIST CSF": "DE.CM-1",
         "NIST 800-53": "DE.CM-1",
         "COBIT": "DS5.5",
     },
     "monitoring": {
         "SOC 2": "CC7.2",
-        "ISO 27001": "A.12.4.1",
+        "ISO 27001": "A.8.15",
         "NIST CSF": "DE.CM-1",
         "NIST 800-53": "DE.CM-1",
         "COBIT": "DS5.5",
     },
     "risk-management": {
-        "ISO 27001": "A.12.6.1",
+        "ISO 27001": "A.8.8",
         "NIST CSF": "ID.RA-1",
         "NIST 800-53": "ID.RA-1",
     },
     "patch-management": {
-        "ISO 27001": "A.12.6.1",
+        "ISO 27001": "A.8.8",
         "NIST CSF": "ID.RA-1",
         "NIST 800-53": "ID.RA-1",
     },
@@ -201,7 +201,7 @@ def map_controls(
 ) -> dict[str, Any]:
     """Map framework-qualified control refs to internal controls and minimal SPL set.
 
-    Input:  ["SOC2:CC6.1", "ISO:A.9.2.3", "NIST-CSF:PR.AC-1"]
+    Input:  ["SOC2:CC6.1", "ISO:A.8.2", "NIST-CSF:PR.AC-1"]
     Output: {
         "internal_controls": ["CTRL-003", ...],
         "framework_coverage": {"SOC2:CC6.1": ["CTRL-003", ...], ...},

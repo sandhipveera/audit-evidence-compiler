@@ -6,7 +6,7 @@ Usage:
     aec_demo --sample soc2-cc61 --no-llm
     aec_demo --control CC6.1 --review interactive
     aec_demo --control CC6.1 --resume <run_id>
-    aec_demo --control "SOC2:CC6.1+ISO:A.9.2.3+NIST-CSF:PR.AC-1"
+    aec_demo --control "SOC2:CC6.1+ISO:A.8.2+NIST-CSF:PR.AC-1"
     aec_demo --ask "Show access control evidence across SOC 2, ISO 27001, and NIST CSF"
     aec_demo --concept access-control --frameworks "SOC2,ISO,NIST-CSF"
     aec_demo list-checkpoints
@@ -118,7 +118,7 @@ def _sample_control(sample_name: str) -> str | None:
     mapping = {
         "soc2-cc61": "CC6.1",
         "soc2-cc72": "CC7.2",
-        "iso27001-a921": "A.9.2.1",
+        "iso27001-a516": "A.5.16",
     }
     return mapping.get(sample_name)
 
@@ -192,9 +192,9 @@ def _control_text_for(control_id: str) -> str:
             "disasters, and errors affecting the entity's ability to meet its objectives; "
             "anomalies are analyzed to determine whether they represent security events."
         ),
-        "A.9.2.1": (
-            "A.9.2.1: User registration and de-registration — a formal user registration "
-            "and de-registration process shall be implemented to enable assignment of access rights."
+        "A.5.16": (
+            "A.5.16: Identity management — the full life cycle of identities shall be managed, "
+            "including registration, de-registration, and assignment of access rights."
         ),
     }
     return texts.get(control_id, f"Control {control_id}")
@@ -1470,7 +1470,7 @@ def main() -> None:
 
     parser.add_argument(
         "--control",
-        help="Control ID (e.g., CC6.1, A.9.2.1, PR.AC-1)",
+        help="Control ID (e.g., CC6.1, A.5.16, PR.AC-1)",
     )
     parser.add_argument(
         "--window",

@@ -1,0 +1,283 @@
+{
+  "_meta": {
+    "purpose": "Sanitized executive-report priors for the Tessera demo. Distilled from the AccessQuint vCISO practice. NO raw client spreadsheet rows are present; this is the only artifact that goes public.",
+    "source": "AccessQuint vCISO Core-Biz Templates (sanitized)",
+    "generator": "python -m aec.priors.build_from_xlsx --source <core-biz> --exec-out web/static/exec_priors.json",
+    "version": "0.2.0",
+    "license": "Apache-2.0"
+  },
+  "scenarios": {
+    "prep": {
+      "grade": "D",
+      "posture": [
+        {
+          "fw": "SOC 2",
+          "id": "CC6.1",
+          "coverage": 60,
+          "strength": "Developing",
+          "verdict": "PARTIAL"
+        },
+        {
+          "fw": "NIST CSF",
+          "id": "PR.AA-01",
+          "coverage": 58,
+          "strength": "Developing",
+          "verdict": "FAIL"
+        },
+        {
+          "fw": "ISO 27001",
+          "id": "A.5.15",
+          "coverage": 22,
+          "strength": "Established",
+          "verdict": "FAIL"
+        }
+      ],
+      "maturity": {
+        "prev": {
+          "label": "2026-01",
+          "score": 2.3
+        },
+        "now": {
+          "label": "2026-04",
+          "score": 2.5
+        },
+        "tag": "Risk trending down across KRIs"
+      },
+      "findings": [
+        {
+          "title": "Vendor Risk \u2014 8 open findings",
+          "impact": "Critical",
+          "mix": "3 Critical, 1 High, 1 Medium, 3 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Revise procedure and train staff"
+        },
+        {
+          "title": "Access Control \u2014 7 open findings",
+          "impact": "Critical",
+          "mix": "2 Critical, 1 High, 3 Medium, 1 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Update control and evidence"
+        },
+        {
+          "title": "Incident Response \u2014 7 open findings",
+          "impact": "Critical",
+          "mix": "2 Critical, 3 High, 1 Medium, 1 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Revise procedure and train staff"
+        },
+        {
+          "title": "Logging & Monitoring \u2014 2 open findings",
+          "impact": "Critical",
+          "mix": "1 Critical, 1 Low",
+          "refs": "NIST CSF",
+          "rem": "Revise procedure and train staff"
+        }
+      ],
+      "control_ids": {
+        "SOC 2": "CC6.1",
+        "ISO 27001": "A.5.15",
+        "NIST CSF": "PR.AA-01",
+        "NIST 800-53": "AC-1",
+        "COBIT": "DSS05.04"
+      },
+      "_source": "distilled from GRC trackers (aggregates only \u2014 no raw client rows)",
+      "vq": "Who can access what, how is access provisioned/reviewed, and is MFA enforced?"
+    },
+    "drift": {
+      "grade": "D",
+      "posture": [
+        {
+          "fw": "SOC 2",
+          "id": "CC7.2",
+          "coverage": 60,
+          "strength": "Developing",
+          "verdict": "PARTIAL"
+        },
+        {
+          "fw": "NIST CSF",
+          "id": "DE.CM-01",
+          "coverage": 58,
+          "strength": "Developing",
+          "verdict": "FAIL"
+        },
+        {
+          "fw": "ISO 27001",
+          "id": "A.8.15",
+          "coverage": 22,
+          "strength": "Established",
+          "verdict": "FAIL"
+        }
+      ],
+      "maturity": {
+        "prev": {
+          "label": "2026-01",
+          "score": 2.3
+        },
+        "now": {
+          "label": "2026-04",
+          "score": 2.5
+        },
+        "tag": "Risk trending down across KRIs \u00b7 two-window drift"
+      },
+      "findings": [
+        {
+          "title": "Vendor Risk \u2014 8 open findings",
+          "impact": "Critical",
+          "mix": "3 Critical, 1 High, 1 Medium, 3 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Revise procedure and train staff"
+        },
+        {
+          "title": "Access Control \u2014 7 open findings",
+          "impact": "Critical",
+          "mix": "2 Critical, 1 High, 3 Medium, 1 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Update control and evidence"
+        },
+        {
+          "title": "Incident Response \u2014 7 open findings",
+          "impact": "Critical",
+          "mix": "2 Critical, 3 High, 1 Medium, 1 Low",
+          "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
+          "rem": "Revise procedure and train staff"
+        },
+        {
+          "title": "Logging & Monitoring \u2014 2 open findings",
+          "impact": "Critical",
+          "mix": "1 Critical, 1 Low",
+          "refs": "NIST CSF",
+          "rem": "Revise procedure and train staff"
+        }
+      ],
+      "control_ids": {
+        "SOC 2": "CC7.2",
+        "ISO 27001": "A.8.15",
+        "NIST CSF": "DE.CM-01",
+        "NIST 800-53": "AU-6",
+        "COBIT": "DSS01.03"
+      },
+      "_source": "distilled from GRC trackers (aggregates only \u2014 no raw client rows)",
+      "vq": "Did a control that passed earlier quietly regress between assessments?"
+    },
+    "trust": {
+      "grade": "A-",
+      "vq": "Can a board trust AI-generated evidence \u2014 and prove it wasn't altered?",
+      "posture": [
+        {
+          "fw": "SOC 2",
+          "id": "CC4.1",
+          "coverage": 100,
+          "strength": "Strong",
+          "verdict": "PASS"
+        },
+        {
+          "fw": "ISO 27001",
+          "id": "A.8.15",
+          "coverage": 98,
+          "strength": "Strong",
+          "verdict": "PASS"
+        },
+        {
+          "fw": "NIST 800-53",
+          "id": "AU-9",
+          "coverage": 97,
+          "strength": "Established",
+          "verdict": "PASS"
+        },
+        {
+          "fw": "COBIT",
+          "id": "MEA03",
+          "coverage": 95,
+          "strength": "Established",
+          "verdict": "PASS"
+        }
+      ],
+      "maturity": {
+        "prev": {
+          "label": "manual review",
+          "score": 2.5
+        },
+        "now": {
+          "label": "cross-checked + sealed",
+          "score": 4.2
+        },
+        "tag": "Four-model cross-check + Merkle proof"
+      },
+      "findings": [
+        {
+          "title": "Every verdict cross-checked by four independent vendors",
+          "impact": "Medium",
+          "refs": "SOC 2 CC4.1 \u00b7 NIST 800-53 AU-9",
+          "rem": "Maintain the four-vendor panel; single-vendor fallback is logged and flagged."
+        },
+        {
+          "title": "Tampering is provable \u2014 any edit breaks the SHA-256 chain",
+          "impact": "Medium",
+          "refs": "ISO 27001 A.8.15",
+          "rem": "Publish the chain root with each report; auditors re-verify at /verify."
+        }
+      ],
+      "_source": "curated \u2014 not yet in GRC sheets"
+    },
+    "aigov": {
+      "grade": "C",
+      "vq": "Is there proof \u2014 not just policy \u2014 that AI systems are governed and monitored?",
+      "posture": [
+        {
+          "fw": "ISO 42001",
+          "id": "A.6.2.2",
+          "coverage": 71,
+          "strength": "Developing",
+          "verdict": "PARTIAL"
+        },
+        {
+          "fw": "ISO 42001",
+          "id": "A.8.3",
+          "coverage": 58,
+          "strength": "Initial",
+          "verdict": "FAIL"
+        },
+        {
+          "fw": "NIST AI RMF",
+          "id": "MEASURE",
+          "coverage": 64,
+          "strength": "Developing",
+          "verdict": "PARTIAL"
+        },
+        {
+          "fw": "SOC 2",
+          "id": "CC7.2",
+          "coverage": 80,
+          "strength": "Established",
+          "verdict": "PARTIAL"
+        }
+      ],
+      "maturity": {
+        "prev": {
+          "label": "policy only",
+          "score": 1.6
+        },
+        "now": {
+          "label": "evidence-backed",
+          "score": 2.9
+        },
+        "tag": "Moving from policy to proof"
+      },
+      "findings": [
+        {
+          "title": "Model inventory exists on paper but is not evidenced in logs",
+          "impact": "Critical",
+          "refs": "ISO 42001 A.8.3",
+          "rem": "Instrument model/agent registration to Splunk; reconcile inventory weekly."
+        },
+        {
+          "title": "Agent decisions not consistently logged (OWASP Agentic Top 10)",
+          "impact": "High",
+          "refs": "ISO 42001 A.6.2.2 \u00b7 NIST AI RMF MEASURE",
+          "rem": "Capture agent-decision traces to a tamper-evident index."
+        }
+      ],
+      "_source": "curated \u2014 not yet in GRC sheets"
+    }
+  }
+}
