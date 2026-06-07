@@ -24,6 +24,8 @@ class ControlMatch(BaseModel):
     framework: str
     description: str = ""
     spl_hint: str = ""
+    control_family: str = ""
+    framework_control_ids: dict[str, str] = Field(default_factory=dict)
 
 
 class EvidenceSnapshot(BaseModel):
