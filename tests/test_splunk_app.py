@@ -82,9 +82,9 @@ class TestBuildSnapshot:
 
     def test_snapshot_name_format(self, _mock_splunklib):
         mod = _mock_splunklib
-        snapshot = mod._build_snapshot_from_events(FIXTURE_EVENTS, "A.9.2.1", "ISO27001")
+        snapshot = mod._build_snapshot_from_events(FIXTURE_EVENTS, "A.5.16", "ISO27001")
 
-        assert snapshot["snapshot_name"] == "iso27001-a921"
+        assert snapshot["snapshot_name"] == "iso27001-a516"
 
     def test_internal_fields_excluded_from_aggregation(self, _mock_splunklib):
         mod = _mock_splunklib
@@ -227,7 +227,7 @@ class TestAuditCompilerCommand:
     def test_framework_alias_resolution(self, _mock_splunklib):
         mod = _mock_splunklib
         cmd = mod.AuditCompilerCommand.__new__(mod.AuditCompilerCommand)
-        cmd.control = "A.9.2.1"
+        cmd.control = "A.5.16"
         cmd.framework = "ISO"
         cmd.mode = "summary"
 

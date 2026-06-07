@@ -17,7 +17,7 @@ class TestMapAlertToControls:
     def test_mfa_maps_to_multiple_controls(self):
         controls = map_alert_to_controls("MFA Bypass Detected — 23 accounts", "")
         assert "CC6.1" in controls
-        assert "A.9.2.3" in controls
+        assert "A.8.2" in controls
         assert "PR.AC-1" in controls
 
     def test_login_maps_to_cc61_and_cc72(self):
@@ -28,7 +28,7 @@ class TestMapAlertToControls:
     def test_privilege_escalation(self):
         controls = map_alert_to_controls("Privilege Escalation Detected", "")
         assert "CC6.1" in controls
-        assert "A.9.2.3" in controls
+        assert "A.8.2" in controls
 
     def test_ransomware_maps_to_incident_response(self):
         controls = map_alert_to_controls("Ransomware Activity Detected", "")
@@ -50,7 +50,7 @@ class TestMapAlertToControls:
         )
         assert "CC6.1" in controls
         assert "CC7.2" in controls
-        assert "A.9.2.3" in controls
+        assert "A.8.2" in controls
         assert "PR.AC-1" in controls
 
     def test_unknown_alert_defaults_to_cc61(self):
@@ -59,7 +59,7 @@ class TestMapAlertToControls:
 
     def test_returns_deterministic_mapping_order(self):
         controls = map_alert_to_controls("MFA bypass with brute force", "")
-        assert controls == ["CC6.1", "A.9.2.3", "PR.AC-1", "CC7.2"]
+        assert controls == ["CC6.1", "A.8.2", "PR.AC-1", "CC7.2"]
 
     def test_anomaly_maps_to_cc72(self):
         controls = map_alert_to_controls("Anomalous Activity Detected", "")

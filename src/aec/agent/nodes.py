@@ -217,9 +217,9 @@ def _control_text_for(control_id: str) -> str:
             "CC7.2: The entity monitors system components for anomalies indicative "
             "of malicious acts, natural disasters, and errors."
         ),
-        "A.9.2.1": (
-            "A.9.2.1: User registration and de-registration — a formal process "
-            "shall be implemented to enable assignment of access rights."
+        "A.5.16": (
+            "A.5.16: Identity management — the full life cycle of identities shall "
+            "be managed to enable assignment of access rights and accountability."
         ),
     }
     return texts.get(control_id, f"Control {control_id}")
