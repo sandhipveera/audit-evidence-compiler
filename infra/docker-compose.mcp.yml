@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   splunk:
     image: splunk/splunk:latest
@@ -11,7 +9,7 @@ services:
     environment:
       SPLUNK_START_ARGS: "--accept-license"
       SPLUNK_GENERAL_TERMS: "--accept-sgt-current-at-splunk-com"
-      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD:-changeme123}"
+      SPLUNK_PASSWORD: "changeme123"
     volumes:
       - splunk-data:/opt/splunk/var
     restart: unless-stopped
@@ -19,42 +17,8 @@ services:
       test: ["CMD", "/opt/splunk/bin/splunk", "status"]
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 120s
-
-  mcp-official:
-    image: ghcr.io/splunk/mcp-server-for-splunk:latest
-    container_name: aec-mcp-official
-    build:
-      context: .
-      dockerfile: Dockerfile.mcp-official
-    ports:
-      - "8765:8765"
-    environment:
-      SPLUNK_HOST: "https://splunk:8089"
-      SPLUNK_TOKEN: "${SPLUNK_TOKEN}"
-      SPLUNK_VERIFY_SSL: "false"
-    depends_on:
-      splunk:
-        condition: service_healthy
-    restart: unless-stopped
-
-  mcp-livehybrid:
-    image: ghcr.io/livehybrid/splunk-mcp:latest
-    container_name: aec-mcp-livehybrid
-    build:
-      context: .
-      dockerfile: Dockerfile.mcp-livehybrid
-    ports:
-      - "8766:8766"
-    environment:
-      SPLUNK_HOST: "https://splunk:8089"
-      SPLUNK_TOKEN: "${SPLUNK_TOKEN}"
-      SPLUNK_VERIFY_SSL: "false"
-    depends_on:
-      splunk:
-        condition: service_healthy
-    restart: unless-stopped
+      retries: 20
+      start_period: 180s
 
 volumes:
   splunk-data:
