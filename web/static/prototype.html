@@ -163,11 +163,13 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 .impact .clk{font-family:'JetBrains Mono',monospace;color:var(--brass);font-weight:700}
 @keyframes btnglow{0%,100%{box-shadow:0 8px 22px -8px rgba(var(--btn-glow),.55),0 0 15px -3px rgba(var(--btn-glow),.35)}50%{box-shadow:0 10px 30px -6px rgba(var(--btn-glow),.9),0 0 34px 0 rgba(var(--btn-glow),.62)}}
 @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
-.toexec{display:none;width:calc(100% - 40px);margin:2px 20px 18px;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;border:1px solid var(--brass2);border-radius:12px;padding:13px 18px;background:linear-gradient(180deg,rgba(218,179,106,.13),rgba(218,179,106,.04));color:var(--text);font-family:inherit;text-align:left;animation:btnglow 2.8s ease-in-out infinite}
+.toexec{display:none;width:calc(100% - 40px);margin:2px 20px 18px;gap:10px;align-items:stretch}
 .toexec.show{display:flex}
-.toexec .te-ok{font-weight:700;font-size:12.5px;color:var(--brass);white-space:nowrap}
-.toexec .te-go{font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
-.toexec .te-ar{font-size:17px;color:var(--brass);display:inline-block;animation:nudge 1.5s ease-in-out infinite}
+.te-act{flex:1;cursor:pointer;border-radius:12px;padding:13px 18px;font-family:inherit;font-size:13px;font-weight:700;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid;transition:filter .15s}
+.te-splunk{color:var(--splunk);border-color:rgba(236,59,155,.45);background:rgba(236,59,155,.08)}
+.te-report{color:#1a1304;border-color:var(--brass2);background:linear-gradient(135deg,var(--brass),var(--brass2));animation:btnglow 2.8s ease-in-out infinite}
+.te-act:hover{filter:brightness(1.08)}
+.te-ar{font-size:16px;display:inline-block;animation:nudge 1.5s ease-in-out infinite}
 .runbtn{margin-left:auto;border:1px solid var(--brass2);cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;color:#1a1304;background:linear-gradient(135deg,var(--brass),var(--brass2));padding:11px 22px;border-radius:10px;box-shadow:0 8px 22px -8px rgba(var(--btn-glow),.6);transition:.15s;animation:btnglow 2.6s ease-in-out infinite}
 .runbtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .runbtn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;animation:none}
@@ -561,7 +563,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
         <a class="verify" href="/verify" target="_blank" rel="noopener">Verify this trail at /verify →</a>
       </div>
     </div>
-    <button class="toexec" id="toexec" type="button"><span class="te-ok">✓ Verdict sealed &amp; posted to Splunk</span><span class="te-go">Your Executive Compliance Report is ready below <span class="te-ar">↓</span></span></button>
+    <div class="toexec" id="toexec"><a class="te-act te-splunk" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">✓ Sealed · view verdict in Splunk ↗</a><button class="te-act te-report" id="toexecGo" type="button">Open Executive Compliance Report <span class="te-ar">↓</span></button></div>
     </div>
   </section>
 
@@ -853,7 +855,7 @@ qa('.exec-dl a').forEach(a=>a.addEventListener('click',e=>{
 }));
 // hero scroll cue → advance to the use-cases
 {const sd=q('#scrolldown');if(sd)sd.onclick=()=>{const t=q('.workbench');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})};}
-{const te=q('#toexec');if(te)te.onclick=()=>{const e=q('#exec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})};}
+{const te=q('#toexecGo');if(te)te.onclick=()=>{const e=q('#exec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})};}
 
 /* behind-the-scenes expander */
 
