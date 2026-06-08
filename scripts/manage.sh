@@ -268,6 +268,9 @@ cmd_shell() {
 # Install the auditcompiler Splunk app + seed the Compliance Posture dashboard.
 cmd_install_app() { bash "$REPO_DIR/scripts/install_splunk_app.sh" "${2:-}"; }
 
+# Install / restore the real BOTS v3 dataset (cached on host, idempotent).
+cmd_install_bots() { bash "$REPO_DIR/scripts/install_botsv3.sh" "${2:-}"; }
+
 # ─────────────────────────────────────────────────────────────────────────────
 CMD="${1:-status}"
 
@@ -282,8 +285,9 @@ case "$CMD" in
   update)       cmd_update ;;
   verify)       cmd_verify ;;
   install-app)  cmd_install_app "$@" ;;
+  install-bots) cmd_install_bots "$@" ;;
   shell)        cmd_shell ;;
   *)
-    echo "Usage: $0 {status|start|stop|restart|logs|logs-web|logs-splunk|update|verify|install-app|shell}"
+    echo "Usage: $0 {status|start|stop|restart|logs|logs-web|logs-splunk|update|verify|install-app|install-bots|shell}"
     exit 1 ;;
 esac
