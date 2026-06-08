@@ -557,7 +557,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
       <div class="panel-card merkle" id="merkle">
         <div class="rule"><span class="lock">🔒</span> Tamper-evident evidence chain</div>
         <div class="chain" id="chain"></div>
-        <div class="root">chain root <span class="h">a3f1c9…e7b2</span> · written to xlsx <b style="color:var(--text)">and posted back to Splunk</b> <a class="mono" style="color:var(--splunk)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time" target="_blank" rel="noopener">(view in Splunk: index=aec_audit ↗)</a></div>
+        <div class="root">chain root <span class="h">a3f1c9…e7b2</span> · written to xlsx <b style="color:var(--text)">and posted back to Splunk</b> <a class="mono" style="color:var(--splunk)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">(view in Splunk: index=aec_audit ↗)</a></div>
         <a class="verify" href="/verify" target="_blank" rel="noopener">Verify this trail at /verify →</a>
       </div>
     </div>
@@ -781,7 +781,7 @@ async function run(){
 function postToSplunk(verdict){
   const node=q('[data-n="5"]'),vEl=node&&q('.v',node);
   fetch('/api/post-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({control:(SCN[curScn]&&SCN[curScn].ctl)||'',verdict:verdict||'',root:'a3f1c9…e7b2',source:curScn})})
-    .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' verdicts':'')+' ↗</a>'; } }).catch(()=>{});
+    .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' verdicts':'')+' ↗</a>'; } }).catch(()=>{});
 }
 function focusVerdict(){ const wp=q('#workpanel'); if(wp) setTimeout(()=>wp.scrollTo({top:wp.scrollHeight,behavior:'smooth'}),160); }
 q('#runbtn').onclick=run;
