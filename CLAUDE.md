@@ -27,7 +27,7 @@ Ruff config (in `pyproject.toml`): `line-length = 100`, `target-version = "py311
 ## VM provisioning & stack lifecycle (bash scripts)
 
 - `bash scripts/setup.sh [OPTIONS]` — idempotent one-shot Ubuntu provision (venv, deps, Docker Splunk, BOTS v3 data, AEC web via systemd, Cloudflare Tunnel). Safe to re-run.
-- `bash scripts/manage.sh <status|start|stop|restart|logs|update|verify|install-app|shell>` — stack lifecycle. `install-app` installs the `auditcompiler` Splunk app into the container and seeds the Compliance Posture dashboard (`scripts/install_splunk_app.sh` + `scripts/seed_posture.py`).
+- `bash scripts/manage.sh <status|start|stop|restart|logs|update|verify|install-app|install-bots|shell>` — stack lifecycle. `install-app` installs the `auditcompiler` Splunk app + seeds the Compliance Posture dashboard (`scripts/install_splunk_app.sh` + `scripts/seed_posture.py`). `install-bots` restores the real BOTS v3 dataset (`scripts/install_botsv3.sh`) — the 320MB dataset is cached on the host (`~/.aec-data`) so a container rebuild restores 1.9M events in ~30s with no re-download; idempotent (skips if already loaded, `--force` to reinstall). setup.sh runs it automatically.
 - Both read `~/.aec-config` (outside the repo; template is `.aec-config.example`) for `GH_TOKEN`, `HF_TOKEN`, `CF_TOKEN`, `SPLUNK_PASSWORD`, `PUBLIC_DOMAIN`, etc. Project `.env` (template `.env.example`) holds runtime config. **Both are gitignored — never commit secrets, and the repo intentionally contains none.**
 
 ## Architecture gotchas (read before changing agent behavior)
