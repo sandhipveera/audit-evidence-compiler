@@ -25,7 +25,7 @@
 #     CF_TOKEN=eyJ...
 #     SPLUNK_PASSWORD=changeme123
 #     PUBLIC_DOMAIN=aec3.accessquint.com
-#     LICENSE_FILE=/home/veera/Splunk.License
+#     LICENSE_FILE=$HOME/Splunk.License
 #
 # After setup, manage the stack with:
 #   bash scripts/manage.sh status|start|stop|restart|logs|update|verify
