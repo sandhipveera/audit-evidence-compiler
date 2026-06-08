@@ -1,3 +1,7 @@
+<dashboard version="2" theme="light">
+  <label>Compliance Posture</label>
+  <description>Live PASS/FAIL/PARTIAL/INSUFFICIENT status across all 36 controls, updated every 4 hours by the AEC scheduled saved searches. Powered by the four-vendor AI panel (Claude · GPT · Gemini · Foundation-Sec-8B).</description>
+  <definition><![CDATA[
 {
   "title": "Compliance Posture",
   "description": "Live PASS/FAIL/PARTIAL/INSUFFICIENT status across all 36 controls, updated every 4 hours by the AEC scheduled saved searches. Powered by the four-vendor AI panel (Claude · GPT · Gemini · Foundation-Sec-8B).",
@@ -249,3 +253,6 @@
     "globalInputs": []
   }
 }
+
+  ]]></definition>
+</dashboard>

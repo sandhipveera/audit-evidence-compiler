@@ -41,25 +41,3 @@ core-biz/
 # Hatch build artifacts
 dist/
 build/
-
-# YuktiCastle agent orchestration (.yukticastle/.env contains secrets)
-.yukticastle/.env
-.yukticastle/logs/
-.yukticastle/worktrees/
-# Run history — gitignore by default; commit if you want an audit trail
-.yukticastle/runs.jsonl
-# Context pack — auto-generated; regenerate with `npm run agents:context`
-.yukticastle/context.md
-# Learnings ledger — reviewer fix-ups for self-improving prompts
-.yukticastle/learnings.jsonl
-# Upstream sandcastle library writes per-agent transcripts here;
-# main.mts's clean-host preflight already filters this path out,
-# but gitignoring it keeps `git status` quiet between runs.
-.sandcastle/
-
-# Playwright E2E
-test-results/
-playwright-report/
-tests/.auth/
-.playwright/
-node_modules/

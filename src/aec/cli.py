@@ -16,7 +16,7 @@ def ask(
 ):
     """Compile evidence for a framework control from Splunk."""
     console.print(f"[bold cyan]aec[/] — {framework} {control} → {output}")
-    console.print("[yellow]Agent pipeline not yet wired. See tasks/003-langgraph-agent.md[/]")
+    console.print("[yellow]Run the full pipeline with:[/] aec_demo --control " + control)
 
 
 @app.command()

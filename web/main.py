@@ -49,13 +49,47 @@ def _check_rate_limit(ip: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Run gate — the /ws/run and /api/incident endpoints invoke the *paid* four-vendor
+# panel, so protect them from anonymous abuse: an optional shared token plus a hard
+# global daily cap. The public dashboard is a static mock and never calls these.
+# ---------------------------------------------------------------------------
+
+RUN_TOKEN = os.environ.get("AEC_RUN_TOKEN", "")
+MAX_RUNS_PER_DAY = int(os.environ.get("AEC_MAX_RUNS_PER_DAY", "25"))
+
+_run_day = ""    # UTC date the counter belongs to
+_run_count = 0   # real panel runs started today
+
+
+def _check_run_token(token: str | None) -> bool:
+    """True if no token is configured (dev), or the supplied token matches."""
+    if not RUN_TOKEN:
+        return True
+    return bool(token) and token == RUN_TOKEN
+
+
+def _check_run_budget() -> bool:
+    """True if today's global real-run budget has room; increments when it does."""
+    global _run_day, _run_count
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if today != _run_day:
+        _run_day, _run_count = today, 0
+    if _run_count >= MAX_RUNS_PER_DAY:
+        return False
+    _run_count += 1
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
 
 @app.get("/")
 def root():
-    return FileResponse(str(STATIC_DIR / "index.html"))
+    # The Tessera dashboard (prototype.html) is the public face; the legacy
+    # index.html remains reachable at /static/index.html if needed.
+    return FileResponse(str(STATIC_DIR / "prototype.html"))
 
 
 @app.get("/api/controls")
@@ -105,6 +139,16 @@ async def run_debate(ws: WebSocket):
             "type": "error",
             "message": f"Rate limit exceeded — max {RATE_LIMIT} debates per {RATE_WINDOW}s",
         })
+        await ws.close()
+        return
+
+    if not _check_run_token(cfg.get("token") or ws.query_params.get("token")):
+        await ws.send_json({"type": "error", "message": "Unauthorized — a valid run token is required for live runs."})
+        await ws.close()
+        return
+
+    if not _check_run_budget():
+        await ws.send_json({"type": "error", "message": f"Daily live-run limit reached ({MAX_RUNS_PER_DAY}/day). Try again tomorrow."})
         await ws.close()
         return
 
@@ -329,6 +373,12 @@ async def handle_incident(
             },
         )
 
+    if not _check_run_token(request.headers.get("X-AEC-Token") or payload.get("token")):
+        return JSONResponse(status_code=401, content={"error": "Unauthorized — a valid run token is required."})
+
+    if not _check_run_budget():
+        return JSONResponse(status_code=429, content={"error": f"Daily live-run limit reached ({MAX_RUNS_PER_DAY}/day)."})
+
     alert_name, alert_body = alert_fields_from_payload(payload)
     controls = map_alert_to_controls(alert_name, alert_body)
 
@@ -522,3 +572,86 @@ def get_artifact(filename: str):
         filename=safe_name,
         media_type="application/octet-stream",
     )
+
+
+# ---------------------------------------------------------------------------
+# Splunk post-back — write the sealed verdict to HEC index=aec_audit and return
+# proof (running count), so the pipeline's "post back to Splunk" step is real,
+# not narrative. Cheap (no AI); rate-limited like the other endpoints.
+# ---------------------------------------------------------------------------
+
+AUDIT_INDEX = os.environ.get("AEC_AUDIT_INDEX", "aec_audit")
+
+
+def _splunk_post_verdict(payload: dict) -> dict:
+    import base64
+    import ssl as _ssl
+    import urllib.parse as _up
+    import urllib.request as _ur
+
+    hec_url = os.environ.get("AEC_HEC_URL", "https://localhost:8088")
+    hec_token = os.environ.get("HEC_TOKEN", "")
+    mgmt = os.environ.get("SPLUNK_HOST", "https://localhost:8089")
+    pw = os.environ.get("SPLUNK_PASSWORD", "")
+    if not hec_token:
+        return {"ok": False, "error": "HEC not configured"}
+
+    ctx = _ssl._create_unverified_context()
+    event = {
+        "time": time.time(),
+        "index": AUDIT_INDEX,
+        "sourcetype": "aec:verdict",
+        "event": {
+            "control_id": str(payload.get("control", ""))[:120],
+            "verdict": str(payload.get("verdict", ""))[:24],
+            "merkle_root": str(payload.get("root", ""))[:96],
+            "models": payload.get("models") or ["claude", "gpt", "gemini", "foundation-sec"],
+            "mode": str(payload.get("source", "web"))[:24],
+        },
+    }
+    req = _ur.Request(
+        f"{hec_url}/services/collector/event",
+        data=json.dumps(event).encode(),
+        headers={"Authorization": f"Splunk {hec_token}"},
+        method="POST",
+    )
+    with _ur.urlopen(req, context=ctx, timeout=15) as r:
+        ok = json.loads(r.read().decode()).get("text") == "Success"
+
+    count = None
+    try:
+        auth = base64.b64encode(f"admin:{pw}".encode()).decode()
+        creq = _ur.Request(
+            f"{mgmt}/services/search/jobs/export",
+            data=_up.urlencode({
+                "search": f"| tstats count where index={AUDIT_INDEX}",
+                "output_mode": "json",
+            }).encode(),
+            headers={"Authorization": f"Basic {auth}"},
+            method="POST",
+        )
+        with _ur.urlopen(creq, context=ctx, timeout=15) as r:
+            for line in r.read().decode().splitlines():
+                line = line.strip()
+                if line:
+                    res = (json.loads(line).get("result") or {})
+                    if "count" in res:
+                        count = int(res["count"])
+    except Exception:
+        pass
+
+    return {"ok": ok, "index": AUDIT_INDEX, "count": count,
+            "search": f"index={AUDIT_INDEX} | sort -_time"}
+
+
+@app.post("/api/post-audit")
+async def post_audit(payload: dict, request: Request):
+    """Post a sealed verdict to Splunk (index=aec_audit) and return proof."""
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(status_code=429, content={"ok": False, "error": "rate limited"})
+    try:
+        return _splunk_post_verdict(payload)
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"ok": False, "error": str(exc)})
+
