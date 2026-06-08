@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tessera — Slide Deck</title>
+<style>
+:root{--bg:#0c0b12;--bg2:#08070c;--text:#ece6da;--muted:#9a9384;--faint:#6a6457;
+  --brass:#dab36a;--brass2:#b78a3e;--splunk:#ec3b9b;--green:#6fd44a;--border:#2a2733;
+  --auditor:#6ba4e8;--engineer:#5ec9b0;--adversary:#e8954a;--security:#b08ce0;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;color:var(--text);background:
+  radial-gradient(1100px 520px at 50% -160px,rgba(218,179,106,.13),transparent 60%),
+  radial-gradient(700px 400px at 88% -40px,rgba(236,59,155,.06),transparent 55%),var(--bg);}
+.serif{font-family:Georgia,'Times New Roman',serif}
+.slide{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;
+  padding:6vh 9vw;position:relative;border-bottom:1px solid #15131d}
+.eyebrow{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:1.1rem}
+h1{font-size:3.2rem;line-height:1.05;font-weight:800;letter-spacing:-.01em;margin-bottom:1rem}
+h1 .br{color:var(--brass)}
+h2{font-size:2.1rem;font-weight:700;color:var(--brass);letter-spacing:-.01em;margin-bottom:1.4rem}
+p.lead{font-size:1.35rem;color:var(--muted);max-width:60ch;line-height:1.5}
+ul{list-style:none;max-width:70ch}
+li{font-size:1.25rem;line-height:1.5;margin:.7rem 0;padding-left:1.5rem;position:relative;color:var(--text)}
+li::before{content:"▸";position:absolute;left:0;color:var(--brass)}
+li small{color:var(--muted)}
+b,strong{color:var(--brass)}
+blockquote{font-family:Georgia,serif;font-style:italic;font-size:1.5rem;color:var(--text);
+  border-left:3px solid var(--brass);padding-left:1.2rem;margin-top:1.4rem;max-width:60ch}
+table{border-collapse:collapse;font-size:1.1rem;margin-top:.4rem}
+td,th{padding:.5rem 1.1rem;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--faint);font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+.A{color:var(--auditor)}.E{color:var(--engineer)}.X{color:var(--adversary)}.S{color:var(--security)}
+pre{background:#15131d;border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.3rem;
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:1rem;color:var(--green);line-height:1.7;overflow:auto;max-width:75ch}
+.muted{color:var(--muted);font-size:.95rem;margin-top:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem 2.4rem;max-width:80ch}
+a{color:var(--splunk);text-decoration:none}
+.pageno{position:fixed;bottom:14px;right:20px;font-size:.8rem;color:var(--faint);font-family:monospace}
+.hint{position:fixed;bottom:14px;left:20px;font-size:.78rem;color:var(--faint)}
+.logo{display:inline-grid;grid-template-columns:1fr 1fr;gap:3px;width:34px;height:34px;vertical-align:-8px;margin-right:10px}
+.logo i{border-radius:4px}.logo i:nth-child(1),.logo i:nth-child(4){background:linear-gradient(135deg,#e9c884,#b78a3e)}
+.logo i:nth-child(2),.logo i:nth-child(3){background:#b78a3e}
+@media print{html{scroll-snap-type:none}.slide{min-height:auto;page-break-after:always;border:none}.hint,.pageno{display:none}}
+</style></head>
+<body>
+
+<section class="slide">
+  <div class="eyebrow"><span class="logo"><i></i><i></i><i></i><i></i></span>Splunk Agentic Ops Hackathon 2026 · Security Track</div>
+  <h1>Tessera</h1>
+  <p class="lead">The trust engine for AI-generated compliance evidence. <b>Four rival AI models debate real Splunk data, then seal a tamper-evident verdict you can verify.</b></p>
+  <p class="muted">Live: aec3.accessquint.com · github.com/sandhipveera/audit-evidence-compiler</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">The problem</div>
+  <ul>
+    <li>A single <b>SOC 2 audit cycle = 40+ hours</b> of pulling evidence from Splunk and judging whether it satisfies the control.</li>
+    <li><b>AI can generate that evidence in seconds — but can you trust it?</b> One model, one opinion, no proof it wasn't altered.</li>
+    <li><b>90% of orgs fail their first AI-governance audit</b> — they have policies, not proof.</li>
+  </ul>
+  <blockquote>The bottleneck isn't generating evidence. It's <i>trusting</i> it.</blockquote>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">The idea</div>
+  <h2>Don't trust one AI — make four debate</h2>
+  <table>
+    <tr><th>Persona</th><th>Model</th><th>Lens</th></tr>
+    <tr><td class="A">Auditor</td><td>Claude · Anthropic</td><td>satisfies the control language?</td></tr>
+    <tr><td class="E">Engineer</td><td>GPT-5.5 / Codex · OpenAI</td><td>statistically sound?</td></tr>
+    <tr><td class="X">Adversary</td><td>Gemini · Google</td><td>red-team — can an attacker slip through?</td></tr>
+    <tr><td class="S">Security Model</td><td><b>Foundation-Sec-8B · Splunk/Cisco</b></td><td>does it stop <i>real</i> attackers?</td></tr>
+  </table>
+  <p class="muted">Consensus is <b>mechanical</b> — lowest verdict wins, no LLM tiebreaker → reproducible. One dissent forces PARTIAL/FAIL.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Deep Splunk integration</div>
+  <h2>Real Splunk, end to end</h2>
+  <ul>
+    <li>Question → <b>SPL generated</b> → <b>policy gate</b> → executed on <b>BOTS v3 (1.94M real events)</b> via <b>MCP</b>.</li>
+    <li>The <span class="X">Adversary</span> can issue <b>counter-SPL</b> — a 2nd round runs on what the data <i>actually</i> shows.</li>
+    <li>Verdict + Merkle root <b>posted back to Splunk</b> (<code>HEC → index=aec_audit</code>) — a live audit log inside the platform.</li>
+    <li>Splunk-native <b>Compliance Posture dashboard</b> + <code>| auditcompiler</code> search command.</li>
+  </ul>
+  <p class="muted">Not mocked — live tunnel to the Splunk instance, real query results, real write-back.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Trust, made provable</div>
+  <h2>Tamper-evident by construction</h2>
+  <ul>
+    <li>Every snapshot is <b>SHA-256 Merkle-chained</b> (canonical JSON; no signing keys to leak).</li>
+    <li>The <code>gap_report.xlsx</code> carries the <b>chain root</b>.</li>
+    <li>Anyone verifies at the public <b>/verify</b> portal — drop in <code>audit_trail.jsonl</code>:</li>
+    <li>&nbsp;&nbsp;✅ <b>VERIFIED</b> — nothing changed since collection &nbsp;·&nbsp; ❌ <b>TAMPERED</b> — one flipped verdict breaks the hash.</li>
+  </ul>
+  <blockquote>Trust isn't asserted. It's provable — by a third party, with no install.</blockquote>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Use cases</div>
+  <h2>Four ways teams use it</h2>
+  <ul>
+    <li><b>40 hours → 30 seconds</b> — SOC 2 CC6.1 audit prep, compiled in one run.</li>
+    <li><b>Passed in Q1, failing now</b> — control <i>drift</i> across two Splunk windows.</li>
+    <li><b>Verify, then trust</b> — four rival models cross-check every verdict; tampering is provable.</li>
+    <li><b>AI-governance audit (ISO 42001)</b> — "policies, not proof" → provable AI-control evidence from Splunk.</li>
+  </ul>
+  <p class="muted">Five frameworks: SOC 2 · ISO 27001:2022 · NIST CSF 2.0 · NIST 800-53 Rev 5 · COBIT 2019.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">How it's built</div>
+  <h2>Architecture</h2>
+<pre>Trigger (control / Splunk alert)
+   ↓
+LangGraph agent:  map → SPL-gen → policy gate → MCP executor → normalize
+   ↓
+Four-vendor panel (parallel) → mechanical consensus (lowest-of-four)
+   ↓
+Merkle seal (SHA-256) → xlsx + audit_trail.jsonl
+   ↓
+Post back to Splunk (HEC → index=aec_audit) · external /verify portal</pre>
+  <p class="muted">Pluggable MCP transport (official | livehybrid | rest). Personas are plain markdown — edit to change behavior.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Why it wins · the four criteria</div>
+  <div class="grid2">
+    <div><b>Technological Implementation</b><br><span class="muted">Real multi-vendor orchestration, live Splunk via MCP, policy-gated SPL, Merkle integrity, write-back to Splunk.</span></div>
+    <div><b>Design / UX</b><br><span class="muted">A two-panel <i>tool</i>: pick a case, convene the tribunal, watch four models rule, jump to the board report.</span></div>
+    <div><b>Potential Impact</b><br><span class="muted">40+ audit hours → 30 seconds across 5 frameworks; continuous (drift), not point-in-time.</span></div>
+    <div><b>Quality of Idea</b><br><span class="muted">"Verify, then trust" — adversarial cross-vendor consensus + third-party-verifiable proof. Novel & reproducible.</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">See it live</div>
+  <h1 class="serif">Real Splunk.<br>Four rival models.<br><span class="br">One verdict you can prove.</span></h1>
+  <ul style="margin-top:1.2rem">
+    <li>Dashboard — <a href="https://aec3.accessquint.com">aec3.accessquint.com</a></li>
+    <li>Splunk (read-only) — <a href="https://splunk-aec.accessquint.com">splunk-aec.accessquint.com</a> · Compliance Posture + <code>index=aec_audit</code></li>
+    <li>Verify portal — <a href="https://aec3.accessquint.com/verify">aec3.accessquint.com/verify</a></li>
+    <li>Code — <a href="https://github.com/sandhipveera/audit-evidence-compiler">github.com/sandhipveera/audit-evidence-compiler</a></li>
+  </ul>
+</section>
+
+<div class="pageno" id="pg">1 / 9</div>
+<div class="hint">← → / Space to navigate · F11 fullscreen · ⌘P to export PDF</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];const pg=document.getElementById('pg');
+function cur(){let i=0,best=1e9;slides.forEach((s,j)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<best){best=d;i=j}});return i}
+function go(n){n=Math.max(0,Math.min(slides.length-1,n));slides[n].scrollIntoView()}
+function upd(){pg.textContent=(cur()+1)+' / '+slides.length}
+addEventListener('scroll',upd,{passive:true});
+addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(cur()+1)}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(cur()-1)}
+  else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(slides.length-1)}
+});
+addEventListener('click',e=>{if(!e.target.closest('a'))go(cur()+1)});
+upd();
+</script>
+</body></html>
