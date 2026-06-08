@@ -57,6 +57,22 @@ pre .b{color:var(--brass)} pre .p{color:var(--splunk)} pre .a{color:var(--faint)
 .links a{color:var(--text);text-decoration:none;border-bottom:1px solid transparent;transition:.2s}
 .links a:hover{color:var(--brass);border-color:var(--brass2)}
 .links .k{color:var(--faint);font-size:1.1rem}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1040px;width:100%;text-align:left}
+.card{border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.004));padding:1.7rem 1.95rem}
+.card b{font-family:'Fraunces',serif;font-size:1.8rem;color:var(--brass);font-weight:600;display:block;margin-bottom:.5rem;line-height:1.08}
+.card span{font-size:1.32rem;color:var(--muted);line-height:1.45}
+.card code{font-size:.86em}
+.archimg{max-width:95vw;max-height:80vh;border-radius:14px;border:1px solid var(--border);box-shadow:0 40px 90px -40px #000}
+.exec-card{display:flex;align-items:center;gap:2.6rem;border:1px solid var(--brass2);border-radius:20px;background:linear-gradient(180deg,rgba(227,192,116,.06),rgba(255,255,255,.008));padding:2.2rem 2.6rem;max-width:920px;width:100%;margin-top:.5rem}
+.exec-grade{font-family:'Fraunces',serif;font-size:4.6rem;font-weight:600;color:var(--brass);width:150px;height:150px;flex:none;display:grid;place-items:center;border:2px solid var(--brass2);border-radius:50%;line-height:1;position:relative}
+.exec-grade small{position:absolute;bottom:-2rem;left:-10px;right:-10px;font-family:'Inter';font-size:.92rem;color:var(--muted);font-weight:500}
+.exec-body{flex:1;display:flex;flex-direction:column;gap:1.05rem}
+.exec-row{display:flex;align-items:center;gap:1.3rem;font-size:1.25rem}
+.exec-row .lbl{width:240px;text-align:left;color:var(--text);font-weight:500;font-size:1.2rem}
+.exec-row .bar{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}
+.exec-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brass2),var(--brass))}
+.exec-row .v{width:96px;text-align:right;font-size:1.05rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+.v.FAIL{color:#e0584f}.v.PARTIAL{color:#d6a52e}.v.PASS{color:#6fd44a}
 .logo{display:inline-grid;grid-template-columns:1fr 1fr;gap:5px;width:84px;height:84px;margin-bottom:.6rem}
 .logo i{border-radius:9px}.logo i:nth-child(1),.logo i:nth-child(4){background:linear-gradient(135deg,#f0d28f,#b78a3e)}
 .logo i:nth-child(2),.logo i:nth-child(3){background:#b78a3e}
@@ -96,12 +112,12 @@ pre .b{color:var(--brass)} pre .p{color:var(--splunk)} pre .a{color:var(--faint)
 
 <section class="slide"><div class="wrap">
   <div class="eyebrow">Deep Splunk, end to end</div>
-  <ul>
-    <li><b class="brass">1.94M</b> real BOTS v3 events — SPL generated, policy-gated, run via MCP</li>
-    <li>The Adversary issues <b>counter-SPL</b> — a 2nd round on what the data really shows</li>
-    <li>Verdict <b>posted back into Splunk</b> — <code>HEC → index=aec_audit</code></li>
-    <li>Splunk-native <b>Compliance Posture</b> dashboard + <code>| auditcompiler</code></li>
-  </ul>
+  <div class="cards">
+    <div class="card"><b>1.94M real events</b><span>BOTS v3 — SPL generated, policy-gated, executed via MCP</span></div>
+    <div class="card"><b>Adversary counter-SPL</b><span>a second round runs on what the data really shows</span></div>
+    <div class="card"><b>Posted back to Splunk</b><span>verdict + Merkle root → <code>HEC · index=aec_audit</code></span></div>
+    <div class="card"><b>Splunk-native</b><span>Compliance Posture dashboard + <code>| auditcompiler</code> command</span></div>
+  </div>
   <p class="note">Not mocked — live tunnel to the Splunk instance, real query results, real write-back.</p>
 </div></section>
 
@@ -114,37 +130,32 @@ pre .b{color:var(--brass)} pre .p{color:var(--splunk)} pre .a{color:var(--faint)
 
 <section class="slide"><div class="wrap">
   <div class="eyebrow">Four ways teams use it</div>
-  <ul style="max-width:40ch">
-    <li><b>40 hours → 30 seconds</b> <span class="s">— SOC 2 audit prep in one run</span></li>
-    <li><b>Passed in Q1, failing now</b> <span class="s">— control drift across Splunk windows</span></li>
-    <li><b>Verify, then trust</b> <span class="s">— four rivals cross-check every verdict</span></li>
-    <li><b>AI-governance audit</b> <span class="s">— ISO 42001: proof, not policies</span></li>
-  </ul>
+  <div class="cards">
+    <div class="card"><b>40 hrs → 30 sec</b><span>SOC 2 audit prep, compiled in one run</span></div>
+    <div class="card"><b>Passed in Q1, failing now</b><span>control drift across two Splunk windows</span></div>
+    <div class="card"><b>Verify, then trust</b><span>four rivals cross-check every verdict; tampering is provable</span></div>
+    <div class="card"><b>AI-governance audit</b><span>ISO 42001 — provable AI-control evidence, not policies</span></div>
+  </div>
   <p class="note">SOC 2 · ISO 27001:2022 · NIST CSF 2.0 · NIST 800-53 Rev 5 · COBIT 2019</p>
 </div></section>
 
-<section class="slide"><div class="wrap">
-  <div class="eyebrow">How it's built</div>
-<pre>control / Splunk alert
-   <span class="a">↓</span>
-<span class="b">LangGraph</span>  map → SPL → <span class="b">policy gate</span> → MCP → normalize
-   <span class="a">↓</span>
-<span class="b">four-vendor panel</span> → mechanical consensus (lowest-of-four)
-   <span class="a">↓</span>
-<span class="b">Merkle seal</span> → xlsx + audit_trail.jsonl
-   <span class="a">↓</span>
-post back to <span class="p">Splunk</span> · external <span class="p">/verify</span> portal</pre>
-  <p class="note">Pluggable MCP transport · personas are plain markdown — edit to change behavior.</p>
-</div></section>
+<section class="slide" style="padding:5vh 3vw">
+  <div class="eyebrow" style="margin-bottom:1.4rem">Architecture · one LangGraph agent · four rival vendors · Splunk end-to-end</div>
+  <img class="archimg" src="https://aec3.accessquint.com/static/architecture-panel.png" alt="Tessera architecture — triggers, LangGraph evidence agent, four-vendor panel, Merkle seal, Splunk write-back">
+</section>
 
 <section class="slide"><div class="wrap">
-  <div class="eyebrow">Why it wins</div>
-  <div class="grid2">
-    <div class="c"><b>Technological Implementation</b><span>Real multi-vendor orchestration, live Splunk via MCP, policy-gated SPL, Merkle integrity, write-back.</span></div>
-    <div class="c"><b>Design / UX</b><span>A two-panel <em>tool</em>: pick a case, convene the tribunal, watch four models rule.</span></div>
-    <div class="c"><b>Potential Impact</b><span>40+ audit hours → 30 seconds across 5 frameworks; continuous, not point-in-time.</span></div>
-    <div class="c"><b>Quality of Idea</b><span>Adversarial cross-vendor consensus + third-party-verifiable proof. Novel &amp; reproducible.</span></div>
+  <div class="eyebrow">The board-ready output</div>
+  <h2>Every run becomes an<br><span class="brass">Executive Compliance Report.</span></h2>
+  <div class="exec-card">
+    <div class="exec-grade">C+<small>posture grade</small></div>
+    <div class="exec-body">
+      <div class="exec-row"><span class="lbl">SOC 2 · CC6.1</span><div class="bar"><i style="width:60%"></i></div><span class="v PARTIAL">PARTIAL</span></div>
+      <div class="exec-row"><span class="lbl">ISO 27001 · A.5.15</span><div class="bar"><i style="width:22%"></i></div><span class="v FAIL">FAIL</span></div>
+      <div class="exec-row"><span class="lbl">NIST CSF · PR.AA-01</span><div class="bar"><i style="width:58%"></i></div><span class="v FAIL">FAIL</span></div>
+    </div>
   </div>
+  <p class="note">Board-ready in 30 seconds — posture, findings &amp; remediation across 5 frameworks, sealed and externally verifiable.</p>
 </div></section>
 
 <section class="slide"><div class="wrap">
