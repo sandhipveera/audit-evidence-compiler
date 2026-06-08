@@ -41,4 +41,4 @@ PUBLIC_DOMAIN=aec3.accessquint.com
 # Absolute path to the .License file on this VM.
 # Download from: https://www.splunk.com/en_us/download/splunk-enterprise.html
 # (requires free Splunk developer account)
-LICENSE_FILE=/home/veera/Splunk.License
+LICENSE_FILE=$HOME/Splunk.License
