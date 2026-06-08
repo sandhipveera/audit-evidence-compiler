@@ -572,3 +572,86 @@ def get_artifact(filename: str):
         filename=safe_name,
         media_type="application/octet-stream",
     )
+
+
+# ---------------------------------------------------------------------------
+# Splunk post-back — write the sealed verdict to HEC index=aec_audit and return
+# proof (running count), so the pipeline's "post back to Splunk" step is real,
+# not narrative. Cheap (no AI); rate-limited like the other endpoints.
+# ---------------------------------------------------------------------------
+
+AUDIT_INDEX = os.environ.get("AEC_AUDIT_INDEX", "aec_audit")
+
+
+def _splunk_post_verdict(payload: dict) -> dict:
+    import base64
+    import ssl as _ssl
+    import urllib.parse as _up
+    import urllib.request as _ur
+
+    hec_url = os.environ.get("AEC_HEC_URL", "https://localhost:8088")
+    hec_token = os.environ.get("HEC_TOKEN", "")
+    mgmt = os.environ.get("SPLUNK_HOST", "https://localhost:8089")
+    pw = os.environ.get("SPLUNK_PASSWORD", "")
+    if not hec_token:
+        return {"ok": False, "error": "HEC not configured"}
+
+    ctx = _ssl._create_unverified_context()
+    event = {
+        "time": time.time(),
+        "index": AUDIT_INDEX,
+        "sourcetype": "aec:verdict",
+        "event": {
+            "control_id": str(payload.get("control", ""))[:120],
+            "verdict": str(payload.get("verdict", ""))[:24],
+            "merkle_root": str(payload.get("root", ""))[:96],
+            "models": payload.get("models") or ["claude", "gpt", "gemini", "foundation-sec"],
+            "mode": str(payload.get("source", "web"))[:24],
+        },
+    }
+    req = _ur.Request(
+        f"{hec_url}/services/collector/event",
+        data=json.dumps(event).encode(),
+        headers={"Authorization": f"Splunk {hec_token}"},
+        method="POST",
+    )
+    with _ur.urlopen(req, context=ctx, timeout=15) as r:
+        ok = json.loads(r.read().decode()).get("text") == "Success"
+
+    count = None
+    try:
+        auth = base64.b64encode(f"admin:{pw}".encode()).decode()
+        creq = _ur.Request(
+            f"{mgmt}/services/search/jobs/export",
+            data=_up.urlencode({
+                "search": f"| tstats count where index={AUDIT_INDEX}",
+                "output_mode": "json",
+            }).encode(),
+            headers={"Authorization": f"Basic {auth}"},
+            method="POST",
+        )
+        with _ur.urlopen(creq, context=ctx, timeout=15) as r:
+            for line in r.read().decode().splitlines():
+                line = line.strip()
+                if line:
+                    res = (json.loads(line).get("result") or {})
+                    if "count" in res:
+                        count = int(res["count"])
+    except Exception:
+        pass
+
+    return {"ok": ok, "index": AUDIT_INDEX, "count": count,
+            "search": f"index={AUDIT_INDEX} | sort -_time"}
+
+
+@app.post("/api/post-audit")
+async def post_audit(payload: dict, request: Request):
+    """Post a sealed verdict to Splunk (index=aec_audit) and return proof."""
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(status_code=429, content={"ok": False, "error": "rate limited"})
+    try:
+        return _splunk_post_verdict(payload)
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"ok": False, "error": str(exc)})
+
