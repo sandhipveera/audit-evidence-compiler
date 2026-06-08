@@ -22,7 +22,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-snap-type:y proximity;scroll-padding-top:66px}
-.hero,.console,.exec,.arch{scroll-snap-align:start;scroll-snap-stop:always}
+.hero,.workbench,.exec,.arch{scroll-snap-align:start;scroll-snap-stop:always}
 .hero{min-height:calc(100vh - 66px);display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative}
 body{
   background:
@@ -72,6 +72,15 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 .hero p.sub{font-size:18.5px;line-height:1.5;color:var(--muted);max-width:740px;margin:0 auto}
 .hero h1,.hero .sub,.hero .eyebrow{transition:opacity .28s ease}
 .hero.swapping h1,.hero.swapping .sub,.hero.swapping .eyebrow{opacity:0}
+.howworks h1{font-size:46px;line-height:1.08;margin-bottom:14px}
+.hw-steps{display:flex;align-items:stretch;justify-content:center;gap:8px;flex-wrap:wrap;margin:6px 0 18px;max-width:1160px}
+.hw-step{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--border2);border-radius:11px;background:var(--surface);padding:9px 12px}
+.hw-n{flex:none;width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#1a1304;background:linear-gradient(135deg,var(--brass),var(--brass2))}
+.hw-t b{font-size:12.5px;font-weight:700;display:block;white-space:nowrap} .hw-t small{font-size:10.5px;color:var(--muted);display:block;margin-top:1px;white-space:nowrap}
+.hw-sep{align-self:center;color:var(--brass);font-weight:700;font-size:18px}
+.hw-flow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);max-width:800px}
+.hw-flow span{padding:4px 10px;border:1px solid var(--border2);border-radius:7px;background:var(--surface)} .hw-flow i{color:var(--brass-dim);font-style:normal}
+@media(max-width:760px){.hw-sep{display:none}.hw-steps{flex-direction:column}}
 /* hero headline carousel */
 .hpick{margin:24px auto 0;display:flex;align-items:center;justify-content:center;gap:15px}
 .hpick button{cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);background:transparent;border:1px solid var(--border2);border-radius:50%;width:28px;height:28px;line-height:1;transition:.15s;opacity:.65}
@@ -131,6 +140,21 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 
 /* console */
 .console{margin-top:22px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--bg2));overflow:hidden;box-shadow:0 40px 100px -50px #000}
+/* ===== two-panel workbench: Use Cases (left) · Tribunal (right) ===== */
+.workbench{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start;margin:6px 0}
+.usecases{position:sticky;top:84px;align-self:start;border:1px solid var(--border2);border-radius:16px;background:var(--surface);padding:16px 14px;display:flex;flex-direction:column;gap:9px;max-height:calc(100vh - 104px);overflow:auto}
+.usecases h2{font-family:'Fraunces',serif;font-size:21px;font-weight:600;letter-spacing:-.01em;margin:2px 2px 4px}
+.uclist{display:flex;flex-direction:column;gap:8px}
+.usecases .scn{padding:11px 12px;border-radius:11px}
+.usecases .scn .stat,.usecases .scn .tag{display:none}
+.usecases .scn .num{font-size:9px}
+.usecases .scn .ttl{font-size:14px;margin:4px 0;line-height:1.16}
+.usecases .scn .pain{font-size:11.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.uc-demo{margin-top:auto;align-self:flex-start;font-size:12px}
+.workpanel{position:relative;border:1px solid var(--border2);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--bg2));overflow-x:hidden;overflow-y:auto;max-height:calc(100vh - 104px);box-shadow:0 30px 80px -54px #000}
+.workpanel .console-head{position:sticky;top:0;z-index:5;background:var(--surface)}
+.workpanel .debate{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.workbench{grid-template-columns:1fr}.usecases{position:static;max-height:none}.workpanel{max-height:none;overflow:visible}}
 .console-head{display:flex;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid var(--border)}
 .console-head .ctl{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
 .console-head .meta{font-size:12px;color:var(--muted);margin-top:1px}
@@ -138,6 +162,12 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 .impact b{color:var(--text);font-weight:700}
 .impact .clk{font-family:'JetBrains Mono',monospace;color:var(--brass);font-weight:700}
 @keyframes btnglow{0%,100%{box-shadow:0 8px 22px -8px rgba(var(--btn-glow),.55),0 0 15px -3px rgba(var(--btn-glow),.35)}50%{box-shadow:0 10px 30px -6px rgba(var(--btn-glow),.9),0 0 34px 0 rgba(var(--btn-glow),.62)}}
+@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.toexec{display:none;width:calc(100% - 40px);margin:2px 20px 18px;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;border:1px solid var(--brass2);border-radius:12px;padding:13px 18px;background:linear-gradient(180deg,rgba(218,179,106,.13),rgba(218,179,106,.04));color:var(--text);font-family:inherit;text-align:left;animation:btnglow 2.8s ease-in-out infinite}
+.toexec.show{display:flex}
+.toexec .te-ok{font-weight:700;font-size:12.5px;color:var(--brass);white-space:nowrap}
+.toexec .te-go{font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.toexec .te-ar{font-size:17px;color:var(--brass);display:inline-block;animation:nudge 1.5s ease-in-out infinite}
 .runbtn{margin-left:auto;border:1px solid var(--brass2);cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;color:#1a1304;background:linear-gradient(135deg,var(--brass),var(--brass2));padding:11px 22px;border-radius:10px;box-shadow:0 8px 22px -8px rgba(var(--btn-glow),.6);transition:.15s;animation:btnglow 2.6s ease-in-out infinite}
 .runbtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .runbtn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;animation:none}
@@ -150,14 +180,16 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 #runtoken:focus{border-color:var(--brass-dim)}
 
 /* splunk lineage */
-.lineage{display:flex;align-items:stretch;padding:18px 20px;background:rgba(236,59,155,.03);border-bottom:1px solid var(--border);overflow-x:auto}
-.node{display:flex;flex-direction:column;gap:3px;min-width:118px;opacity:.38;transition:.4s;padding-right:8px}
-.node.on{opacity:1}
-.node .k{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
-.node .v{font-size:13px;font-weight:700}
-.node .v .mono{font-size:12px}
+.lineage{display:flex;align-items:stretch;padding:15px 16px;gap:0;background:rgba(236,59,155,.03);border-bottom:1px solid var(--border)}
+.node{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 0;opacity:.55;transition:.4s;padding:8px 9px;background:var(--surface);border:1px solid var(--border);border-radius:9px}
+.debate.hidden{display:none}
+.node.posted{opacity:1;border-color:var(--splunk2);box-shadow:0 0 0 1px rgba(111,212,74,.3)}
+.node.on{opacity:1;border-color:var(--brass-dim)}
+.node .k{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.node .v{font-size:11.5px;font-weight:700;line-height:1.2}
+.node .v .mono{font-size:10px}
 .node.splunk .v{color:var(--splunk)}
-.arrow{align-self:center;color:var(--faint);margin:0 10px;font-size:17px;transition:.4s;flex:0 0 auto}
+.arrow{align-self:center;color:var(--faint);margin:0 4px;font-size:13px;transition:.4s;flex:0 0 auto}
 .arrow.on{color:var(--brass)}
 .lineage-cap{font-size:11.5px;color:var(--muted);padding:13px 20px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lineage-cap .rd{font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:10.5px;color:var(--splunk2);font-family:'JetBrains Mono',monospace}
@@ -355,6 +387,8 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
   .arch-grid{grid-template-columns:1fr;gap:14px}.arch-arrow{transform:rotate(90deg)}.arch-col{min-width:0}.arch-inner{padding:24px 18px}}
 
 /* ── theme toggle button ── */
+.splink{text-decoration:none;color:var(--splunk);border-color:rgba(236,59,155,.4)!important}
+.splink:hover{filter:brightness(1.1)}
 .themetgl{margin-left:4px;width:34px;height:34px;flex:none;border-radius:9px;border:1px solid var(--border2);background:var(--surface2);color:var(--brass);font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:.2s}
 .themetgl:hover{border-color:var(--brass-dim);background:var(--raise)}
 
@@ -436,51 +470,40 @@ html[data-theme="light"] .rt{color:#c01c7e}
   <div class="spacer"></div>
   <div class="pill splunk"><span class="dot"></span>Splunk BOTS v3 · connected</div>
   <div class="pill vbadge"><span class="dots"><i class="vd-a"></i><i class="vd-e"></i><i class="vd-x"></i><i class="vd-s"></i></span><span>4 / 4 vendors empaneled</span></div>
+  <a class="pill splink" href="https://splunk-aec.accessquint.com/en-US/app/auditcompiler/posture" target="_blank" rel="noopener" title="Open the live Compliance Posture dashboard in Splunk">⊙ Live in Splunk ↗</a>
   <button class="themetgl" id="themetgl" type="button" aria-label="Toggle light / dark theme" title="Toggle light / dark"><span class="ti">☾</span></button>
 </div></header>
 
 <div class="wrap">
-  <section class="hero reveal">
-    <span class="eyebrow" id="heroEb">AI-cross-checked · tamper-evident · Splunk-native</span>
-    <h1 class="serif" id="heroH">Turn Splunk data into<br><span class="br">audit-proof evidence.</span></h1>
-    <p class="sub" id="heroSub">Four independent AI models deliberate, agree, and seal the verdict — tamper-evident, end to end, from your real Splunk data.</p>
-    <div class="hpick" id="hpick">
-      <button id="hPrev" aria-label="previous headline">◂</button>
-      <span class="hdots" id="hDots"></span>
-      <button id="hNext" aria-label="next headline">▸</button>
+  <section class="hero howworks reveal">
+    <span class="eyebrow">How it works</span>
+    <h1 class="serif">Turn Splunk data into<br><span class="br">audit-proof evidence.</span></h1>
+    <p class="sub">Pick a use case and convene the tribunal — four rival AI models debate your real Splunk evidence and seal a tamper-evident verdict you can verify yourself.</p>
+    <div class="hw-steps">
+      <div class="hw-step"><span class="hw-n">1</span><div class="hw-t"><b>Pick a use case</b><small>choose a control</small></div></div>
+      <span class="hw-sep">→</span>
+      <div class="hw-step"><span class="hw-n">2</span><div class="hw-t"><b>Convene the tribunal</b><small>4 models debate</small></div></div>
+      <span class="hw-sep">→</span>
+      <div class="hw-step"><span class="hw-n">3</span><div class="hw-t"><b>Sealed verdict</b><small>consensus + Merkle</small></div></div>
+      <span class="hw-sep">→</span>
+      <div class="hw-step"><span class="hw-n">4</span><div class="hw-t"><b>Executive report</b><small>board-ready, auto</small></div></div>
     </div>
+    <div class="hw-flow"><span>map control</span><i>→</i><span>generate SPL</span><i>→</i><span>policy gate</span><i>→</i><span>Splunk MCP</span><i>→</i><span>4-model panel</span><i>→</i><span>consensus</span><i>→</i><span>Merkle seal</span></div>
     <button class="scrolldown" id="scrolldown" type="button" aria-label="Scroll to use cases"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
   </section>
 
-  <div class="howto reveal">
-    <div class="howline">
-      <div class="steps">
-        <span class="lead">How it works</span>
-        <span class="step"><b>1</b><span class="t">Pick a case</span></span>
-        <span class="sep">→</span>
-        <span class="step"><b>2</b><span class="t">Convene the tribunal</span></span>
-        <span class="sep">→</span>
-        <span class="step"><b>3</b><span class="t">Watch four models rule, then the evidence is sealed</span></span>
-      </div>
-      <div class="bts">
-        <button class="btsd-tog" id="btsTog" type="button">What's happening behind the scenes <span class="car">▾</span></button>
-        <a class="demolink" href="/static/demo.mp4" target="_blank" rel="noopener"><span class="rec"></span>Watch the real run</a>
-      </div>
-    </div>
-    <div class="btsbody" id="btsBody">
-      <p>This screen is a <b>live UI preview</b>. In a real run the agent <b>generates SPL</b> from the chosen control, validates it through the <b>policy gate</b>, and executes it against <span class="pk">Splunk BOTS v3 via the MCP server</span>. Four independently-trained models — <b>Claude, GPT, Gemini and Splunk's Foundation-Sec-8B</b> — then deliberate over the returned events and reach a <b>mechanical consensus</b> (lowest verdict wins, no LLM tiebreaker, fully reproducible). The verdict is <b>SHA-256 Merkle-chained</b> into a tamper-evident trail and written into the xlsx audit tracker. The <span class="hl">▶ Watch the real run</span> link is a recording of that exact CLI pipeline.</p>
-      <div class="flow"><span class="s">map control</span><span class="ar">→</span><span class="s">generate SPL</span><span class="ar">→</span><span class="s">policy gate</span><span class="ar">→</span><span class="s">Splunk MCP</span><span class="ar">→</span><span class="s">4-model panel</span><span class="ar">→</span><span class="s">consensus</span><span class="ar">→</span><span class="s">Merkle seal</span></div>
-    </div>
-  </div>
-
-  <div class="scenarios" id="scenarios">
+  <section class="workbench reveal" id="workbench">
+    <aside class="usecases">
+      <h2 class="serif">Use Cases</h2>
+      <div class="uclist" id="scenarios">
     <button class="scn reveal active" data-scn="prep"><div class="num">USE CASE 01</div><div class="stat"><span class="fig serif">30 sec</span><span class="cap">vs ~40 hrs<br>manual prep</span></div><div class="ttl serif">40 hours → 30 seconds</div><div class="pain">SOC 2 evidence prep burns 100–500 internal hours. Compile a full audit package in one run.</div><div class="tag">Impact</div></button>
     <button class="scn reveal" data-scn="drift"><div class="num">USE CASE 02</div><div class="stat"><span class="fig serif">365-day</span><span class="cap">blind spot<br>between audits</span></div><div class="ttl serif">Passed in Q1, failing now</div><div class="pain">Point-in-time audits miss 365 days. Detect control drift between two Splunk windows.</div><div class="tag">Continuous compliance</div></button>
     <button class="scn reveal" data-scn="trust"><div class="num">USE CASE 03</div><div class="stat"><span class="fig serif">4 models</span><span class="cap">cross-check<br>every verdict</span></div><div class="ttl serif">Verify, then trust</div><div class="pain">Can you trust AI-generated evidence? Four rival models cross-check; tampering is provable.</div><div class="tag">Quality of idea</div></button>
     <button class="scn reveal" data-scn="aigov"><div class="num">USE CASE 04</div><div class="stat"><span class="fig serif">90%</span><span class="cap">fail their first<br>AI audit</span></div><div class="ttl serif">AI-governance audit</div><div class="pain">90% fail their first ISO 42001 audit — "policies, not proof." Generate provable AI-control evidence from Splunk.</div><div class="tag">Newest market</div></button>
-  </div>
-
-  <div class="console reveal">
+      </div>
+      <a class="demolink uc-demo" href="/static/demo.mp4" target="_blank" rel="noopener"><span class="rec"></span>Watch the real CLI run</a>
+    </aside>
+    <div class="workpanel" id="workpanel">
     <div class="console-head">
       <div><div class="ctl serif" id="ctlName">SOC 2 · CC6.1 — Logical access / MFA enforcement</div><div class="meta" id="ctlMeta">Maps to ISO 27001:2022 A.5.15 · NIST CSF 2.0 PR.AA-01 · NIST 800-53 AC-1 · COBIT DSS05.04</div></div>
       <div class="impact"><span>Manual: <b>~40 hrs</b></span>→<span class="clk" id="clk">0:00</span></div>
@@ -518,7 +541,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
 
     <div class="deliberating serif" id="delib">The tribunal is deliberating…</div>
 
-    <div class="debate" id="debate">
+    <div class="debate hidden" id="debate">
       <div class="vendor" data-v="auditor"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-claude"/></svg></span><span class="nm">Auditor</span></div><div class="model">Claude Sonnet 4 · anthropic-cli</div><div class="org">Anthropic</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--auditor)"></i></div></div></div></div>
       <div class="vendor" data-v="engineer"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-openai"/></svg></span><span class="nm">Engineer</span></div><div class="model">GPT-5.5 · codex-cli</div><div class="org">OpenAI</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--engineer)"></i></div></div></div></div>
       <div class="vendor" data-v="adversary"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-gemini"/></svg></span><span class="nm">Adversary</span></div><div class="model">Gemini 2.5 Pro · gemini-cli</div><div class="org">Google</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--adversary)"></i></div></div><div class="dissent" data-dissent>↺ counter-search</div></div></div>
@@ -534,11 +557,13 @@ html[data-theme="light"] .rt{color:#c01c7e}
       <div class="panel-card merkle" id="merkle">
         <div class="rule"><span class="lock">🔒</span> Tamper-evident evidence chain</div>
         <div class="chain" id="chain"></div>
-        <div class="root">chain root <span class="h">a3f1c9…e7b2</span> · written to xlsx <b style="color:var(--text)">and posted back to Splunk</b> <span class="mono" style="color:var(--splunk)">(index=aec_audit)</span></div>
+        <div class="root">chain root <span class="h">a3f1c9…e7b2</span> · written to xlsx <b style="color:var(--text)">and posted back to Splunk</b> <a class="mono" style="color:var(--splunk)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time" target="_blank" rel="noopener">(view in Splunk: index=aec_audit ↗)</a></div>
         <a class="verify" href="/verify" target="_blank" rel="noopener">Verify this trail at /verify →</a>
       </div>
     </div>
-  </div>
+    <button class="toexec" id="toexec" type="button"><span class="te-ok">✓ Verdict sealed &amp; posted to Splunk</span><span class="te-go">Your Executive Compliance Report is ready below <span class="te-ar">↓</span></span></button>
+    </div>
+  </section>
 
   <section class="exec reveal" id="exec">
     <div class="exec-inner">
@@ -646,10 +671,10 @@ html[data-theme="light"] .rt{color:#c01c7e}
 
 <script>
 const SCN={
-  prep:{ctl:"SOC 2 · CC6.1 — Logical access / MFA enforcement",meta:"Maps to ISO 27001:2022 A.5.15 · NIST CSF 2.0 PR.AA-01 · NIST 800-53 AC-1 · COBIT DSS05.04",manual:"~40 hrs",ev:"1,247 events"},
-  drift:{ctl:"SOC 2 · CC6.1 — drift across two audit windows",meta:"Window Q1 vs Q2 · same control, divergent posture",manual:"missed 90 days",ev:"Q1 1,247 · Q2 1,809"},
-  trust:{ctl:"Trust check · can you trust AI-generated evidence?",meta:"4 independent vendors cross-check · SHA-256 Merkle proof · live tamper demo",manual:"unverifiable",ev:"1,247 events"},
-  aigov:{ctl:"ISO 42001 · AI-governance control evidence",meta:"AI access logs · model inventory · agent-decision logs (OWASP Agentic Top 10)",manual:"90% fail 1st audit",ev:"AI logs: 642"}
+  prep:{ctl:"SOC 2 · CC6.1 — Logical access / MFA enforcement",meta:"ISO 27001:2022 A.5.15 · NIST CSF 2.0 PR.AA-01 · NIST 800-53 AC-1 · COBIT DSS05.04",manual:"~40 hrs",ev:"1,247 events",evq:"Who can access what, how is access provisioned/reviewed, and is MFA enforced?"},
+  drift:{ctl:"SOC 2 · CC6.1 — drift across two audit windows",meta:"Window Q1 vs Q2 · ISO 27001:2022 A.5.15 · NIST CSF PR.AA-01 · NIST 800-53 AC-1",manual:"missed 90 days",ev:"Q1 1,247 · Q2 1,809",evq:"Did a control that passed earlier quietly regress between assessments?"},
+  trust:{ctl:"SOC 2 · CC4.1 — Monitoring of controls",meta:"ISO 27001:2022 A.8.15 · NIST 800-53 AU-9 · COBIT MEA03",manual:"unverifiable",ev:"1,247 events",evq:"Can a board trust AI-generated evidence — and prove it wasn't altered?"},
+  aigov:{ctl:"ISO 42001 · A.6.2.2 — AI governance & monitoring",meta:"ISO 42001 A.8.3 · NIST AI RMF MEASURE · OWASP Agentic Top 10",manual:"90% fail 1st audit",ev:"AI logs: 642",evq:"Is there proof — not just policy — that AI systems are governed and monitored?"}
 };
 const RUN=[
   {v:"auditor",verdict:"FAIL",conf:87,reason:"23 accounts authenticated without MFA in the window. Control language requires MFA on all privileged access — not satisfied."},
@@ -704,11 +729,11 @@ function renderExec(scn){
 /* fetch the sanitized priors, then render; fall back to inline data on failure */
 fetch('/static/exec_priors.json').then(r=>r.json()).then(j=>{EXEC=j.scenarios||j;renderExec(curScn);}).catch(()=>renderExec(curScn));
 
-qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const s=SCN[b.dataset.scn];q('#ctlName').textContent=s.ctl;q('#ctlMeta').textContent=s.meta;q('.impact b').textContent=s.manual;q('#evCount').innerHTML=`<span class="mono">${s.ev}</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span>`;curScn=b.dataset.scn;renderExec(curScn);reset();scrollToEl(q('.console'));});
+qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const s=SCN[b.dataset.scn];q('#ctlName').textContent=s.ctl;q('#ctlMeta').textContent=s.meta;q('.impact b').textContent=s.manual;q('#evCount').innerHTML=`<span class="mono">${s.ev}</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span>`;if(s.evq)q('#evqText').textContent=s.evq;curScn=b.dataset.scn;renderExec(curScn);reset();});
 function reset(){
   qa('.node,.arrow').forEach(n=>n.classList.remove('on'));
   qa('.vendor').forEach(c=>{c.classList.remove('active');q('[data-st]',c).textContent='idle';const r=q('[data-reason]',c);r.classList.remove('show');r.textContent='';const vd=q('[data-verdict]',c);vd.className='verdict';vd.textContent='';q('[data-cval]',c).textContent='—';q('[data-cbar]',c).style.width='0';const d=q('[data-dissent]',c);if(d)d.classList.remove('show')});
-  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');
+  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');q('#debate').classList.add('hidden');if(q('#toexec'))q('#toexec').classList.remove('show');{const pb=q('[data-n="5"]');if(pb){pb.classList.remove('posted');const pv=q('.v',pb);if(pv)pv.innerHTML='verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span>';}}
   qa('.ladder span').forEach(s=>s.classList.remove('win'));q('#final').classList.remove('struck');
   q('#chain').innerHTML='';q('#clk').textContent='0:00';q('#runbtn').disabled=false;q('#runbtn').textContent='▷ Guided walkthrough';
   qa('.exec-dl a').forEach(a=>{a.classList.add('locked');a.title='Run the tribunal first'});  // exports gated until a run completes
@@ -722,10 +747,10 @@ async function run(){
   qa('.scn').forEach(b=>b.disabled=true);const _lb=q('#runlivebtn');if(_lb)_lb.disabled=true;
   const W=ms=>wait(ms*SPEED);
   let t=0;const clk=q('#clk');const ti=setInterval(()=>{t+=1;clk.textContent='0:'+String(t).padStart(2,'0')},1000);
-  scrollToEl(q('.console'));await W(120);
+  scrollToEl(q('.workbench'));await W(120);
   for(let i=0;i<5;i++){q(`[data-n="${i}"]`).classList.add('on');const a=q(`[data-a="${i-1}"]`);if(a)a.classList.add('on');await W(460)}
   const cards={};qa('.vendor').forEach(c=>cards[c.dataset.v]=c);
-  focus(q('#debate'));
+  q('#debate').classList.remove('hidden');focus(q('#debate'));
   q('#delib').classList.add('show');
   qa('.vendor').forEach(c=>{q('[data-st]',c).innerHTML='<span class="spin"></span>deliberating'});
   await W(800);
@@ -751,8 +776,14 @@ async function run(){
   clearInterval(ti);clk.textContent='0:31';
   running=false;qa('.scn').forEach(b=>b.disabled=false);const _lb2=q('#runlivebtn');if(_lb2)_lb2.disabled=false;
   btn.disabled=false;btn.textContent='↻ Replay walkthrough';
-  qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});  // verdict sealed → exports unlocked
+  qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk('FAIL');focusVerdict();  // verdict sealed → exports unlocked, posted to Splunk, scroll to it
 }
+function postToSplunk(verdict){
+  const node=q('[data-n="5"]'),vEl=node&&q('.v',node);
+  fetch('/api/post-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({control:(SCN[curScn]&&SCN[curScn].ctl)||'',verdict:verdict||'',root:'a3f1c9…e7b2',source:curScn})})
+    .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' verdicts':'')+' ↗</a>'; } }).catch(()=>{});
+}
+function focusVerdict(){ const wp=q('#workpanel'); if(wp) setTimeout(()=>wp.scrollTo({top:wp.scrollHeight,behavior:'smooth'}),160); }
 q('#runbtn').onclick=run;
 
 /* ===== LIVE run — drives the SAME UI from the real /ws/run backend (token-gated) ===== */
@@ -767,17 +798,17 @@ async function sealAnim(){
 function runLive(){
   if(running)return;
   const token=((q('#runtoken')&&q('#runtoken').value)||new URLSearchParams(location.search).get('token')||'').trim();
-  running=true;reset();
+  running=true;reset();let liveVerdict='FAIL';
   const wbtn=q('#runbtn'),lbtn=q('#runlivebtn');
   wbtn.disabled=true;lbtn.disabled=true;lbtn.textContent='● live…';
   qa('.scn').forEach(b=>b.disabled=true);
   let t=0;const clk=q('#clk');const ti=setInterval(()=>{t+=1;clk.textContent='0:'+String(t).padStart(2,'0')},1000);
   const cards={};qa('.vendor').forEach(c=>cards[c.dataset.v]=c);
-  q('#delib').classList.add('show');q('#delib').textContent='Opening a live four-vendor panel…';
+  q('#debate').classList.remove('hidden');q('#delib').classList.add('show');q('#delib').textContent='Opening a live four-vendor panel…';
   for(let i=0;i<2;i++){q(`[data-n="${i}"]`)&&q(`[data-n="${i}"]`).classList.add('on');const a=q(`[data-a="${i-1}"]`);if(a)a.classList.add('on');}
-  scrollToEl(q('.console'));
+  scrollToEl(q('.workbench'));
   let liveTimer=0;
-  const finishUp=(ok)=>{clearInterval(ti);clearTimeout(liveTimer);running=false;qa('.scn').forEach(b=>b.disabled=false);wbtn.disabled=false;lbtn.disabled=false;lbtn.textContent='▶ Run live';if(ok)qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});};
+  const finishUp=(ok)=>{clearInterval(ti);clearTimeout(liveTimer);running=false;qa('.scn').forEach(b=>b.disabled=false);wbtn.disabled=false;lbtn.disabled=false;lbtn.textContent='▶ Run live';if(ok){qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk(liveVerdict);focusVerdict();}};
   let ws;
   try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/run');}
   catch(e){q('#delib').textContent='⚠ Could not open a connection.';finishUp(false);return;}
@@ -803,7 +834,7 @@ function runLive(){
     if(m.type==='consensus'){
       qa('.vendor').forEach(x=>x.classList.remove('active'));q('#delib').classList.remove('show');
       q('#consensus').classList.add('show');focus(q('#consensus'));
-      const v=m.verdict;const w=q('[data-l="'+v+'"]');if(w)w.classList.add('win');
+      const v=m.verdict;liveVerdict=v;const w=q('[data-l="'+v+'"]');if(w)w.classList.add('win');
       const fin=q('#final');fin.className='final '+v+' serif';fin.innerHTML=v+'<small>'+(m.degraded?'Degraded — not all vendors responded. ':'')+'Mechanical consensus · '+(m.method||'lowest-of-four')+' · live.</small>';fin.classList.add('struck');
       await sealAnim();
       q('[data-a="4"]')&&q('[data-a="4"]').classList.add('on');q('[data-n="5"]')&&q('[data-n="5"]').classList.add('on');
@@ -821,46 +852,12 @@ qa('.exec-dl a').forEach(a=>a.addEventListener('click',e=>{
   if(a.id==='dlExec'){ q('#exec').scrollIntoView(); window.print(); }
 }));
 // hero scroll cue → advance to the use-cases
-{const sd=q('#scrolldown');if(sd)sd.onclick=()=>{const t=q('.howto')||q('#scenarios');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})};}
+{const sd=q('#scrolldown');if(sd)sd.onclick=()=>{const t=q('.workbench');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})};}
+{const te=q('#toexec');if(te)te.onclick=()=>{const e=q('#exec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})};}
 
 /* behind-the-scenes expander */
-q('#btsTog').onclick=()=>{q('#btsBody').classList.toggle('open');q('#btsTog').classList.toggle('open')};
 
 /* ===== hero headline carousel (auto-advancing slideshow) ===== */
-const HEADLINES=[
-  {label:"Splunk→proof", eb:"AI-cross-checked · tamper-evident · Splunk-native",
-   h:'Turn Splunk data into<br><span class="br">audit-proof evidence.</span>',
-   s:"Four independent AI models deliberate, agree, and seal the verdict — tamper-evident, end to end, from your real Splunk data."},
-  {label:"Prove it", eb:"Verify, then trust",
-   h:'Audit evidence<br>you can <span class="br">prove.</span>',
-   s:"Four rival AI models cross-examine your real Splunk data, then seal it in a Merkle chain no one can tamper with."},
-  {label:"40h→30s", eb:"40 hours → 30 seconds",
-   h:'40 hours of audit prep,<br><span class="br">in 30 seconds.</span>',
-   s:"Tessera turns real Splunk data into cross-checked, tamper-evident compliance evidence — automatically."},
-  {label:"Trust engine", eb:"The trust layer for AI compliance",
-   h:'The trust engine for<br><span class="br">AI compliance evidence.</span>',
-   s:"Real Splunk data. Four rival models. One tamper-evident verdict."}
-];
-let hi=0;const hero=q('.hero'),hpick=q('#hpick'),hDots=q('#hDots');
-HEADLINES.forEach((_,i)=>{const d=document.createElement('i');d.onclick=()=>setHeadline(i);hDots.appendChild(d)});
-function setHeadline(i){
-  hi=(i+HEADLINES.length)%HEADLINES.length;const H=HEADLINES[hi];
-  hero.classList.add('swapping');
-  setTimeout(()=>{
-    q('#heroEb').textContent=H.eb;q('#heroH').innerHTML=H.h;q('#heroSub').textContent=H.s;
-    qa('#hDots i').forEach((d,j)=>d.classList.toggle('on',j===hi));
-    hero.classList.remove('swapping');
-  },280);
-}
-q('#hPrev').onclick=()=>setHeadline(hi-1);
-q('#hNext').onclick=()=>setHeadline(hi+1);
-/* the active dot's fill bar is the timer — when it finishes, advance */
-hDots.addEventListener('animationend',e=>{if(e.animationName==='hfill'&&!hpick.classList.contains('paused'))setHeadline(hi+1)});
-/* pause the slideshow while a viewer hovers the hero (let them read) */
-hero.addEventListener('mouseenter',()=>hpick.classList.add('paused'));
-hero.addEventListener('mouseleave',()=>hpick.classList.remove('paused'));
-addEventListener('keydown',e=>{if(e.key==='ArrowLeft')setHeadline(hi-1);if(e.key==='ArrowRight')setHeadline(hi+1)});
-setHeadline(0);
 
 /* reveal panels as they enter the viewport */
 const io=new IntersectionObserver((entries,obs)=>{
