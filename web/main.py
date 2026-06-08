@@ -49,13 +49,47 @@ def _check_rate_limit(ip: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Run gate — the /ws/run and /api/incident endpoints invoke the *paid* four-vendor
+# panel, so protect them from anonymous abuse: an optional shared token plus a hard
+# global daily cap. The public dashboard is a static mock and never calls these.
+# ---------------------------------------------------------------------------
+
+RUN_TOKEN = os.environ.get("AEC_RUN_TOKEN", "")
+MAX_RUNS_PER_DAY = int(os.environ.get("AEC_MAX_RUNS_PER_DAY", "25"))
+
+_run_day = ""    # UTC date the counter belongs to
+_run_count = 0   # real panel runs started today
+
+
+def _check_run_token(token: str | None) -> bool:
+    """True if no token is configured (dev), or the supplied token matches."""
+    if not RUN_TOKEN:
+        return True
+    return bool(token) and token == RUN_TOKEN
+
+
+def _check_run_budget() -> bool:
+    """True if today's global real-run budget has room; increments when it does."""
+    global _run_day, _run_count
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if today != _run_day:
+        _run_day, _run_count = today, 0
+    if _run_count >= MAX_RUNS_PER_DAY:
+        return False
+    _run_count += 1
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
 
 @app.get("/")
 def root():
-    return FileResponse(str(STATIC_DIR / "index.html"))
+    # The Tessera dashboard (prototype.html) is the public face; the legacy
+    # index.html remains reachable at /static/index.html if needed.
+    return FileResponse(str(STATIC_DIR / "prototype.html"))
 
 
 @app.get("/api/controls")
@@ -105,6 +139,16 @@ async def run_debate(ws: WebSocket):
             "type": "error",
             "message": f"Rate limit exceeded — max {RATE_LIMIT} debates per {RATE_WINDOW}s",
         })
+        await ws.close()
+        return
+
+    if not _check_run_token(cfg.get("token") or ws.query_params.get("token")):
+        await ws.send_json({"type": "error", "message": "Unauthorized — a valid run token is required for live runs."})
+        await ws.close()
+        return
+
+    if not _check_run_budget():
+        await ws.send_json({"type": "error", "message": f"Daily live-run limit reached ({MAX_RUNS_PER_DAY}/day). Try again tomorrow."})
         await ws.close()
         return
 
@@ -328,6 +372,12 @@ async def handle_incident(
                 )
             },
         )
+
+    if not _check_run_token(request.headers.get("X-AEC-Token") or payload.get("token")):
+        return JSONResponse(status_code=401, content={"error": "Unauthorized — a valid run token is required."})
+
+    if not _check_run_budget():
+        return JSONResponse(status_code=429, content={"error": f"Daily live-run limit reached ({MAX_RUNS_PER_DAY}/day)."})
 
     alert_name, alert_body = alert_fields_from_payload(payload)
     controls = map_alert_to_controls(alert_name, alert_body)
