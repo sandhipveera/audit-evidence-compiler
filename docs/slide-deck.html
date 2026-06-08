@@ -2,163 +2,174 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tessera — Slide Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0c0b12;--bg2:#08070c;--text:#ece6da;--muted:#9a9384;--faint:#6a6457;
-  --brass:#dab36a;--brass2:#b78a3e;--splunk:#ec3b9b;--green:#6fd44a;--border:#2a2733;
-  --auditor:#6ba4e8;--engineer:#5ec9b0;--adversary:#e8954a;--security:#b08ce0;}
+:root{--bg:#0b0a10;--text:#f1ece1;--muted:#a59d8c;--faint:#6a6457;
+  --brass:#e3c074;--brass2:#b78a3e;--splunk:#ec3b9b;--green:#6fd44a;--border:#2c2935;
+  --auditor:#7fb0ee;--engineer:#6fd3bb;--adversary:#f0a45c;--security:#bfa0e6;}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
-body{font-family:Inter,system-ui,sans-serif;color:var(--text);background:
-  radial-gradient(1100px 520px at 50% -160px,rgba(218,179,106,.13),transparent 60%),
-  radial-gradient(700px 400px at 88% -40px,rgba(236,59,155,.06),transparent 55%),var(--bg);}
-.serif{font-family:Georgia,'Times New Roman',serif}
-.slide{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;
-  padding:6vh 9vw;position:relative;border-bottom:1px solid #15131d}
-.eyebrow{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:1.1rem}
-h1{font-size:3.2rem;line-height:1.05;font-weight:800;letter-spacing:-.01em;margin-bottom:1rem}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--bg);
+  -webkit-font-smoothing:antialiased;letter-spacing:.005em}
+.serif{font-family:'Fraunces','Hoefler Text',Georgia,serif}
+.slide{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:8vh 8vw;position:relative;
+  background:
+   radial-gradient(120% 80% at 50% -25%,rgba(227,192,116,.10),transparent 55%),
+   radial-gradient(90% 60% at 50% 130%,rgba(236,59,155,.05),transparent 55%),
+   radial-gradient(140% 120% at 50% 45%,transparent 55%,rgba(0,0,0,.55)),var(--bg)}
+.wrap{max-width:1040px;width:100%;display:flex;flex-direction:column;align-items:center;gap:1.5rem}
+.eyebrow{font-size:.95rem;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);font-weight:600;
+  display:flex;align-items:center;gap:.9rem}
+.eyebrow::before,.eyebrow::after{content:"";width:38px;height:1px;background:linear-gradient(90deg,transparent,var(--brass2))}
+.eyebrow::after{transform:scaleX(-1)}
+h1{font-family:'Fraunces',Georgia,serif;font-size:5.4rem;line-height:1.02;font-weight:600;letter-spacing:-.02em}
+h1.big{font-size:7rem}
 h1 .br{color:var(--brass)}
-h2{font-size:2.1rem;font-weight:700;color:var(--brass);letter-spacing:-.01em;margin-bottom:1.4rem}
-p.lead{font-size:1.35rem;color:var(--muted);max-width:60ch;line-height:1.5}
-ul{list-style:none;max-width:70ch}
-li{font-size:1.25rem;line-height:1.5;margin:.7rem 0;padding-left:1.5rem;position:relative;color:var(--text)}
-li::before{content:"▸";position:absolute;left:0;color:var(--brass)}
-li small{color:var(--muted)}
-b,strong{color:var(--brass)}
-blockquote{font-family:Georgia,serif;font-style:italic;font-size:1.5rem;color:var(--text);
-  border-left:3px solid var(--brass);padding-left:1.2rem;margin-top:1.4rem;max-width:60ch}
-table{border-collapse:collapse;font-size:1.1rem;margin-top:.4rem}
-td,th{padding:.5rem 1.1rem;border-bottom:1px solid var(--border);text-align:left}
-th{color:var(--faint);font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+h2{font-family:'Fraunces',Georgia,serif;font-size:3.6rem;font-weight:600;color:var(--brass);letter-spacing:-.015em;line-height:1.08}
+p.lead{font-size:1.9rem;color:var(--muted);max-width:24ch;line-height:1.45;font-weight:400}
+p.lead.wide{max-width:34ch}
+p.lead b,b,strong{color:var(--text);font-weight:600}
+.brass{color:var(--brass)!important}
+ul{list-style:none;display:inline-flex;flex-direction:column;gap:1.15rem;text-align:left;max-width:30ch}
+li{font-size:1.65rem;line-height:1.4;padding-left:2rem;position:relative;color:var(--text);font-weight:400}
+li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:9px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brass),var(--brass2))}
+li small,li .s{color:var(--muted);font-weight:400}
+blockquote{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:2.4rem;color:var(--text);
+  line-height:1.25;max-width:22ch;font-weight:400}
+table{border-collapse:collapse;font-size:1.45rem;margin:0 auto}
+td,th{padding:.7rem 1.4rem;border-bottom:1px solid var(--border)}
+th{color:var(--faint);font-weight:600;font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;padding-bottom:1rem}
+td:first-child{font-weight:700;font-family:'Fraunces',serif;font-size:1.5rem}
+td.lens{color:var(--muted);font-size:1.25rem;text-align:left}
 .A{color:var(--auditor)}.E{color:var(--engineer)}.X{color:var(--adversary)}.S{color:var(--security)}
-pre{background:#15131d;border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.3rem;
-  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:1rem;color:var(--green);line-height:1.7;overflow:auto;max-width:75ch}
-.muted{color:var(--muted);font-size:.95rem;margin-top:1rem}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem 2.4rem;max-width:80ch}
-a{color:var(--splunk);text-decoration:none}
-.pageno{position:fixed;bottom:14px;right:20px;font-size:.8rem;color:var(--faint);font-family:monospace}
-.hint{position:fixed;bottom:14px;left:20px;font-size:.78rem;color:var(--faint)}
-.logo{display:inline-grid;grid-template-columns:1fr 1fr;gap:3px;width:34px;height:34px;vertical-align:-8px;margin-right:10px}
-.logo i{border-radius:4px}.logo i:nth-child(1),.logo i:nth-child(4){background:linear-gradient(135deg,#e9c884,#b78a3e)}
+code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.92em;color:var(--green);background:rgba(111,212,74,.08);
+  padding:.08em .4em;border-radius:5px}
+pre{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:1.25rem;color:var(--text);line-height:1.85;text-align:left}
+pre .b{color:var(--brass)} pre .p{color:var(--splunk)} pre .a{color:var(--faint)}
+.note{color:var(--muted);font-size:1.15rem;max-width:60ch;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem 3rem;max-width:64ch;text-align:left}
+.grid2 .c b{font-family:'Fraunces',serif;font-size:1.5rem;color:var(--brass);font-weight:600;display:block;margin-bottom:.35rem}
+.grid2 .c span{color:var(--muted);font-size:1.15rem;line-height:1.45}
+.links{display:flex;flex-direction:column;gap:.85rem;font-size:1.5rem}
+.links a{color:var(--text);text-decoration:none;border-bottom:1px solid transparent;transition:.2s}
+.links a:hover{color:var(--brass);border-color:var(--brass2)}
+.links .k{color:var(--faint);font-size:1.1rem}
+.logo{display:inline-grid;grid-template-columns:1fr 1fr;gap:5px;width:84px;height:84px;margin-bottom:.6rem}
+.logo i{border-radius:9px}.logo i:nth-child(1),.logo i:nth-child(4){background:linear-gradient(135deg,#f0d28f,#b78a3e)}
 .logo i:nth-child(2),.logo i:nth-child(3){background:#b78a3e}
-@media print{html{scroll-snap-type:none}.slide{min-height:auto;page-break-after:always;border:none}.hint,.pageno{display:none}}
+.pageno{position:fixed;bottom:18px;right:26px;font-size:.85rem;color:var(--faint);font-family:'JetBrains Mono',monospace;letter-spacing:.1em}
+.hint{position:fixed;bottom:18px;left:26px;font-size:.78rem;color:#3b3747}
+@media print{html{scroll-snap-type:none}.slide{min-height:100vh;page-break-after:always}.hint,.pageno{display:none}}
+@media(max-width:1100px){h1{font-size:3.6rem}h1.big{font-size:4.4rem}h2{font-size:2.6rem}p.lead,li,blockquote{font-size:1.4rem}}
 </style></head>
 <body>
 
-<section class="slide">
-  <div class="eyebrow"><span class="logo"><i></i><i></i><i></i><i></i></span>Splunk Agentic Ops Hackathon 2026 · Security Track</div>
-  <h1>Tessera</h1>
-  <p class="lead">The trust engine for AI-generated compliance evidence. <b>Four rival AI models debate real Splunk data, then seal a tamper-evident verdict you can verify.</b></p>
-  <p class="muted">Live: aec3.accessquint.com · github.com/sandhipveera/audit-evidence-compiler</p>
-</section>
+<section class="slide"><div class="wrap">
+  <div class="logo"><i></i><i></i><i></i><i></i></div>
+  <h1 class="serif big">Tessera</h1>
+  <p class="lead wide">The trust engine for AI-generated compliance evidence.</p>
+  <p class="lead wide"><b>Four rival AI models debate real Splunk data, then seal a tamper-evident verdict you can prove.</b></p>
+  <div class="eyebrow" style="margin-top:1rem">Splunk Agentic Ops Hackathon 2026 · Security Track</div>
+</div></section>
 
-<section class="slide">
+<section class="slide"><div class="wrap">
   <div class="eyebrow">The problem</div>
-  <ul>
-    <li>A single <b>SOC 2 audit cycle = 40+ hours</b> of pulling evidence from Splunk and judging whether it satisfies the control.</li>
-    <li><b>AI can generate that evidence in seconds — but can you trust it?</b> One model, one opinion, no proof it wasn't altered.</li>
-    <li><b>90% of orgs fail their first AI-governance audit</b> — they have policies, not proof.</li>
-  </ul>
-  <blockquote>The bottleneck isn't generating evidence. It's <i>trusting</i> it.</blockquote>
-</section>
+  <h2>Generating evidence is easy.<br><span class="brass">Trusting it isn't.</span></h2>
+  <p class="lead wide">A SOC 2 cycle costs a vCISO <b>40+ hours</b> of pulling evidence from Splunk. AI can do it in seconds — but one model, one opinion, <b>no proof it wasn't altered.</b></p>
+</div></section>
 
-<section class="slide">
+<section class="slide"><div class="wrap">
   <div class="eyebrow">The idea</div>
-  <h2>Don't trust one AI — make four debate</h2>
+  <h2 style="margin-bottom:.5rem">Don't trust one AI.<br>Make <span class="brass">four</span> debate.</h2>
   <table>
     <tr><th>Persona</th><th>Model</th><th>Lens</th></tr>
-    <tr><td class="A">Auditor</td><td>Claude · Anthropic</td><td>satisfies the control language?</td></tr>
-    <tr><td class="E">Engineer</td><td>GPT-5.5 / Codex · OpenAI</td><td>statistically sound?</td></tr>
-    <tr><td class="X">Adversary</td><td>Gemini · Google</td><td>red-team — can an attacker slip through?</td></tr>
-    <tr><td class="S">Security Model</td><td><b>Foundation-Sec-8B · Splunk/Cisco</b></td><td>does it stop <i>real</i> attackers?</td></tr>
+    <tr><td class="A">Auditor</td><td>Claude · Anthropic</td><td class="lens">satisfies the control?</td></tr>
+    <tr><td class="E">Engineer</td><td>GPT-5.5 · OpenAI</td><td class="lens">statistically sound?</td></tr>
+    <tr><td class="X">Adversary</td><td>Gemini · Google</td><td class="lens">can an attacker slip through?</td></tr>
+    <tr><td class="S">Security</td><td><b class="brass">Foundation-Sec-8B</b> · Splunk/Cisco</td><td class="lens">does it stop <em>real</em> attackers?</td></tr>
   </table>
-  <p class="muted">Consensus is <b>mechanical</b> — lowest verdict wins, no LLM tiebreaker → reproducible. One dissent forces PARTIAL/FAIL.</p>
-</section>
+  <p class="note">Consensus is <b>mechanical</b> — lowest verdict wins, no LLM tiebreaker → reproducible. One dissent forces PARTIAL / FAIL.</p>
+</div></section>
 
-<section class="slide">
-  <div class="eyebrow">Deep Splunk integration</div>
-  <h2>Real Splunk, end to end</h2>
+<section class="slide"><div class="wrap">
+  <div class="eyebrow">Deep Splunk, end to end</div>
   <ul>
-    <li>Question → <b>SPL generated</b> → <b>policy gate</b> → executed on <b>BOTS v3 (1.94M real events)</b> via <b>MCP</b>.</li>
-    <li>The <span class="X">Adversary</span> can issue <b>counter-SPL</b> — a 2nd round runs on what the data <i>actually</i> shows.</li>
-    <li>Verdict + Merkle root <b>posted back to Splunk</b> (<code>HEC → index=aec_audit</code>) — a live audit log inside the platform.</li>
-    <li>Splunk-native <b>Compliance Posture dashboard</b> + <code>| auditcompiler</code> search command.</li>
+    <li><b class="brass">1.94M</b> real BOTS v3 events — SPL generated, policy-gated, run via MCP</li>
+    <li>The Adversary issues <b>counter-SPL</b> — a 2nd round on what the data really shows</li>
+    <li>Verdict <b>posted back into Splunk</b> — <code>HEC → index=aec_audit</code></li>
+    <li>Splunk-native <b>Compliance Posture</b> dashboard + <code>| auditcompiler</code></li>
   </ul>
-  <p class="muted">Not mocked — live tunnel to the Splunk instance, real query results, real write-back.</p>
-</section>
+  <p class="note">Not mocked — live tunnel to the Splunk instance, real query results, real write-back.</p>
+</div></section>
 
-<section class="slide">
+<section class="slide"><div class="wrap">
   <div class="eyebrow">Trust, made provable</div>
-  <h2>Tamper-evident by construction</h2>
-  <ul>
-    <li>Every snapshot is <b>SHA-256 Merkle-chained</b> (canonical JSON; no signing keys to leak).</li>
-    <li>The <code>gap_report.xlsx</code> carries the <b>chain root</b>.</li>
-    <li>Anyone verifies at the public <b>/verify</b> portal — drop in <code>audit_trail.jsonl</code>:</li>
-    <li>&nbsp;&nbsp;✅ <b>VERIFIED</b> — nothing changed since collection &nbsp;·&nbsp; ❌ <b>TAMPERED</b> — one flipped verdict breaks the hash.</li>
-  </ul>
-  <blockquote>Trust isn't asserted. It's provable — by a third party, with no install.</blockquote>
-</section>
+  <h2>Tamper-evident<br>by construction.</h2>
+  <p class="lead wide">Every verdict is <b>SHA-256 Merkle-chained.</b> Anyone re-checks it at the public <b>/verify</b> portal — no install, no account.</p>
+  <p class="lead wide" style="font-size:1.7rem"><span class="brass">✅ VERIFIED</span> &nbsp;·&nbsp; flip one verdict &nbsp;·&nbsp; <span style="color:#e0584f">❌ TAMPERED</span></p>
+</div></section>
 
-<section class="slide">
-  <div class="eyebrow">Use cases</div>
-  <h2>Four ways teams use it</h2>
-  <ul>
-    <li><b>40 hours → 30 seconds</b> — SOC 2 CC6.1 audit prep, compiled in one run.</li>
-    <li><b>Passed in Q1, failing now</b> — control <i>drift</i> across two Splunk windows.</li>
-    <li><b>Verify, then trust</b> — four rival models cross-check every verdict; tampering is provable.</li>
-    <li><b>AI-governance audit (ISO 42001)</b> — "policies, not proof" → provable AI-control evidence from Splunk.</li>
+<section class="slide"><div class="wrap">
+  <div class="eyebrow">Four ways teams use it</div>
+  <ul style="max-width:40ch">
+    <li><b>40 hours → 30 seconds</b> <span class="s">— SOC 2 audit prep in one run</span></li>
+    <li><b>Passed in Q1, failing now</b> <span class="s">— control drift across Splunk windows</span></li>
+    <li><b>Verify, then trust</b> <span class="s">— four rivals cross-check every verdict</span></li>
+    <li><b>AI-governance audit</b> <span class="s">— ISO 42001: proof, not policies</span></li>
   </ul>
-  <p class="muted">Five frameworks: SOC 2 · ISO 27001:2022 · NIST CSF 2.0 · NIST 800-53 Rev 5 · COBIT 2019.</p>
-</section>
+  <p class="note">SOC 2 · ISO 27001:2022 · NIST CSF 2.0 · NIST 800-53 Rev 5 · COBIT 2019</p>
+</div></section>
 
-<section class="slide">
+<section class="slide"><div class="wrap">
   <div class="eyebrow">How it's built</div>
-  <h2>Architecture</h2>
-<pre>Trigger (control / Splunk alert)
-   ↓
-LangGraph agent:  map → SPL-gen → policy gate → MCP executor → normalize
-   ↓
-Four-vendor panel (parallel) → mechanical consensus (lowest-of-four)
-   ↓
-Merkle seal (SHA-256) → xlsx + audit_trail.jsonl
-   ↓
-Post back to Splunk (HEC → index=aec_audit) · external /verify portal</pre>
-  <p class="muted">Pluggable MCP transport (official | livehybrid | rest). Personas are plain markdown — edit to change behavior.</p>
-</section>
+<pre>control / Splunk alert
+   <span class="a">↓</span>
+<span class="b">LangGraph</span>  map → SPL → <span class="b">policy gate</span> → MCP → normalize
+   <span class="a">↓</span>
+<span class="b">four-vendor panel</span> → mechanical consensus (lowest-of-four)
+   <span class="a">↓</span>
+<span class="b">Merkle seal</span> → xlsx + audit_trail.jsonl
+   <span class="a">↓</span>
+post back to <span class="p">Splunk</span> · external <span class="p">/verify</span> portal</pre>
+  <p class="note">Pluggable MCP transport · personas are plain markdown — edit to change behavior.</p>
+</div></section>
 
-<section class="slide">
-  <div class="eyebrow">Why it wins · the four criteria</div>
+<section class="slide"><div class="wrap">
+  <div class="eyebrow">Why it wins</div>
   <div class="grid2">
-    <div><b>Technological Implementation</b><br><span class="muted">Real multi-vendor orchestration, live Splunk via MCP, policy-gated SPL, Merkle integrity, write-back to Splunk.</span></div>
-    <div><b>Design / UX</b><br><span class="muted">A two-panel <i>tool</i>: pick a case, convene the tribunal, watch four models rule, jump to the board report.</span></div>
-    <div><b>Potential Impact</b><br><span class="muted">40+ audit hours → 30 seconds across 5 frameworks; continuous (drift), not point-in-time.</span></div>
-    <div><b>Quality of Idea</b><br><span class="muted">"Verify, then trust" — adversarial cross-vendor consensus + third-party-verifiable proof. Novel & reproducible.</span></div>
+    <div class="c"><b>Technological Implementation</b><span>Real multi-vendor orchestration, live Splunk via MCP, policy-gated SPL, Merkle integrity, write-back.</span></div>
+    <div class="c"><b>Design / UX</b><span>A two-panel <em>tool</em>: pick a case, convene the tribunal, watch four models rule.</span></div>
+    <div class="c"><b>Potential Impact</b><span>40+ audit hours → 30 seconds across 5 frameworks; continuous, not point-in-time.</span></div>
+    <div class="c"><b>Quality of Idea</b><span>Adversarial cross-vendor consensus + third-party-verifiable proof. Novel &amp; reproducible.</span></div>
   </div>
-</section>
+</div></section>
 
-<section class="slide">
+<section class="slide"><div class="wrap">
   <div class="eyebrow">See it live</div>
-  <h1 class="serif">Real Splunk.<br>Four rival models.<br><span class="br">One verdict you can prove.</span></h1>
-  <ul style="margin-top:1.2rem">
-    <li>Dashboard — <a href="https://aec3.accessquint.com">aec3.accessquint.com</a></li>
-    <li>Splunk (read-only) — <a href="https://splunk-aec.accessquint.com">splunk-aec.accessquint.com</a> · Compliance Posture + <code>index=aec_audit</code></li>
-    <li>Verify portal — <a href="https://aec3.accessquint.com/verify">aec3.accessquint.com/verify</a></li>
-    <li>Code — <a href="https://github.com/sandhipveera/audit-evidence-compiler">github.com/sandhipveera/audit-evidence-compiler</a></li>
-  </ul>
-</section>
+  <h1 class="serif" style="font-size:3.8rem">Real Splunk.<br>Four rival models.<br><span class="br">One verdict you can prove.</span></h1>
+  <div class="links" style="margin-top:1.4rem">
+    <a href="https://aec3.accessquint.com"><span class="k">dashboard</span> &nbsp;aec3.accessquint.com</a>
+    <a href="https://splunk-aec.accessquint.com"><span class="k">splunk</span> &nbsp;splunk-aec.accessquint.com</a>
+    <a href="https://aec3.accessquint.com/verify"><span class="k">verify</span> &nbsp;aec3.accessquint.com/verify</a>
+    <a href="https://github.com/sandhipveera/audit-evidence-compiler"><span class="k">code</span> &nbsp;github.com/sandhipveera/audit-evidence-compiler</a>
+  </div>
+</div></section>
 
-<div class="pageno" id="pg">1 / 9</div>
-<div class="hint">← → / Space to navigate · F11 fullscreen · ⌘P to export PDF</div>
+<div class="pageno" id="pg">01 / 09</div>
+<div class="hint">← →  navigate · F11 fullscreen · ⌘P → PDF</div>
 <script>
 const slides=[...document.querySelectorAll('.slide')];const pg=document.getElementById('pg');
-function cur(){let i=0,best=1e9;slides.forEach((s,j)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<best){best=d;i=j}});return i}
-function go(n){n=Math.max(0,Math.min(slides.length-1,n));slides[n].scrollIntoView()}
-function upd(){pg.textContent=(cur()+1)+' / '+slides.length}
+const cur=()=>{let i=0,b=1e9;slides.forEach((s,j)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<b){b=d;i=j}});return i};
+const go=n=>{n=Math.max(0,Math.min(slides.length-1,n));slides[n].scrollIntoView()};
+const upd=()=>{pg.textContent=String(cur()+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0')};
 addEventListener('scroll',upd,{passive:true});
 addEventListener('keydown',e=>{
   if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(cur()+1)}
   else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(cur()-1)}
-  else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(slides.length-1)}
-});
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1)});
 addEventListener('click',e=>{if(!e.target.closest('a'))go(cur()+1)});
 upd();
 </script>
