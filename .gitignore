@@ -33,6 +33,7 @@ splunk-app/auditcompiler/bin/lib/
 .DS_Store
 .vscode/
 .idea/
+*.swp
 
 # Never commit raw client templates from AccessQuint core-biz
 core-biz/
@@ -49,3 +50,7 @@ docs/demo-vo-elevenlabs.md
 docs/demo-script.md
 docs/demo-video-script.md
 scripts/trim-demo.sh
+
+# Internal gallery/debate screenshots — upload to the submission portal, never commit
+gallery-internal/
+docs/gallery-captions.md

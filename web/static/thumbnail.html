@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tessera — Submission Thumbnail (1200×800)</title>
+<!--
+  Submission thumbnail · 3:2 · 1200×800.
+  To export a PNG: open this page, then screenshot the card (it is exactly 1200×800).
+  Easiest: a full-page screenshot at a 1200×800 browser viewport, or DevTools → capture node screenshot on .thumb.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0a10;--text:#f1ece1;--muted:#a59d8c;--faint:#6a6457;
+  --brass:#e3c074;--brass2:#b78a3e;--splunk:#ec3b9b;--green:#6fd44a;--border:#2c2935;
+  --auditor:#7fb0ee;--engineer:#6fd3bb;--adversary:#f0a45c;--security:#bfa0e6;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050409;display:grid;place-items:center;min-height:100vh;
+  font-family:'Inter',system-ui,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+.serif{font-family:'Fraunces','Hoefler Text',Georgia,serif}
+
+.thumb{position:relative;width:1200px;height:800px;overflow:hidden;
+  padding:74px 88px;display:flex;flex-direction:column;justify-content:space-between;
+  letter-spacing:.005em;
+  background:
+    radial-gradient(120% 80% at 50% -20%,rgba(227,192,116,.13),transparent 55%),
+    radial-gradient(90% 70% at 50% 128%,rgba(236,59,155,.08),transparent 55%),
+    radial-gradient(140% 120% at 50% 45%,transparent 52%,rgba(0,0,0,.6)),var(--bg)}
+.thumb::after{content:"";position:absolute;inset:20px;border:1px solid rgba(227,192,116,.16);
+  border-radius:14px;pointer-events:none}
+
+/* ---- top: brand lockup ---- */
+.brand{display:flex;align-items:center;gap:18px}
+.brand .mark{width:54px;height:54px;flex:none;filter:drop-shadow(0 0 18px rgba(227,192,116,.25))}
+.brand .wm{font-family:'Fraunces',Georgia,serif;font-size:2.9rem;font-weight:600;line-height:1;letter-spacing:-.01em}
+.brand .wm b{color:var(--brass)}
+.brand .sub{display:block;font-family:'Inter';font-size:.82rem;font-weight:600;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--muted);margin-top:7px}
+
+/* ---- middle: headline ---- */
+.mid{margin:auto 0}
+.eyebrow{font-size:.86rem;letter-spacing:.34em;text-transform:uppercase;color:var(--brass);font-weight:600;
+  display:flex;align-items:center;gap:.8rem;margin-bottom:22px}
+.eyebrow::before{content:"";width:42px;height:1px;background:linear-gradient(90deg,var(--brass2),transparent)}
+h1{font-family:'Fraunces',Georgia,serif;font-size:4.15rem;line-height:1.04;font-weight:600;letter-spacing:-.02em;max-width:21ch}
+h1 .br{color:var(--brass)}
+.lead{margin-top:26px;font-size:1.42rem;line-height:1.5;color:var(--muted);max-width:40ch;font-weight:400}
+.lead b{color:var(--text);font-weight:600}
+
+/* ---- bottom: vendors + proof tag ---- */
+.foot{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.vendors{display:flex;flex-direction:column;gap:11px}
+.vlbl{font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:10px;max-width:560px}
+.chip{display:inline-flex;align-items:center;gap:9px;font-size:1.06rem;font-weight:600;color:var(--text);
+  padding:9px 16px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.018)}
+.chip i{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 10px -1px currentColor}
+.chip.a i{background:var(--auditor);color:var(--auditor)} .chip.e i{background:var(--engineer);color:var(--engineer)}
+.chip.x i{background:var(--adversary);color:var(--adversary)} .chip.s i{background:var(--security);color:var(--security)}
+.proof{text-align:right;flex:none}
+.proof .real{display:inline-flex;align-items:center;gap:8px;font-size:.92rem;font-weight:700;color:var(--splunk);
+  letter-spacing:.02em;margin-bottom:10px}
+.proof .real::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--splunk);box-shadow:0 0 10px var(--splunk)}
+.proof .big{font-family:'Fraunces',Georgia,serif;font-size:2rem;font-weight:600;color:var(--text);line-height:1}
+.proof .big b{color:var(--brass)}
+.proof .url{margin-top:10px;font-size:.92rem;color:var(--muted);font-weight:500}
+</style></head>
+<body>
+<div class="thumb">
+
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <defs><linearGradient id="af1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9c884"/><stop offset="1" stop-color="#b78a3e"/></linearGradient></defs>
+      <rect x="3" y="3" width="11" height="11" rx="2.4" fill="url(#af1)"/>
+      <rect x="18" y="3" width="11" height="11" rx="2.4" fill="#b78a3e"/>
+      <rect x="3" y="18" width="11" height="11" rx="2.4" fill="#b78a3e"/>
+      <rect x="18" y="18" width="11" height="11" rx="2.4" fill="url(#af1)"/>
+      <circle cx="16" cy="16" r="4.1" fill="#0c0b12"/>
+      <circle cx="16" cy="16" r="4.1" fill="none" stroke="url(#af1)" stroke-width="1.5"/>
+    </svg>
+    <div><span class="wm">Tess<b>era</b></span><span class="sub">Audit Evidence Auto-Compiler</span></div>
+  </div>
+
+  <div class="mid">
+    <div class="eyebrow">A trust engine for AI compliance evidence</div>
+    <h1 class="serif">Four rival AI models debate your evidence — over <span class="br">real Splunk data</span>.</h1>
+    <p class="lead">One compliance question in. A board-ready audit verdict out in 30 seconds — <b>sealed in a SHA-256 Merkle chain, tamper-evident, and provable</b> to any auditor.</p>
+  </div>
+
+  <div class="foot">
+    <div class="vendors">
+      <span class="vlbl">Four organizations · four training sets</span>
+      <div class="chips">
+        <span class="chip a"><i></i>Claude Sonnet 4</span>
+        <span class="chip e"><i></i>GPT-5.5</span>
+        <span class="chip x"><i></i>Gemini 2.5 Pro</span>
+        <span class="chip s"><i></i>Foundation-Sec-8B</span>
+      </div>
+    </div>
+    <div class="proof">
+      <span class="real">Real Splunk · BOTS v3</span>
+      <div class="big"><b>1.94M</b> events</div>
+      <div class="url">aec3.accessquint.com</div>
+    </div>
+  </div>
+
+</div>
+</body></html>
