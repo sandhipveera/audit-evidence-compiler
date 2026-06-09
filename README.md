@@ -26,7 +26,7 @@ When you ask "give me SOC 2 CC6.1 evidence from this Splunk instance," you get b
 
 4. **Self-correction on record** — mid-debate, the Auditor persona caught its own setup error (wrong time window against a 2018 dataset), recommended the fix, and the corrected run returned 1,247 real events. That transcript is committed at [`examples/transcript-self-correction.md`](examples/transcript-self-correction.md).
 
-**Live demo:** [https://aec3.accessquint.com](https://aec3.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time.  
+**Live demo:** [https://aec3.accessquint.com](https://aec3.accessquint.com) — no install, no setup. Pick a control, watch four AI models argue about your compliance posture in real time, then open the board-ready Executive Compliance Report.  
 **Auditor verification:** [https://aec3.accessquint.com/verify](https://aec3.accessquint.com/verify) — upload `audit_trail.jsonl`, verify the evidence chain hasn't been tampered with.
 
 ---
@@ -181,7 +181,7 @@ graph TD
     end
 
     subgraph "Splunk"
-      S1[BOTS v3<br/>1.7M events]
+      S1[BOTS v3<br/>1.94M events]
       S2[splunk-official MCP]
       S3[livehybrid MCP]
       S4[REST API]
@@ -203,7 +203,7 @@ graph TD
 
     subgraph "Verification"
       V1[aec verify CLI]
-      V2[aec.accessquint.com/verify<br/>Auditor Portal]
+      V2[aec3.accessquint.com/verify<br/>Auditor Portal]
     end
 
     N5 --> S2 & S3 & S4

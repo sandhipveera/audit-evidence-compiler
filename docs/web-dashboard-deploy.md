@@ -6,7 +6,7 @@ The Audit Evidence Compiler web dashboard is a FastAPI server that streams
 panel debates live to any browser via WebSocket. No installation required
 for the end user — just a URL.
 
-**Live demo:** `https://aec.accessquint.com`
+**Live demo:** `https://aec3.accessquint.com`
 
 ## Architecture
 
@@ -21,7 +21,7 @@ Browser ──── HTTPS ──── Caddy (reverse proxy + TLS) ────
 
 - Python 3.11+
 - A Vultr VM (or any Linux server) with a public IP
-- DNS A record pointing `aec.accessquint.com` to the VM IP
+- DNS A record pointing `aec3.accessquint.com` to the VM IP
 - API keys for panel debate (ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY)
 
 ## Local Development
@@ -60,7 +60,7 @@ sudo systemctl enable --now aec-web
 
 ```bash
 sudo systemctl status aec-web
-curl -s https://aec.accessquint.com/api/controls | python3 -m json.tool
+curl -s https://aec3.accessquint.com/api/controls | python3 -m json.tool
 ```
 
 ### 4. DNS
@@ -68,7 +68,7 @@ curl -s https://aec.accessquint.com/api/controls | python3 -m json.tool
 Create an A record:
 
 ```
-aec.accessquint.com  →  <VM public IP>
+aec3.accessquint.com  →  <VM public IP>
 ```
 
 ## Configuration

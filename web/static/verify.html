@@ -223,7 +223,7 @@
         'AUDIT EVIDENCE VERIFICATION CERTIFICATE',
         '========================================',
         'Generated:   ' + now,
-        'Portal:      https://aec.accessquint.com/verify',
+        'Portal:      https://aec3.accessquint.com/verify',
         '',
         'Result:      ' + status + (d.ok ? ' ✓' : ' ✗'),
         'Run ID:      ' + (d.run_id || 'N/A'),
@@ -237,7 +237,7 @@
       if (d.ok) {
         lines.push(
           'This certificate confirms that the audit_trail.jsonl file',
-          'submitted to aec.accessquint.com/verify on ' + now,
+          'submitted to aec3.accessquint.com/verify on ' + now,
           'passed SHA-256 Merkle chain verification. No modifications were',
           'detected between evidence collection and verification.',
         );
