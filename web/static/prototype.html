@@ -319,6 +319,30 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 .finding .fmeta b{color:var(--text)}
 .finding .rem{font-size:11.5px;color:var(--text);margin-top:7px;line-height:1.5}
 .finding .rem .lbl{color:var(--brass);font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.finding.has-detail{cursor:pointer;transition:border-color .15s}
+.finding.has-detail:hover{border-color:var(--brass2)}
+.finding .fh .ft{flex:1}
+.finding .chev{flex:0 0 auto;color:var(--faint);font-size:11px;transition:transform .18s;margin-top:1px}
+.finding.open .chev{transform:rotate(90deg);color:var(--brass)}
+.fdetail{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.finding.open .fdetail{display:block}
+.fdetail .dh{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:9px 0 6px}
+.fdetail .dh:first-child{margin-top:0}
+.fitem{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;line-height:1.45;margin-bottom:5px;color:var(--text)}
+.sev{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;white-space:nowrap;flex:0 0 auto;margin-top:1px}
+.sev.Critical{color:#ff9b90;border:1px solid var(--fail);background:rgba(224,88,79,.14)}
+.sev.High{color:#ffd083;border:1px solid var(--partial);background:rgba(214,165,46,.14)}
+.sev.Medium{color:#9fc3f0;border:1px solid var(--auditor);background:rgba(107,164,232,.12)}
+.sev.Low{color:var(--muted);border:1px solid var(--border);background:rgba(255,255,255,.03)}
+.sev.Pass{color:#9be8a0;border:1px solid var(--pass);background:rgba(111,212,74,.12)}
+.fctl{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 4px}
+.fctl span{font-size:9.5px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:2px 7px}
+.fsteps{margin:2px 0 9px;padding:0;list-style:none}
+.fsteps li{font-size:11.5px;line-height:1.5;color:var(--text);padding-left:16px;position:relative;margin-bottom:4px}
+.fsteps li::before{content:'\2192';position:absolute;left:0;color:var(--brass)}
+.fsplunk{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:11px;font-weight:600;color:var(--splunk);text-decoration:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-top:2px}
+.fsplunk:hover{border-color:var(--splunk)}
+.fsplunk .q{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);font-weight:400;font-size:10px}
 .exec-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:15px 22px;border-top:1px solid var(--border);background:rgba(0,0,0,.28)}
 .exec-foot .cred{font-size:10.5px;color:var(--faint);line-height:1.5}
 .exec-foot .cred b{color:var(--muted)}
@@ -725,12 +749,25 @@ function renderExec(scn){
     <span class="mar">→</span>
     <span class="mq now"><b>${m.now.score.toFixed(1)}</b> ${m.now.label}</span>
     <span class="mtag">${m.tag}</span>`;
-  q('#execFindings').innerHTML=data.findings.map(f=>`
-    <div class="finding">
-      <div class="fh"><div class="ft">${f.title}</div><span class="imp ${f.impact}">${f.impact}</span></div>
+  q('#execFindings').innerHTML=data.findings.map(f=>{
+    const items=(f.items&&f.items.length)?`<div class="dh">Open findings</div>${f.items.map(it=>`<div class="fitem"><span class="sev ${it.sev}">${it.sev}</span><span>${it.text}</span></div>`).join('')}`:'';
+    const ctl=(f.controls&&f.controls.length)?`<div class="dh">Mapped controls</div><div class="fctl">${f.controls.map(c=>`<span>${c}</span>`).join('')}</div>`:'';
+    const steps=(f.steps&&f.steps.length)?`<div class="dh">Remediation plan</div><ul class="fsteps">${f.steps.map(s=>`<li>${s}</li>`).join('')}</ul>`:'';
+    let splunk='';
+    if(f.splunk&&f.splunk.q){
+      const href='https://splunk-aec.accessquint.com/en-US/app/search/search?q='+encodeURIComponent('search '+f.splunk.q)+'&earliest=0&latest=now';
+      splunk=`<a class="fsplunk" href="${href}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${f.splunk.label} <span class="q">${f.splunk.q}</span></a>`;
+    }
+    const has=!!(items||ctl||steps||splunk);
+    const detail=has?`<div class="fdetail">${items}${ctl}${steps}${splunk}</div>`:'';
+    return `
+    <div class="finding${has?' has-detail':''}"${has?' onclick="this.classList.toggle(\'open\')"':''}>
+      <div class="fh"><div class="ft">${f.title}</div><span class="imp ${f.impact}">${f.impact}</span>${has?'<span class="chev">▸</span>':''}</div>
       <div class="fmeta"><span>maps to <b>${f.refs}</b></span>${f.mix?`<span>${f.mix}</span>`:''}</div>
       <div class="rem"><span class="lbl">Remediation</span>${f.rem}</div>
-    </div>`).join('');
+      ${detail}
+    </div>`;
+  }).join('');
 }
 /* fetch the sanitized priors, then render; fall back to inline data on failure */
 fetch('/static/exec_priors.json').then(r=>r.json()).then(j=>{EXEC=j.scenarios||j;renderExec(curScn);}).catch(()=>renderExec(curScn));

@@ -49,28 +49,144 @@
           "impact": "Critical",
           "mix": "3 Critical, 1 High, 1 Medium, 3 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "SOC 2 CC9.2",
+            "ISO 27001 A.5.19",
+            "NIST CSF GV.SC-01"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "3 critical vendors have no current SOC 2 Type II report on file."
+            },
+            {
+              "sev": "High",
+              "text": "Vendor register not reconciled against active data-sharing agreements."
+            },
+            {
+              "sev": "Medium",
+              "text": "Re-assessment cadence undefined for 5 medium-risk vendors."
+            },
+            {
+              "sev": "Low",
+              "text": "DPA addenda missing for 3 low-risk SaaS tools."
+            }
+          ],
+          "steps": [
+            "Collect current SOC 2 Type II reports for the 3 critical vendors (30-day SLA).",
+            "Reconcile the vendor register against signed data-sharing agreements.",
+            "Define and calendar a risk-tiered re-assessment cadence."
+          ]
         },
         {
           "title": "Access Control \u2014 7 open findings",
           "impact": "Critical",
           "mix": "2 Critical, 1 High, 3 Medium, 1 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Update control and evidence"
+          "rem": "Update control and evidence",
+          "controls": [
+            "SOC 2 CC6.1",
+            "ISO 27001 A.5.15",
+            "NIST CSF PR.AA-01",
+            "NIST 800-53 AC-1",
+            "COBIT DSS05.04"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "23 accounts authenticated without MFA in the audit window; 3 are admin roles."
+            },
+            {
+              "sev": "Critical",
+              "text": "Privileged access not reviewed in the last 90 days."
+            },
+            {
+              "sev": "High",
+              "text": "2 service accounts share a static, non-rotated credential."
+            },
+            {
+              "sev": "Medium",
+              "text": "Joiner/mover/leaver tickets missing access-revocation evidence (3 of 14)."
+            },
+            {
+              "sev": "Low",
+              "text": "MFA not enforced to phishing-resistant factors."
+            }
+          ],
+          "steps": [
+            "Enforce conditional-access MFA on all admin roles \u2014 remediate the 3 flagged admins within 7 days.",
+            "Run a privileged-access review and capture sign-off as evidence.",
+            "Re-run CC6.1 evidence collection to confirm closure and extend the Merkle chain."
+          ],
+          "splunk": {
+            "label": "View the sealed CC6.1 verdict & evidence chain \u2192",
+            "q": "index=aec_audit | sort -_time"
+          }
         },
         {
           "title": "Incident Response \u2014 7 open findings",
           "impact": "Critical",
           "mix": "2 Critical, 3 High, 1 Medium, 1 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "SOC 2 CC7.4",
+            "ISO 27001 A.5.24",
+            "NIST CSF RS.MA-01"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "No tested runbook for credential-compromise; tabletop overdue >12 months."
+            },
+            {
+              "sev": "High",
+              "text": "Mean time-to-contain (MTTC) is not measured."
+            },
+            {
+              "sev": "Medium",
+              "text": "Post-incident reviews not consistently documented."
+            },
+            {
+              "sev": "Low",
+              "text": "On-call contact tree is out of date."
+            }
+          ],
+          "steps": [
+            "Adopt and tabletop a credential-compromise runbook this quarter.",
+            "Instrument MTTC/MTTR and report monthly.",
+            "Standardize a post-incident review template."
+          ]
         },
         {
           "title": "Logging & Monitoring \u2014 2 open findings",
           "impact": "Critical",
           "mix": "1 Critical, 1 Low",
           "refs": "NIST CSF",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "NIST CSF DE.CM-01",
+            "NIST 800-53 AU-6"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "Authentication failures and MFA-less logins are not alerted in near-real-time."
+            },
+            {
+              "sev": "Low",
+              "text": "Log retention below the 1-year policy for one source."
+            }
+          ],
+          "steps": [
+            "Create a detection for repeated failed / MFA-less authentications.",
+            "Extend retention on the affected source to meet the 1-year policy."
+          ],
+          "splunk": {
+            "label": "Open the live Compliance Posture data \u2192",
+            "q": "index=auditcompiler_posture | sort -_time"
+          }
         }
       ],
       "control_ids": {
@@ -125,28 +241,122 @@
           "impact": "Critical",
           "mix": "3 Critical, 1 High, 1 Medium, 3 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "SOC 2 CC9.2",
+            "ISO 27001 A.5.19",
+            "NIST CSF GV.SC-01"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "2 vendors that were compliant in window 1 lapsed their SOC 2 by window 2."
+            },
+            {
+              "sev": "High",
+              "text": "New sub-processor added between windows without a risk review."
+            },
+            {
+              "sev": "Low",
+              "text": "3 low-risk DPAs still pending signature across both windows."
+            }
+          ],
+          "steps": [
+            "Re-collect lapsed vendor attestations before the next assessment.",
+            "Gate new sub-processors behind a risk review."
+          ]
         },
         {
           "title": "Access Control \u2014 7 open findings",
           "impact": "Critical",
           "mix": "2 Critical, 1 High, 3 Medium, 1 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Update control and evidence"
+          "rem": "Update control and evidence",
+          "controls": [
+            "SOC 2 CC7.2",
+            "ISO 27001 A.8.15",
+            "NIST CSF DE.CM-01",
+            "NIST 800-53 AU-6",
+            "COBIT DSS01.03"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "Passed in window 1 (Q1, 1,247 events) \u2014 23 non-MFA auths reappeared in window 2 (Q2, 1,809). Silent regression."
+            },
+            {
+              "sev": "High",
+              "text": "A conditional-access policy was disabled between windows."
+            },
+            {
+              "sev": "Medium",
+              "text": "Drift not caught because re-assessment cadence is annual, not continuous."
+            }
+          ],
+          "steps": [
+            "Re-enable the disabled conditional-access policy.",
+            "Move CC7.2 monitoring from annual to scheduled (continuous) evaluation.",
+            "Alert on window-over-window verdict regressions."
+          ],
+          "splunk": {
+            "label": "Compare the two windows in Splunk \u2192",
+            "q": "index=aec_audit | sort -_time"
+          }
         },
         {
           "title": "Incident Response \u2014 7 open findings",
           "impact": "Critical",
           "mix": "2 Critical, 3 High, 1 Medium, 1 Low",
           "refs": "ISO 27001 \u00b7 NIST CSF \u00b7 SOC 2",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "SOC 2 CC7.4",
+            "ISO 27001 A.5.24",
+            "NIST CSF RS.MA-01"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "Detection coverage that existed in window 1 was not present in window 2."
+            },
+            {
+              "sev": "High",
+              "text": "Escalation SLA slipped between windows."
+            }
+          ],
+          "steps": [
+            "Restore the missing detection content.",
+            "Re-baseline the escalation SLA and monitor for drift."
+          ]
         },
         {
           "title": "Logging & Monitoring \u2014 2 open findings",
           "impact": "Critical",
           "mix": "1 Critical, 1 Low",
           "refs": "NIST CSF",
-          "rem": "Revise procedure and train staff"
+          "rem": "Revise procedure and train staff",
+          "controls": [
+            "NIST CSF DE.CM-01",
+            "NIST 800-53 AU-6"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "A log source feeding window 1 stopped ingesting before window 2."
+            },
+            {
+              "sev": "Low",
+              "text": "Retention reduced on one index between windows."
+            }
+          ],
+          "steps": [
+            "Restore the dropped log source and backfill if possible.",
+            "Add a data-ingest health monitor."
+          ],
+          "splunk": {
+            "label": "Open the live Compliance Posture data \u2192",
+            "q": "index=auditcompiler_posture | sort -_time"
+          }
         }
       ],
       "control_ids": {
@@ -208,13 +418,51 @@
           "title": "Every verdict cross-checked by four independent vendors",
           "impact": "Medium",
           "refs": "SOC 2 CC4.1 \u00b7 NIST 800-53 AU-9",
-          "rem": "Maintain the four-vendor panel; single-vendor fallback is logged and flagged."
+          "rem": "Maintain the four-vendor panel; single-vendor fallback is logged and flagged.",
+          "controls": [
+            "SOC 2 CC4.1",
+            "NIST 800-53 AU-9"
+          ],
+          "items": [
+            {
+              "sev": "Pass",
+              "text": "4 of 4 vendors empaneled for every verdict in the window."
+            },
+            {
+              "sev": "Pass",
+              "text": "Single-vendor fallback events: 0 (each would be logged and flagged)."
+            }
+          ],
+          "steps": [
+            "Maintain the four-vendor panel; alert on any single-vendor fallback."
+          ],
+          "splunk": {
+            "label": "View the cross-checked verdicts in Splunk \u2192",
+            "q": "index=aec_audit | sort -_time"
+          }
         },
         {
           "title": "Tampering is provable \u2014 any edit breaks the SHA-256 chain",
           "impact": "Medium",
           "refs": "ISO 27001 A.8.15",
-          "rem": "Publish the chain root with each report; auditors re-verify at /verify."
+          "rem": "Publish the chain root with each report; auditors re-verify at /verify.",
+          "controls": [
+            "ISO 27001 A.8.15",
+            "NIST 800-53 AU-9"
+          ],
+          "items": [
+            {
+              "sev": "Pass",
+              "text": "6 of 6 snapshots verified intact on the last check."
+            },
+            {
+              "sev": "Pass",
+              "text": "Chain root is published with each report; a 1-byte edit breaks verification."
+            }
+          ],
+          "steps": [
+            "Publish the chain root with every report; auditors re-verify at /verify."
+          ]
         }
       ],
       "_source": "curated \u2014 not yet in GRC sheets"
@@ -268,13 +516,50 @@
           "title": "Model inventory exists on paper but is not evidenced in logs",
           "impact": "Critical",
           "refs": "ISO 42001 A.8.3",
-          "rem": "Instrument model/agent registration to Splunk; reconcile inventory weekly."
+          "rem": "Instrument model/agent registration to Splunk; reconcile inventory weekly.",
+          "controls": [
+            "ISO 42001 A.8.3",
+            "NIST AI RMF MAP"
+          ],
+          "items": [
+            {
+              "sev": "Critical",
+              "text": "12 models in the registry; 4 have no corresponding runtime log evidence."
+            },
+            {
+              "sev": "High",
+              "text": "No automated reconciliation between the registry and deployed models."
+            }
+          ],
+          "steps": [
+            "Instrument model/agent registration to Splunk.",
+            "Reconcile the inventory against runtime logs weekly."
+          ]
         },
         {
           "title": "Agent decisions not consistently logged (OWASP Agentic Top 10)",
           "impact": "High",
           "refs": "ISO 42001 A.6.2.2 \u00b7 NIST AI RMF MEASURE",
-          "rem": "Capture agent-decision traces to a tamper-evident index."
+          "rem": "Capture agent-decision traces to a tamper-evident index.",
+          "controls": [
+            "ISO 42001 A.6.2.2",
+            "NIST AI RMF MEASURE",
+            "OWASP Agentic Top 10"
+          ],
+          "items": [
+            {
+              "sev": "High",
+              "text": "Agent-decision traces captured for only 64% of runs."
+            },
+            {
+              "sev": "Medium",
+              "text": "No tamper-evident index dedicated to agent decisions."
+            }
+          ],
+          "steps": [
+            "Capture agent-decision traces to a tamper-evident index.",
+            "Set a coverage SLO (\u2265 95%) and alert below it."
+          ]
         }
       ],
       "_source": "curated \u2014 not yet in GRC sheets"
