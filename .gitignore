@@ -41,3 +41,11 @@ core-biz/
 # Hatch build artifacts
 dist/
 build/
+
+# Internal demo / recording materials — keep local, never publish
+docs/demo-links.md
+docs/demo-vo-script.md
+docs/demo-vo-elevenlabs.md
+docs/demo-script.md
+docs/demo-video-script.md
+scripts/trim-demo.sh
