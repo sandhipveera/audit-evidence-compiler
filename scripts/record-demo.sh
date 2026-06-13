@@ -174,6 +174,7 @@ cat <<'LANGGRAPH'
 
 [graph] node: mcp_executor          (2280ms  via splunk-official)
 [graph] node: evidence_normalizer   (8ms)
+[graph] node: splunk_ml_anomaly     (2254ms — Splunk MLTK fit/apply → 4 anomalies)
 [graph] node: panel_round_1         (28400ms — 4 personas parallel)
 [graph] node: consensus             (4ms)
 
