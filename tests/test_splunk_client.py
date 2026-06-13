@@ -25,11 +25,32 @@ class TestAuth:
         with pytest.raises(ValueError, match="SPLUNK_HOST"):
             SplunkClient()
 
-    def test_missing_token_raises(self, monkeypatch: pytest.MonkeyPatch):
+    def test_missing_credentials_raises(self, monkeypatch: pytest.MonkeyPatch):
+        # No bearer token AND no basic-auth password -> cannot authenticate.
         monkeypatch.setenv("SPLUNK_HOST", "https://localhost:8089")
         monkeypatch.delenv("SPLUNK_TOKEN", raising=False)
+        monkeypatch.delenv("SPLUNK_PASSWORD", raising=False)
         with pytest.raises(ValueError, match="SPLUNK_TOKEN"):
             SplunkClient()
+
+    def test_basic_auth_when_no_token(self, monkeypatch: pytest.MonkeyPatch):
+        # Password but no token -> client falls back to HTTP basic auth.
+        monkeypatch.setenv("SPLUNK_HOST", "https://localhost:8089")
+        monkeypatch.delenv("SPLUNK_TOKEN", raising=False)
+        monkeypatch.setenv("SPLUNK_USERNAME", "admin")
+        monkeypatch.setenv("SPLUNK_PASSWORD", "secret")
+        client = SplunkClient()
+        assert client._auth == ("admin", "secret")
+        assert "Authorization" not in client._headers
+
+    def test_explicit_empty_token_forces_basic_auth(self, monkeypatch: pytest.MonkeyPatch):
+        # token="" disables a stale env token and uses basic auth instead.
+        monkeypatch.setenv("SPLUNK_HOST", "https://localhost:8089")
+        monkeypatch.setenv("SPLUNK_TOKEN", "stale-rotated-token")
+        monkeypatch.setenv("SPLUNK_PASSWORD", "secret")
+        client = SplunkClient(token="")
+        assert client.token == ""
+        assert client._auth == ("admin", "secret")
 
 
 class TestProbe:

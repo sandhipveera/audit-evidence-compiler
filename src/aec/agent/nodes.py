@@ -191,6 +191,48 @@ def evidence_normalizer(state: dict) -> dict:
     })
 
 
+def splunk_ml_anomaly(state: dict) -> dict:
+    """Run Splunk's in-platform ML anomaly engine over the evidence (Splunk AI).
+
+    This is the project's Splunk AI step: MLTK ``fit``/``apply`` when the
+    Machine Learning Toolkit is installed, else core ``anomalydetection``. The
+    scored anomalies are merged into the Splunk snapshot so all four panel
+    vendors debate Splunk's own ML findings, not just raw rows.
+    """
+    t0 = time.monotonic()
+    snapshot = dict(state.get("splunk_snapshot") or {})
+
+    if state.get("sample_name"):
+        # Offline demo: use the recorded ML snapshot if the sample carries one.
+        ml = snapshot.get("ml_anomaly") or {
+            "available": False,
+            "reason": "offline sample — Splunk ML runs against the live instance",
+        }
+    else:
+        try:
+            from aec.splunk.ml_anomaly import run_ml_anomaly
+            ml = run_ml_anomaly(state["control_id"], state.get("framework", ""))
+        except Exception as exc:  # noqa: BLE001 — never break the pipeline on ML
+            ml = {"available": False, "reason": f"ml node error: {exc}"}
+
+    snapshot["ml_anomaly"] = ml
+
+    elapsed = int((time.monotonic() - t0) * 1000)
+    if ml.get("available"):
+        tag = f"{ml.get('engine', 'Splunk ML')} → {ml.get('anomaly_count', 0)} anomaly(ies)"
+    else:
+        tag = f"skipped ({ml.get('reason', 'unavailable')})"
+    console.print(
+        f"[dim]\\[graph][/] node: splunk_ml_anomaly"
+        f"    ({elapsed}ms — {tag})"
+    )
+    return _timed("splunk_ml_anomaly", state, {
+        "splunk_snapshot": snapshot,
+        "splunk_ml": ml,
+        "_elapsed_ms": elapsed,
+    })
+
+
 def formatter_gap(state: dict) -> dict:
     """Format a gap finding when SPL was rejected (skip execution path)."""
     t0 = time.monotonic()

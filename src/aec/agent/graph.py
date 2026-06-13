@@ -29,6 +29,7 @@ from aec.agent.nodes import (
     panel_round_2,
     spl_generator,
     spl_validator,
+    splunk_ml_anomaly,
 )
 from aec.agent.state import AgentState, write_checkpoint
 
@@ -45,6 +46,7 @@ class GraphState(TypedDict, total=False):
     spl_query: str | None
     spl_validation: dict[str, Any] | None
     splunk_snapshot: dict[str, Any] | None
+    splunk_ml: dict[str, Any] | None
     panel_round_1: dict[str, Any] | None
     counter_searches: list[dict[str, Any]]
     panel_round_2: dict[str, Any] | None
@@ -221,6 +223,7 @@ def build_graph(*, checkpointer=None, enable_checkpointing: bool = True):
     builder.add_node("hitl_spl_gate", hitl_spl_gate)
     builder.add_node("mcp_executor", wrap(mcp_executor))
     builder.add_node("evidence_normalizer", wrap(evidence_normalizer))
+    builder.add_node("splunk_ml_anomaly", wrap(splunk_ml_anomaly))
     builder.add_node("formatter_gap", wrap(formatter_gap))
     builder.add_node("panel_round_1", wrap(panel_round_1))
     builder.add_node("adversary_search_validator", wrap(adversary_search_validator))
@@ -244,7 +247,8 @@ def build_graph(*, checkpointer=None, enable_checkpointing: bool = True):
 
     builder.add_edge("formatter_gap", END)
     builder.add_edge("mcp_executor", "evidence_normalizer")
-    builder.add_edge("evidence_normalizer", "panel_round_1")
+    builder.add_edge("evidence_normalizer", "splunk_ml_anomaly")
+    builder.add_edge("splunk_ml_anomaly", "panel_round_1")
 
     builder.add_conditional_edges(
         "panel_round_1",

@@ -65,6 +65,52 @@ def load_persona(name: str, persona_dir: Path | None = None) -> PersonaSpec:
     )
 
 
+def _format_ml_anomaly_section(
+    snapshot: dict[str, Any],
+    splunk_snapshot: dict[str, Any] | None,
+) -> str:
+    """Surface Splunk's in-platform ML anomaly findings to the panel.
+
+    The anomaly scan is produced by Splunk's own ML engine (MLTK or the
+    built-in ``anomalydetection`` command), not by any panel vendor. Make it a
+    first-class section so every persona weighs Splunk's machine-learning
+    verdict alongside the raw evidence.
+    """
+    ml = (snapshot or {}).get("ml_anomaly") or (splunk_snapshot or {}).get("ml_anomaly")
+    if not ml or not ml.get("available"):
+        return ""
+    lines = [
+        "## Splunk ML anomaly scan (Splunk's own AI/ML, run in-platform)\n",
+        f"- Engine: **{ml.get('engine', 'Splunk ML')}** "
+        f"(`{ml.get('command', '')}`) over {ml.get('population', 'the evidence')}",
+        f"- Events scored by Splunk: {ml.get('events_scanned', 'n/a')}",
+        f"- Anomalies Splunk flagged: **{ml.get('anomaly_count', 0)}**",
+    ]
+    for a in (ml.get("anomalies") or [])[:5]:
+        cause = a.get("probable_cause") or a.get("ProbableCause") or ""
+        # built-in anomalydetection -> log_event_prob; MLTK -> probability_density
+        score = (
+            f"log_event_prob={a['log_event_prob']}" if a.get("log_event_prob")
+            else f"probability_density={a['probability_density']}" if a.get("probability_density")
+            else ""
+        )
+        detail = ", ".join(
+            p for p in (
+                f"unique_queries={a.get('unique_queries', '?')}",
+                score,
+                f"probable_cause={cause}" if cause else "",
+                "flagged_outlier=true" if a.get("is_outlier") in ("1", "1.0", 1, 1.0) else "",
+            ) if p
+        )
+        lines.append(f"  - `{a.get('registered_domain', '?')}` — {detail}")
+    lines.append(f"\n{ml.get('summary', '')}\n")
+    lines.append(
+        "Treat this as corroborating monitoring evidence produced by Splunk's "
+        "machine-learning engine; factor it into your verdict.\n\n"
+    )
+    return "\n".join(lines)
+
+
 def _build_user_prompt(
     snapshot: dict[str, Any],
     control_text: str,
@@ -82,6 +128,9 @@ def _build_user_prompt(
     if splunk_snapshot is not None:
         splunk_json = json.dumps(splunk_snapshot, indent=2, ensure_ascii=False)
         parts.append(f"## Splunk snapshot\n\n```json\n{splunk_json}\n```\n\n")
+    ml_section = _format_ml_anomaly_section(snapshot, splunk_snapshot)
+    if ml_section:
+        parts.append(ml_section)
     if drift is not None:
         from aec.splunk.drift import format_drift_transcript
 

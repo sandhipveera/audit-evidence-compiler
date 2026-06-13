@@ -1,10 +1,13 @@
 # Architecture Diagram — Audit Evidence Auto-Compiler (Tessera)
 
-One LangGraph agent pulls real Splunk data, puts it in front of four rival AI vendors, reconciles their
-verdicts mechanically, and seals the result in a tamper-evident Merkle chain — then writes the verdict
-back into Splunk.
+One LangGraph agent pulls real Splunk data, has **Splunk's own ML engine score that evidence for
+anomalies in-platform**, puts both in front of four rival AI vendors, reconciles their verdicts
+mechanically, and seals the result in a tamper-evident Merkle chain — then writes the verdict back
+into Splunk.
 
-![Tessera architecture — triggers, LangGraph evidence agent, four-vendor panel, mechanical consensus, Merkle seal, and Splunk write-back](web/static/slide-architecture.png)
+![Tessera architecture — triggers, LangGraph evidence agent, Splunk's in-platform ML anomaly scan (MLTK / anomalydetection), four-vendor panel, mechanical consensus, Merkle seal, and Splunk write-back](web/static/architecture-pipeline.png)
+
+*Rendered from the LangGraph pipeline below. `splunk_ml_anomaly` is the Splunk-AI step: Splunk's own ML engine scores the collected evidence for anomalies in-platform before the vendor panel debates it.*
 
 ## Pipeline (LangGraph)
 
@@ -21,7 +24,8 @@ graph TD
       N3 --> N4{HITL gate}
       N4 -->|approve| N5[mcp_executor]
       N5 --> N6[evidence_normalizer]
-      N6 --> N7[panel_round_1]
+      N6 --> N6b["splunk_ml_anomaly<br/>Splunk AI: MLTK fit/apply ·<br/>built-in anomalydetection"]
+      N6b --> N7[panel_round_1]
       N7 --> N8[adversary_search_validator]
       N8 --> N9[mcp_executor — counter-SPL]
       N9 --> N10[panel_round_2]
@@ -36,6 +40,7 @@ graph TD
       S2[splunk-official MCP]
       S3[livehybrid MCP]
       S4[REST API]
+      S6["Splunk ML engine<br/>MLTK · anomalydetection"]
       S5[(index=aec_audit<br/>HEC write-back)]
     end
 
@@ -55,7 +60,8 @@ graph TD
 
     T1 & T2 --> N1
     N5 --> S2 & S3 & S4
-    S1 --- S2 & S3 & S4
+    N6b --> S6
+    S1 --- S2 & S3 & S4 & S6
     N7 & N10 --> P1 & P2 & P3 & P4
     N14 --> O1 & O2 & O3 & O4
     N14 --> S5
@@ -63,6 +69,11 @@ graph TD
 
 ## Notes
 
+- **Splunk's AI runs in-platform** — the `splunk_ml_anomaly` node calls Splunk's own machine-learning
+  engine on the collected evidence: MLTK `fit DensityFunction`/`apply` when the Machine Learning Toolkit
+  is installed, otherwise the built-in `anomalydetection` command (the engine behind the Splunk App for
+  Anomaly Detection). The anomalies Splunk flags are fed into the panel debate as corroborating
+  monitoring evidence — so Splunk's AI, not just external LLMs, shapes every verdict.
 - **Consensus is mechanical** — severity ordering `PASS < PARTIAL < FAIL < INSUFFICIENT`, lowest verdict
   wins, no LLM tiebreaker. Fully reproducible.
 - **Splunk transport is pluggable** at runtime: `AEC_SPLUNK_MCP_SERVER=official|livehybrid|rest`.
