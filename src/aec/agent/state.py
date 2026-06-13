@@ -44,6 +44,7 @@ class AgentState(BaseModel):
     spl_query: str | None = None
     spl_validation: ValidationResult | None = None
     splunk_snapshot: dict[str, Any] | None = None
+    splunk_ml: dict[str, Any] | None = None
     panel_round_1: dict[str, Any] | None = None
     counter_searches: list[dict[str, Any]] = []
     panel_round_2: dict[str, Any] | None = None

@@ -3,15 +3,53 @@
   "framework": "SOC2",
   "snapshot_name": "soc2-cc72",
   "fetched_at": "2026-05-24T12:00:00Z",
-  "time_range": { "earliest": "-30d", "latest": "now" },
+  "time_range": {
+    "earliest": "-30d",
+    "latest": "now"
+  },
   "search": "index=botsv3 sourcetype=wineventlog EventCode=4625 OR EventCode=4624 | stats count by severity, status, time_to_respond | eval response_sla=if(time_to_respond<=240,\"met\",\"breached\")",
   "event_count": 87,
   "sample_events": [
-    { "_time": "2018-08-20T03:14:00Z", "EventCode": "4625", "user": "mkraeusen", "src_ip": "104.207.65.187", "status": "failure", "sourcetype": "wineventlog" },
-    { "_time": "2018-08-20T11:30:00Z", "EventCode": "4624", "user": "bgist", "src_ip": "67.164.215.80", "status": "success", "sourcetype": "wineventlog" },
-    { "_time": "2018-08-20T22:05:00Z", "EventCode": "4625", "user": "btun", "src_ip": "45.77.65.211", "status": "failure", "sourcetype": "wineventlog" },
-    { "_time": "2018-08-20T07:45:00Z", "EventCode": "4624", "user": "fyodor", "src_ip": "67.164.215.80", "status": "success", "sourcetype": "wineventlog" },
-    { "_time": "2018-08-20T16:20:00Z", "EventCode": "4625", "user": "bstoll", "src_ip": "104.207.65.187", "status": "failure", "sourcetype": "wineventlog" }
+    {
+      "_time": "2018-08-20T03:14:00Z",
+      "EventCode": "4625",
+      "user": "mkraeusen",
+      "src_ip": "104.207.65.187",
+      "status": "failure",
+      "sourcetype": "wineventlog"
+    },
+    {
+      "_time": "2018-08-20T11:30:00Z",
+      "EventCode": "4624",
+      "user": "bgist",
+      "src_ip": "67.164.215.80",
+      "status": "success",
+      "sourcetype": "wineventlog"
+    },
+    {
+      "_time": "2018-08-20T22:05:00Z",
+      "EventCode": "4625",
+      "user": "btun",
+      "src_ip": "45.77.65.211",
+      "status": "failure",
+      "sourcetype": "wineventlog"
+    },
+    {
+      "_time": "2018-08-20T07:45:00Z",
+      "EventCode": "4624",
+      "user": "fyodor",
+      "src_ip": "67.164.215.80",
+      "status": "success",
+      "sourcetype": "wineventlog"
+    },
+    {
+      "_time": "2018-08-20T16:20:00Z",
+      "EventCode": "4625",
+      "user": "bstoll",
+      "src_ip": "104.207.65.187",
+      "status": "failure",
+      "sourcetype": "wineventlog"
+    }
   ],
   "aggregations": {
     "total_incidents": 87,
@@ -22,5 +60,55 @@
     "open_critical_count": 1,
     "source_index": "botsv3",
     "source_sourcetype": "wineventlog"
+  },
+  "ml_anomaly": {
+    "available": true,
+    "source": "recorded",
+    "engine": "Splunk Machine Learning Toolkit (MLTK)",
+    "command": "fit DensityFunction / apply",
+    "splunk_app": "Splunk_ML_Toolkit",
+    "population": "stream:dns registered domains (BOTS v3)",
+    "events_scanned": 26539,
+    "search": "search index=botsv3 sourcetype=stream:dns query=* | eval qlen=len(query) | rex field=query \"(?<registered_domain>[a-zA-Z0-9-]+\\.[a-zA-Z]+)$\" | stats count as query_count avg(qlen) as avg_qlen max(qlen) as max_qlen dc(query) as unique_queries by registered_domain | where query_count > 5 | fit DensityFunction unique_queries threshold=0.01 into app:aec_dns_density show_density=true | where 'IsOutlier(unique_queries)'=1 | sort - unique_queries | head 10",
+    "anomaly_count": 4,
+    "anomalies": [
+      {
+        "registered_domain": "in-addr.arpa",
+        "query_count": "2855",
+        "unique_queries": "2200",
+        "avg_qlen": "25.75026269702277",
+        "max_qlen": "28",
+        "is_outlier": "1.0",
+        "probability_density": "4.7833889201284885e-76"
+      },
+      {
+        "registered_domain": "outlook.com",
+        "query_count": "348",
+        "unique_queries": "162",
+        "avg_qlen": "49.76436781609196",
+        "max_qlen": "53",
+        "is_outlier": "1.0",
+        "probability_density": "0.00012246226003992817"
+      },
+      {
+        "registered_domain": "froth.ly",
+        "query_count": "6037",
+        "unique_queries": "61",
+        "avg_qlen": "15.113301308596986",
+        "max_qlen": "41",
+        "is_outlier": "1.0",
+        "probability_density": "0.24412410040929022"
+      },
+      {
+        "registered_domain": "microsoft.com",
+        "query_count": "1220",
+        "unique_queries": "61",
+        "avg_qlen": "27.60573770491803",
+        "max_qlen": "40",
+        "is_outlier": "1.0",
+        "probability_density": "0.24412410040929022"
+      }
+    ],
+    "summary": "Splunk Machine Learning Toolkit (MLTK) flagged 4 anomalous DNS domain(s) (in-addr.arpa, outlook.com, froth.ly) — abnormal query cardinality consistent with tunnelling/exfiltration."
   }
 }

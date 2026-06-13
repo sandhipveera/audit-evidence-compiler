@@ -14,6 +14,8 @@ log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 30
 SEARCH_POLL_INTERVAL = 1.0
 
+_UNSET = object()
+
 
 class SplunkAuthError(Exception):
     pass
@@ -54,34 +56,60 @@ def _raise_for_splunk_status(resp: requests.Response, context: str) -> None:
 
 
 class SplunkClient:
-    """Thin REST client for Splunk search via token auth.
+    """Thin REST client for Splunk search via token or basic auth.
+
+    Prefers bearer-token auth when ``SPLUNK_TOKEN`` is set; otherwise falls
+    back to HTTP basic auth with ``SPLUNK_USERNAME`` / ``SPLUNK_PASSWORD``.
 
     Env vars:
         SPLUNK_HOST — base URL (e.g. https://localhost:8089)
-        SPLUNK_TOKEN — bearer token for authentication
+        SPLUNK_TOKEN — bearer token for authentication (optional)
+        SPLUNK_USERNAME — basic-auth user (default: admin)
+        SPLUNK_PASSWORD — basic-auth password (used when no token)
+
+    Pass ``token=""`` to force basic auth even when SPLUNK_TOKEN is set in
+    the environment (e.g. when the env token has been rotated/expired).
     """
 
     def __init__(
         self,
         host: str | None = None,
-        token: str | None = None,
+        token: object = _UNSET,
         verify_ssl: bool = True,
+        username: str | None = None,
+        password: str | None = None,
     ) -> None:
         self.host = (host or os.environ.get("SPLUNK_HOST", "")).rstrip("/")
-        self.token = token or os.environ.get("SPLUNK_TOKEN", "")
+        # Sentinel default lets callers pass token="" to *disable* token auth
+        # (and use basic auth) without silently re-reading the env var.
+        if token is _UNSET:
+            self.token = os.environ.get("SPLUNK_TOKEN", "")
+        else:
+            self.token = str(token) if token else ""
+        self.username = username or os.environ.get("SPLUNK_USERNAME", "admin")
+        self.password = (
+            password if password is not None else os.environ.get("SPLUNK_PASSWORD", "")
+        )
         self.verify_ssl = verify_ssl
 
         if not self.host:
             raise ValueError("SPLUNK_HOST not set — provide host or set env var")
-        if not self.token:
-            raise ValueError("SPLUNK_TOKEN not set — provide token or set env var")
+        if not self.token and not self.password:
+            raise ValueError(
+                "No Splunk credentials — set SPLUNK_TOKEN or SPLUNK_PASSWORD"
+            )
+
+    @property
+    def _auth(self) -> tuple[str, str] | None:
+        """HTTP basic-auth tuple, or None when bearer-token auth is used."""
+        return None if self.token else (self.username, self.password)
 
     @property
     def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        return headers
 
     def _url(self, path: str) -> str:
         return urljoin(self.host + "/", path.lstrip("/"))
@@ -92,6 +120,7 @@ class SplunkClient:
             resp = requests.get(
                 self._url("/services/server/info"),
                 headers=self._headers,
+                auth=self._auth,
                 params={"output_mode": "json"},
                 verify=self.verify_ssl,
                 timeout=DEFAULT_TIMEOUT,
@@ -120,6 +149,7 @@ class SplunkClient:
             create_resp = requests.post(
                 self._url("/services/search/jobs"),
                 headers=self._headers,
+                auth=self._auth,
                 data={
                     "search": query,
                     "earliest_time": earliest,
@@ -141,6 +171,7 @@ class SplunkClient:
                 status_resp = requests.get(
                     self._url(f"/services/search/jobs/{sid}"),
                     headers=self._headers,
+                auth=self._auth,
                     params={"output_mode": "json"},
                     verify=self.verify_ssl,
                     timeout=DEFAULT_TIMEOUT,
@@ -160,6 +191,7 @@ class SplunkClient:
             results_resp = requests.get(
                 self._url(f"/services/search/jobs/{sid}/results"),
                 headers=self._headers,
+                auth=self._auth,
                 params={"output_mode": "json", "count": max_results},
                 verify=self.verify_ssl,
                 timeout=DEFAULT_TIMEOUT,
@@ -181,6 +213,7 @@ class SplunkClient:
         resp = requests.get(
             self._url("/services/data/indexes"),
             headers=self._headers,
+            auth=self._auth,
             params={"output_mode": "json", "count": 0},
             verify=self.verify_ssl,
             timeout=DEFAULT_TIMEOUT,

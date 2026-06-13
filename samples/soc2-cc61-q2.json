@@ -3,15 +3,53 @@
   "framework": "SOC2",
   "snapshot_name": "soc2-cc61-q2",
   "fetched_at": "2026-05-24T12:00:00Z",
-  "time_range": { "earliest": "2018-09-01", "latest": "2018-09-30" },
+  "time_range": {
+    "earliest": "2018-09-01",
+    "latest": "2018-09-30"
+  },
   "search": "index=botsv3 sourcetype=o365:management:activity action=Login | stats count by user, mfa_used, src_ip | where mfa_used=\"false\"",
   "event_count": 1389,
   "sample_events": [
-    { "_time": "2018-09-05T10:22:00Z", "user": "mkraeusen@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" },
-    { "_time": "2018-09-06T14:10:00Z", "user": "bgist@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
-    { "_time": "2018-09-08T09:30:00Z", "user": "btun@froth.ly", "mfa_used": "false", "src_ip": "45.77.65.211", "action": "Login", "sourcetype": "o365:management:activity" },
-    { "_time": "2018-09-10T11:45:00Z", "user": "fyodor@froth.ly", "mfa_used": "false", "src_ip": "67.164.215.80", "action": "Login", "sourcetype": "o365:management:activity" },
-    { "_time": "2018-09-12T16:05:00Z", "user": "bstoll@froth.ly", "mfa_used": "false", "src_ip": "104.207.65.187", "action": "Login", "sourcetype": "o365:management:activity" }
+    {
+      "_time": "2018-09-05T10:22:00Z",
+      "user": "mkraeusen@froth.ly",
+      "mfa_used": "false",
+      "src_ip": "104.207.65.187",
+      "action": "Login",
+      "sourcetype": "o365:management:activity"
+    },
+    {
+      "_time": "2018-09-06T14:10:00Z",
+      "user": "bgist@froth.ly",
+      "mfa_used": "false",
+      "src_ip": "67.164.215.80",
+      "action": "Login",
+      "sourcetype": "o365:management:activity"
+    },
+    {
+      "_time": "2018-09-08T09:30:00Z",
+      "user": "btun@froth.ly",
+      "mfa_used": "false",
+      "src_ip": "45.77.65.211",
+      "action": "Login",
+      "sourcetype": "o365:management:activity"
+    },
+    {
+      "_time": "2018-09-10T11:45:00Z",
+      "user": "fyodor@froth.ly",
+      "mfa_used": "false",
+      "src_ip": "67.164.215.80",
+      "action": "Login",
+      "sourcetype": "o365:management:activity"
+    },
+    {
+      "_time": "2018-09-12T16:05:00Z",
+      "user": "bstoll@froth.ly",
+      "mfa_used": "false",
+      "src_ip": "104.207.65.187",
+      "action": "Login",
+      "sourcetype": "o365:management:activity"
+    }
   ],
   "aggregations": {
     "successful_logins": 1261,
@@ -21,5 +59,55 @@
     "service_accounts_bypassing_mfa": 19,
     "source_index": "botsv3",
     "source_sourcetype": "o365:management:activity"
+  },
+  "ml_anomaly": {
+    "available": true,
+    "source": "recorded",
+    "engine": "Splunk Machine Learning Toolkit (MLTK)",
+    "command": "fit DensityFunction / apply",
+    "splunk_app": "Splunk_ML_Toolkit",
+    "population": "stream:dns registered domains (BOTS v3)",
+    "events_scanned": 26539,
+    "search": "search index=botsv3 sourcetype=stream:dns query=* | eval qlen=len(query) | rex field=query \"(?<registered_domain>[a-zA-Z0-9-]+\\.[a-zA-Z]+)$\" | stats count as query_count avg(qlen) as avg_qlen max(qlen) as max_qlen dc(query) as unique_queries by registered_domain | where query_count > 5 | fit DensityFunction unique_queries threshold=0.01 into app:aec_dns_density show_density=true | where 'IsOutlier(unique_queries)'=1 | sort - unique_queries | head 10",
+    "anomaly_count": 4,
+    "anomalies": [
+      {
+        "registered_domain": "in-addr.arpa",
+        "query_count": "2855",
+        "unique_queries": "2200",
+        "avg_qlen": "25.75026269702277",
+        "max_qlen": "28",
+        "is_outlier": "1.0",
+        "probability_density": "4.7833889201284885e-76"
+      },
+      {
+        "registered_domain": "outlook.com",
+        "query_count": "348",
+        "unique_queries": "162",
+        "avg_qlen": "49.76436781609196",
+        "max_qlen": "53",
+        "is_outlier": "1.0",
+        "probability_density": "0.00012246226003992817"
+      },
+      {
+        "registered_domain": "froth.ly",
+        "query_count": "6037",
+        "unique_queries": "61",
+        "avg_qlen": "15.113301308596986",
+        "max_qlen": "41",
+        "is_outlier": "1.0",
+        "probability_density": "0.24412410040929022"
+      },
+      {
+        "registered_domain": "microsoft.com",
+        "query_count": "1220",
+        "unique_queries": "61",
+        "avg_qlen": "27.60573770491803",
+        "max_qlen": "40",
+        "is_outlier": "1.0",
+        "probability_density": "0.24412410040929022"
+      }
+    ],
+    "summary": "Splunk Machine Learning Toolkit (MLTK) flagged 4 anomalous DNS domain(s) (in-addr.arpa, outlook.com, froth.ly) — abnormal query cardinality consistent with tunnelling/exfiltration."
   }
 }

@@ -498,7 +498,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
   </div>
   <div class="spacer"></div>
   <a class="ghlink" href="https://github.com/sandhipveera/audit-evidence-compiler" target="_blank" rel="noopener" title="View source on GitHub" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
-  <div class="pill splunk"><span class="dot"></span>Splunk BOTS v3 · connected</div>
+  <div class="pill splunk"><span class="dot"></span>Splunk BOTS v3 + MLTK · connected</div>
   <div class="pill vbadge"><span class="dots"><i class="vd-a"></i><i class="vd-e"></i><i class="vd-x"></i><i class="vd-s"></i></span><span>4 / 4 vendors empaneled</span></div>
   <a class="pill splink" href="https://splunk-aec.accessquint.com/en-US/app/auditcompiler/posture" target="_blank" rel="noopener" title="Open the live Compliance Posture dashboard in Splunk">⊙ Live in Splunk ↗</a>
   <button class="themetgl" id="themetgl" type="button" aria-label="Toggle light / dark theme" title="Toggle light / dark"><span class="ti">☾</span></button>
@@ -544,7 +544,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
       </div>
     </div>
 
-    <div class="lineage-cap"><span class="rd">● GUIDED WALKTHROUGH</span> &mdash; a faithful replay of the real pipeline (map → SPL → Splunk → four-vendor panel → Merkle seal). The substrate is real: <b style="color:var(--text)">1.94M BOTS v3 events</b> in Splunk. Run it for real with a token, watch the recorded CLI run, or verify a sealed trail at <a href="/verify" target="_blank" rel="noopener" style="color:var(--splunk2)">/verify</a>.</div>
+    <div class="lineage-cap"><span class="rd">● GUIDED WALKTHROUGH</span> &mdash; a faithful replay of the real pipeline (map → SPL → Splunk → Splunk MLTK anomaly scan → four-vendor panel → Merkle seal). The substrate is real: <b style="color:var(--text)">1.94M BOTS v3 events</b> in Splunk, scored in-platform by Splunk's MLTK. Run it for real with a token, watch the recorded CLI run, or verify a sealed trail at <a href="/verify" target="_blank" rel="noopener" style="color:var(--splunk2)">/verify</a>.</div>
     <div class="lineage" id="lineage">
       <div class="node splunk" data-n="0"><div class="k">Source · Splunk</div><div class="v">BOTS v3 · real<br><span class="mono" style="color:var(--muted)">1.94M events loaded</span></div></div>
       <div class="arrow" data-a="0">→</div>
@@ -552,11 +552,13 @@ html[data-theme="light"] .rt{color:#c01c7e}
       <div class="arrow" data-a="1">→</div>
       <div class="node" data-n="2"><div class="k">Evidence</div><div class="v" id="evCount"><span class="mono">1,247 events</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span></div></div>
       <div class="arrow" data-a="2">→</div>
-      <div class="node" data-n="3"><div class="k">Tribunal</div><div class="v">4 models<br><span class="mono" style="color:var(--muted)">2 rounds</span></div></div>
+      <div class="node splunk" data-n="3"><div class="k">Splunk AI · MLTK</div><div class="v">anomaly scan<br><span class="mono" style="color:var(--muted)">fit / apply · in-platform</span></div></div>
       <div class="arrow" data-a="3">→</div>
-      <div class="node" data-n="4"><div class="k">Seal</div><div class="v">Merkle root<br><span class="mono" style="color:var(--muted)">SHA-256</span></div></div>
+      <div class="node" data-n="4"><div class="k">Tribunal</div><div class="v">4 models<br><span class="mono" style="color:var(--muted)">2 rounds</span></div></div>
       <div class="arrow" data-a="4">→</div>
-      <div class="node splunk" data-n="5"><div class="k">Post back · Splunk</div><div class="v">verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span></div></div>
+      <div class="node" data-n="5"><div class="k">Seal</div><div class="v">Merkle root<br><span class="mono" style="color:var(--muted)">SHA-256</span></div></div>
+      <div class="arrow" data-a="5">→</div>
+      <div class="node splunk" data-n="6"><div class="k">Post back · Splunk</div><div class="v">verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span></div></div>
     </div>
 
     <div class="evq"><span class="evql">vCISO evidence question</span><span id="evqText">Who can access what, how is access provisioned/reviewed, and is MFA enforced?</span><span class="evqar">→ becomes the SPL below</span></div>
@@ -776,7 +778,7 @@ qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.c
 function reset(){
   qa('.node,.arrow').forEach(n=>n.classList.remove('on'));
   qa('.vendor').forEach(c=>{c.classList.remove('active');q('[data-st]',c).textContent='idle';const r=q('[data-reason]',c);r.classList.remove('show');r.textContent='';const vd=q('[data-verdict]',c);vd.className='verdict';vd.textContent='';q('[data-cval]',c).textContent='—';q('[data-cbar]',c).style.width='0';const d=q('[data-dissent]',c);if(d)d.classList.remove('show')});
-  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');q('#debate').classList.add('hidden');if(q('#toexec'))q('#toexec').classList.remove('show');{const pb=q('[data-n="5"]');if(pb){pb.classList.remove('posted');const pv=q('.v',pb);if(pv)pv.innerHTML='verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span>';}}
+  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');q('#debate').classList.add('hidden');if(q('#toexec'))q('#toexec').classList.remove('show');{const pb=q('[data-n="6"]');if(pb){pb.classList.remove('posted');const pv=q('.v',pb);if(pv)pv.innerHTML='verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span>';}}
   qa('.ladder span').forEach(s=>s.classList.remove('win'));q('#final').classList.remove('struck');
   q('#chain').innerHTML='';q('#clk').textContent='0:00';q('#runbtn').disabled=false;q('#runbtn').textContent='▷ Guided walkthrough';
   qa('.exec-dl a').forEach(a=>{a.classList.add('locked');a.title='Run the tribunal first'});  // exports gated until a run completes
@@ -791,7 +793,7 @@ async function run(){
   const W=ms=>wait(ms*SPEED);
   let t=0;const clk=q('#clk');const ti=setInterval(()=>{t+=1;clk.textContent='0:'+String(t).padStart(2,'0')},1000);
   scrollToEl(q('.workbench'));await W(120);
-  for(let i=0;i<5;i++){q(`[data-n="${i}"]`).classList.add('on');const a=q(`[data-a="${i-1}"]`);if(a)a.classList.add('on');await W(460)}
+  for(let i=0;i<6;i++){q(`[data-n="${i}"]`).classList.add('on');const a=q(`[data-a="${i-1}"]`);if(a)a.classList.add('on');await W(460)}
   const cards={};qa('.vendor').forEach(c=>cards[c.dataset.v]=c);
   q('#debate').classList.remove('hidden');focus(q('#debate'));
   q('#delib').classList.add('show');
@@ -815,14 +817,14 @@ async function run(){
   const chain=q('#chain');
   for(let i=0;i<5;i++){const link=document.createElement('div');link.className='link';link.innerHTML=(i>0?'<div class="ln"></div>':'')+'<div class="blk">#'+(i+1)+'</div>';chain.appendChild(link);await W(120);link.classList.add('on');await W(340)}
   const seal=document.createElement('span');seal.className='seal';seal.textContent='✶';chain.appendChild(seal);await W(80);seal.classList.add('on');
-  await W(550);q('[data-a="4"]').classList.add('on');q('[data-n="5"]').classList.add('on');  // round-trip: post back to Splunk
+  await W(550);q('[data-a="5"]').classList.add('on');q('[data-n="6"]').classList.add('on');  // round-trip: post back to Splunk
   clearInterval(ti);clk.textContent='0:31';
   running=false;qa('.scn').forEach(b=>b.disabled=false);const _lb2=q('#runlivebtn');if(_lb2)_lb2.disabled=false;
   btn.disabled=false;btn.textContent='↻ Replay walkthrough';
   qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk('FAIL');focusVerdict();  // verdict sealed → exports unlocked, posted to Splunk, scroll to it
 }
 function postToSplunk(verdict){
-  const node=q('[data-n="5"]'),vEl=node&&q('.v',node);
+  const node=q('[data-n="6"]'),vEl=node&&q('.v',node);
   fetch('/api/post-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({control:(SCN[curScn]&&SCN[curScn].ctl)||'',verdict:verdict||'',root:'a3f1c9…e7b2',source:curScn})})
     .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' verdicts':'')+' ↗</a>'; } }).catch(()=>{});
 }
@@ -860,10 +862,10 @@ function runLive(){
   ws.onmessage=async(ev)=>{
     let m;try{m=JSON.parse(ev.data)}catch(e){return}
     if(m.type==='error'){q('#delib').classList.add('show');q('#delib').textContent='⚠ '+m.message;finishUp(false);try{ws.close()}catch(e){}return}
-    if(m.type==='phase'&&m.name==='snapshot_fetch'&&m.status==='done'){q('[data-n="2"]')&&q('[data-n="2"]').classList.add('on');q('[data-a="1"]')&&q('[data-a="1"]').classList.add('on');if(m.event_count)q('#evCount').innerHTML='<span class="mono">'+Number(m.event_count).toLocaleString()+' events</span><br><span class="mono" style="color:var(--muted)">live snapshot</span>';q('#delib').textContent='The tribunal is deliberating…'}
+    if(m.type==='phase'&&m.name==='snapshot_fetch'&&m.status==='done'){q('[data-n="2"]')&&q('[data-n="2"]').classList.add('on');q('[data-a="1"]')&&q('[data-a="1"]').classList.add('on');q('[data-n="3"]')&&q('[data-n="3"]').classList.add('on');q('[data-a="2"]')&&q('[data-a="2"]').classList.add('on');if(m.event_count)q('#evCount').innerHTML='<span class="mono">'+Number(m.event_count).toLocaleString()+' events</span><br><span class="mono" style="color:var(--muted)">live snapshot</span>';q('#delib').textContent='The tribunal is deliberating…'}
     if(m.type==='panel'){
       const c=cards[PERSONA2V[m.persona]||m.persona];if(!c)return;
-      q('[data-n="3"]')&&q('[data-n="3"]').classList.add('on');q('[data-a="2"]')&&q('[data-a="2"]').classList.add('on');
+      q('[data-n="4"]')&&q('[data-n="4"]').classList.add('on');q('[data-a="3"]')&&q('[data-a="3"]').classList.add('on');
       if(m.status==='thinking'){c.classList.add('active');q('[data-st]',c).innerHTML='<span class="spin"></span>deliberating'}
       else if(m.status==='complete'){
         q('[data-st]',c).textContent='ruled';
@@ -880,7 +882,7 @@ function runLive(){
       const v=m.verdict;liveVerdict=v;const w=q('[data-l="'+v+'"]');if(w)w.classList.add('win');
       const fin=q('#final');fin.className='final '+v+' serif';fin.innerHTML=v+'<small>'+(m.degraded?'Degraded — not all vendors responded. ':'')+'Mechanical consensus · '+(m.method||'lowest-of-four')+' · live.</small>';fin.classList.add('struck');
       await sealAnim();
-      q('[data-a="4"]')&&q('[data-a="4"]').classList.add('on');q('[data-n="5"]')&&q('[data-n="5"]').classList.add('on');
+      q('[data-a="5"]')&&q('[data-a="5"]').classList.add('on');q('[data-n="6"]')&&q('[data-n="6"]').classList.add('on');
     }
     if(m.type==='done'){finishUp(true);try{ws.close()}catch(e){}}
   };

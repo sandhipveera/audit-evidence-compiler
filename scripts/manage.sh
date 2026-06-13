@@ -271,6 +271,10 @@ cmd_install_app() { bash "$REPO_DIR/scripts/install_splunk_app.sh" "${2:-}"; }
 # Install / restore the real BOTS v3 dataset (cached on host, idempotent).
 cmd_install_bots() { bash "$REPO_DIR/scripts/install_botsv3.sh" "${2:-}"; }
 
+# Install MLTK + Python for Scientific Computing (Splunk's ML engine) from
+# local .tgz packages, enabling MLTK fit/apply in the splunk_ml_anomaly node.
+cmd_install_mltk() { bash "$REPO_DIR/scripts/install_mltk.sh" "${2:-}" "${3:-}"; }
+
 # ─────────────────────────────────────────────────────────────────────────────
 CMD="${1:-status}"
 
@@ -286,8 +290,9 @@ case "$CMD" in
   verify)       cmd_verify ;;
   install-app)  cmd_install_app "$@" ;;
   install-bots) cmd_install_bots "$@" ;;
+  install-mltk) cmd_install_mltk "$@" ;;
   shell)        cmd_shell ;;
   *)
-    echo "Usage: $0 {status|start|stop|restart|logs|logs-web|logs-splunk|update|verify|install-app|install-bots|shell}"
+    echo "Usage: $0 {status|start|stop|restart|logs|logs-web|logs-splunk|update|verify|install-app|install-bots|install-mltk|shell}"
     exit 1 ;;
 esac

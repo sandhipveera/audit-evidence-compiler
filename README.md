@@ -2,6 +2,10 @@
 
 > **Splunk Agentic Ops Hackathon 2026 — Security Track**
 
+> **Built entirely during the hackathon period** — first commit 2026-05-23, ~120 commits through submission. Nothing here predates the event; the full git history backs this.
+
+> **Uses Splunk's AI at runtime** — the pipeline doesn't just read rows out of Splunk. Its `splunk_ml_anomaly` step calls **Splunk's own machine-learning engine in-platform** (MLTK `fit DensityFunction`/`apply` when the Machine Learning Toolkit is installed, otherwise the built-in `anomalydetection` command — the engine behind the Splunk App for Anomaly Detection) to score the collected evidence for anomalies. Those Splunk-flagged anomalies are fed into the vendor debate, so **Splunk's AI shapes every verdict**. Code: [`src/aec/splunk/ml_anomaly.py`](src/aec/splunk/ml_anomaly.py), wired in [`src/aec/agent/graph.py`](src/aec/agent/graph.py).
+
 ## The problem nobody has solved yet
 
 Every security vendor is rushing to add AI. CISOs know it. Auditors know it. And everyone is asking the same question:
@@ -170,7 +174,8 @@ graph TD
       N3 --> N4{HITL gate}
       N4 -->|approve| N5[mcp_executor]
       N5 --> N6[evidence_normalizer]
-      N6 --> N7[panel_round_1]
+      N6 --> N6b["splunk_ml_anomaly<br/>Splunk AI · MLTK / anomalydetection"]
+      N6b --> N7[panel_round_1]
       N7 --> N8[adversary_search_validator]
       N8 --> N9[mcp_executor — counter]
       N9 --> N10[panel_round_2]
@@ -185,6 +190,7 @@ graph TD
       S2[splunk-official MCP]
       S3[livehybrid MCP]
       S4[REST API]
+      S6["Splunk ML engine<br/>MLTK · anomalydetection"]
     end
 
     subgraph "Panel (4 vendors)"
@@ -207,7 +213,8 @@ graph TD
     end
 
     N5 --> S2 & S3 & S4
-    S1 --- S2 & S3 & S4
+    N6b --> S6
+    S1 --- S2 & S3 & S4 & S6
     N7 & N10 --> P1 & P2 & P3 & P4
     N14 --> O1 & O2 & O3 & O4
     O4 --> V1 & V2
