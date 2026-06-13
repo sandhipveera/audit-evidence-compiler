@@ -1054,7 +1054,7 @@ async def _run(args: argparse.Namespace) -> None:
     if args.sample:
         snapshot = _load_sample(args.sample)
         console.print(
-            f"[bold cyan][1/5][/] Loading snapshot: samples/{args.sample}.json "
+            f"[bold cyan][1/6][/] Loading snapshot: samples/{args.sample}.json "
             f"({snapshot['event_count']} events, "
             f"{snapshot['time_range']['earliest']} to {snapshot['time_range']['latest']})"
         )
@@ -1070,7 +1070,7 @@ async def _run(args: argparse.Namespace) -> None:
             raise SystemExit(1)
 
         console.print(
-            f"[bold cyan][1/5][/] MCP server: {mcp_router.active_label}"
+            f"[bold cyan][1/6][/] MCP server: {mcp_router.active_label}"
         )
         if mcp_router.fallback_label:
             console.print(
@@ -1094,7 +1094,7 @@ async def _run(args: argparse.Namespace) -> None:
             console.print("  export SPLUNK_TOKEN=your-token")
             raise SystemExit(1)
         console.print(
-            f"[bold cyan][1/5][/] Connecting to Splunk "
+            f"[bold cyan][1/6][/] Connecting to Splunk "
             f"({os.environ.get('SPLUNK_HOST', '')})..."
         )
         snapshot, splunk_client = _load_live(args.control, args.window)
@@ -1113,8 +1113,35 @@ async def _run(args: argparse.Namespace) -> None:
     control_id = snapshot["control_id"]
     control_text = _control_text_for(control_id)
 
+    # Step 2: Splunk's own ML scores the evidence for anomalies (Splunk AI at runtime).
+    ml = snapshot.get("ml_anomaly")
+    if not ml and (_has_splunk_env() or getattr(args, "live", False)):
+        try:
+            from aec.splunk.ml_anomaly import run_ml_anomaly
+            ml = run_ml_anomaly(control_id, snapshot.get("framework", ""))
+            snapshot["ml_anomaly"] = ml
+        except Exception:
+            ml = None
+    if ml and ml.get("available"):
+        doms = ", ".join(a.get("registered_domain", "?") for a in (ml.get("anomalies") or [])[:3])
+        console.print(
+            f"[bold cyan][2/6][/] Splunk MLTK · anomaly scan — "
+            f"[green]{ml.get('engine', 'Splunk ML')}[/] flagged "
+            f"[bold]{ml.get('anomaly_count', 0)}[/] anomaly(ies)"
+            + (f" ([dim]{doms}[/])" if doms else "")
+        )
+        console.print(
+            f"      [dim]Splunk's own ML ({ml.get('command', '')}) scored the evidence "
+            f"in-platform before the panel debated it.[/]"
+        )
+    else:
+        console.print(
+            "[bold cyan][2/6][/] Splunk MLTK · anomaly scan — "
+            "[dim]engine unavailable; continuing[/]"
+        )
+
     if args.no_llm:
-        console.print("[yellow][2/5] Skipping panel (--no-llm)[/]")
+        console.print("[yellow][3/6] Skipping panel (--no-llm)[/]")
         console.print(Panel(json.dumps(snapshot, indent=2), title="Snapshot", border_style="cyan"))
         return
 
@@ -1123,7 +1150,7 @@ async def _run(args: argparse.Namespace) -> None:
     max_counter = getattr(args, "max_counter_searches", 3)
     round_label = "with recurrence" if enable_recurrence else "single round"
     console.print(
-        f"[bold cyan][2/5][/] Running panel debate (4 personas, parallel, {round_label})..."
+        f"[bold cyan][3/6][/] Running panel debate (4 personas, parallel, {round_label})..."
     )
 
     from aec.agent.panel import run_panel_with_recurrence
@@ -1162,7 +1189,7 @@ async def _run(args: argparse.Namespace) -> None:
         consensus_detail = f" — adversary surfaced: {adversary.concerns[0]}"
 
     console.print(
-        f"[bold cyan][3/5][/] Consensus: "
+        f"[bold cyan][4/6][/] Consensus: "
         f"[bold {verdict_style}]{recurrence_result.final_verdict}[/]"
         f" (round {recurrence_result.final_consensus_round})"
         f"{consensus_detail}"
@@ -1189,7 +1216,7 @@ async def _run(args: argparse.Namespace) -> None:
     elapsed = time.monotonic() - start
     memo_path = _write_audit_memo(snapshot, panel_result, out_dir, ts, elapsed)
 
-    console.print(f"[bold cyan][4/5][/] Wrote {transcript_path}")
+    console.print(f"[bold cyan][5/6][/] Wrote {transcript_path}")
     console.print(f"      Wrote {memo_path}")
 
     # Step 5: Evidence chain + xlsx + manifest (Merkle seal)
@@ -1241,7 +1268,7 @@ async def _run(args: argparse.Namespace) -> None:
         mcp_server=snapshot.get("mcp_server"),
     )
 
-    console.print(f"[bold cyan][5/5][/] Wrote {trail_path}")
+    console.print(f"[bold cyan][6/6][/] Wrote {trail_path}")
     console.print(
         f"\n[bold green]Wrote {xlsx_path} "
         f"({chain_length} evidence snapshots, Merkle-sealed)[/]"
