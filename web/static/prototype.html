@@ -655,11 +655,12 @@ html[data-theme="light"] .rt{color:#c01c7e}
             <div class="stg guard"><span class="n">3</span>SPL Validator · policy gate</div>
             <div class="stg"><span class="n">4</span>MCP Router → Executor</div>
             <div class="stg"><span class="n">5</span>Evidence Normalizer</div>
-            <div class="stg panel"><span class="n">6</span>Four-Vendor Panel · parallel
+            <div class="stg" style="border-color:rgba(111,212,74,.55);background:rgba(111,212,74,.06)"><span class="n">6</span>Splunk MLTK · anomaly scan<small style="color:var(--splunk2);font-weight:700;display:block;margin-top:2px">Splunk's own ML — fit/apply, in-platform</small></div>
+            <div class="stg panel"><span class="n">7</span>Four-Vendor Panel · parallel
               <div class="vchips"><i class="vd-a"><svg class="bi"><use href="#bi-claude"/></svg>Claude Sonnet 4</i><i class="vd-e"><svg class="bi"><use href="#bi-openai"/></svg>GPT-5.5 · Codex</i><i class="vd-x"><svg class="bi"><use href="#bi-gemini"/></svg>Gemini 2.5 Pro</i><i class="vd-s"><svg class="bi"><use href="#bi-sec"/></svg>Foundation-Sec-8B</i></div>
             </div>
-            <div class="stg"><span class="n">7</span>Consensus · lowest-of-four</div>
-            <div class="stg"><span class="n">8</span>Evidence Formatter</div>
+            <div class="stg"><span class="n">8</span>Consensus · lowest-of-four</div>
+            <div class="stg"><span class="n">9</span>Evidence Formatter</div>
           </div>
         </div>
 
@@ -677,7 +678,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
       <div class="arch-splunk">
         <div class="rt rt-down"><span class="rtar">↑</span><span>① pull evidence — SPL via MCP server</span></div>
         <div class="splunk-bar">
-          <div class="sb-l"><span class="splogo">splunk&gt;</span><div><b>Splunk Enterprise · BOTS v3 dataset</b><small>1.94M real events loaded · official + livehybrid MCP servers · runtime transport switch</small></div></div>
+          <div class="sb-l"><span class="splogo">splunk&gt;</span><div><b>Splunk Enterprise · BOTS v3 dataset</b><small>1.94M real events loaded · official + livehybrid MCP servers · runtime transport switch · MLTK scores evidence for anomalies in-platform</small></div></div>
           <div class="sb-r"><span class="real">Real BOTS v3 data</span></div>
         </div>
         <div class="rt rt-up"><span class="rtar">↓</span><span>② post verdict + Merkle root back — HEC → index=aec_audit</span></div>
