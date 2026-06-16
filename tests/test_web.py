@@ -195,3 +195,57 @@ class TestArtifactPathTraversal:
     def test_path_traversal_dotdot(self, client):
         resp = client.get("/api/artifact/..%2F..%2Fetc%2Fpasswd")
         assert resp.status_code in (404, 400, 422)
+
+
+class TestHealthEndpoint:
+    """Liveness plus the gated, cached active vendor probe."""
+
+    @pytest.fixture
+    def client(self):
+        from starlette.testclient import TestClient
+        return TestClient(app)
+
+    @pytest.fixture(autouse=True)
+    def _clear_probe_cache(self):
+        from web import main as wm
+        wm._vendor_probe_cache["at"] = 0.0
+        wm._vendor_probe_cache["result"] = None
+        yield
+        wm._vendor_probe_cache["at"] = 0.0
+        wm._vendor_probe_cache["result"] = None
+
+    def test_liveness_is_cheap_and_unauthenticated(self, client):
+        resp = client.get("/health")
+        assert resp.status_code == 200
+        assert resp.json() == {"service": "ok"}
+
+    def test_probe_requires_run_token_when_configured(self, client, monkeypatch):
+        from web import main as wm
+        monkeypatch.setattr(wm, "RUN_TOKEN", "secret")
+
+        resp = client.get("/health?probe=1")
+        assert resp.status_code == 401
+
+    def test_probe_runs_and_caches_when_authorized(self, client, monkeypatch):
+        from web import main as wm
+
+        calls = {"n": 0}
+
+        async def _fake_probe():
+            calls["n"] += 1
+            return {"all_up": True, "vendor_count": 4, "vendors": []}
+
+        monkeypatch.setattr("aec.agent.panel.probe_vendors", _fake_probe)
+        monkeypatch.setattr(wm, "RUN_TOKEN", "")  # dev: no token required
+
+        first = client.get("/health?probe=1")
+        assert first.status_code == 200
+        body = first.json()
+        assert body["service"] == "ok"
+        assert body["all_up"] is True
+        assert body["vendor_count"] == 4
+        assert body["cached"] is False
+
+        second = client.get("/health?probe=1")
+        assert second.json()["cached"] is True
+        assert calls["n"] == 1  # second request served from cache, no re-probe

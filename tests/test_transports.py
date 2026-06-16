@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from aec.agent.transports import CompletionResult, Transport
 from aec.agent.transports.anthropic_cli import AnthropicCLITransport
 from aec.agent.transports.openai_cli import OpenAICLITransport, _extract_codex_text
 
@@ -83,3 +84,58 @@ async def test_openai_cli_raises_on_turn_failed():
         transport = OpenAICLITransport()
         with pytest.raises(RuntimeError, match="Codex CLI error"):
             await transport.complete("system", "user", "gpt-5.5", 0.3)
+
+
+# ---------------------------------------------------------------------------
+# Transport.probe — active round-trip health check used by the vendor pre-flight.
+# ---------------------------------------------------------------------------
+
+
+class _StubTransport(Transport):
+    """Minimal concrete transport to exercise the base-class probe()."""
+
+    name = "stub"
+
+    def __init__(self, *, available: bool, complete_result=None, complete_error=None):
+        self._available = available
+        self._complete_result = complete_result
+        self._complete_error = complete_error
+
+    async def available(self) -> bool:
+        return self._available
+
+    async def complete(self, system_prompt, user_prompt, model, temperature):
+        if self._complete_error is not None:
+            raise self._complete_error
+        return self._complete_result
+
+
+@pytest.mark.asyncio
+async def test_probe_reports_not_available_without_round_trip():
+    transport = _StubTransport(available=False)
+
+    ok, detail = await transport.probe("claude-sonnet-4-6")
+
+    assert ok is False
+    assert "not available" in detail
+
+
+@pytest.mark.asyncio
+async def test_probe_succeeds_and_reports_live_model():
+    result = CompletionResult(text="OK", model="claude-sonnet-4-6", transport_name="stub")
+    transport = _StubTransport(available=True, complete_result=result)
+
+    ok, detail = await transport.probe("claude-sonnet-4-6")
+
+    assert ok is True
+    assert "claude-sonnet-4-6" in detail
+
+
+@pytest.mark.asyncio
+async def test_probe_surfaces_completion_error_as_not_ok():
+    transport = _StubTransport(available=True, complete_error=RuntimeError("OAuth expired"))
+
+    ok, detail = await transport.probe("claude-sonnet-4-6")
+
+    assert ok is False
+    assert "OAuth expired" in detail
