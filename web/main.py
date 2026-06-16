@@ -121,6 +121,50 @@ def list_controls():
     return controls
 
 
+# ---------------------------------------------------------------------------
+# Health — liveness (cheap, no token) + active vendor probe (gated, cached).
+# Judges only ever see the static dashboard; this endpoint is the operator's
+# pre-flight check that all four panel vendors are genuinely live before a demo.
+# ---------------------------------------------------------------------------
+
+_vendor_probe_cache: dict[str, Any] = {"at": 0.0, "result": None}
+VENDOR_PROBE_TTL = int(os.environ.get("AEC_VENDOR_PROBE_TTL", "60"))
+
+
+@app.get("/health")
+async def health(request: Request, probe: int = 0):
+    """Service liveness, plus an optional active four-vendor probe.
+
+    ``GET /health`` is cheap and unauthenticated — it just confirms the web
+    service is up. ``GET /health?probe=1`` actively round-trips each panel vendor
+    to catch expired logins / rotated tokens that would silently degrade the
+    panel; that spends a few tokens, so it is gated behind the run token and
+    cached for AEC_VENDOR_PROBE_TTL seconds.
+    """
+    body: dict[str, Any] = {"service": "ok"}
+    if not probe:
+        return body
+
+    token = request.query_params.get("token") or request.headers.get("X-AEC-Token")
+    if not _check_run_token(token):
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Unauthorized — a valid run token is required to probe vendors."},
+        )
+
+    now = time.monotonic()
+    cached = _vendor_probe_cache["result"]
+    if cached is not None and (now - _vendor_probe_cache["at"]) < VENDOR_PROBE_TTL:
+        return {**body, "cached": True, **cached}
+
+    from aec.agent.panel import probe_vendors
+
+    result = await probe_vendors()
+    _vendor_probe_cache["at"] = now
+    _vendor_probe_cache["result"] = result
+    return {**body, "cached": False, **result}
+
+
 @app.websocket("/ws/run")
 async def run_debate(ws: WebSocket):
     await ws.accept()
