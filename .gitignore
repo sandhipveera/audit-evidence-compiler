@@ -54,3 +54,6 @@ scripts/trim-demo.sh
 # Internal gallery/debate screenshots — upload to the submission portal, never commit
 gallery-internal/
 docs/gallery-captions.md
+
+# Personal Splunk feedback-survey responses — individual prize, never commit
+docs/splunk-feedback-survey.md
