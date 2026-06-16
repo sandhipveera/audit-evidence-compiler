@@ -65,6 +65,45 @@ def load_persona(name: str, persona_dir: Path | None = None) -> PersonaSpec:
     )
 
 
+async def probe_vendors(persona_dir: Path | None = None) -> dict[str, Any]:
+    """Active pre-flight health check of the four panel vendors.
+
+    For each persona it probes the *primary* transport with the exact model the
+    panel would use — a real round-trip that catches expired CLI logins / rotated
+    tokens that ``available()`` misses. ``all_up`` is true only when every primary
+    is live, i.e. a genuine four-vendor panel; otherwise a persona would silently
+    fall back (or drop out). Each probe is a few tokens, so this spends real spend
+    — keep it behind the run gate.
+    """
+
+    async def _probe_one(name: str) -> dict[str, Any]:
+        persona = load_persona(name, persona_dir)
+        primary = persona.transports[0] if persona.transports else None
+        if primary is None:
+            return {"persona": name, "ok": False, "detail": "no transports configured"}
+        transport = llm_router._get_transport(primary.name)
+        model = primary.config.get("model", "")
+        t0 = time.time()
+        ok, detail = await transport.probe(model)
+        fallbacks = [t.name for t in persona.transports[1:]]
+        return {
+            "persona": name,
+            "transport": primary.name,
+            "model": model or "(default)",
+            "ok": ok,
+            "detail": detail,
+            "latency_s": round(time.time() - t0, 1),
+            "fallbacks": fallbacks,
+        }
+
+    vendors = await asyncio.gather(*(_probe_one(n) for n in PERSONA_NAMES))
+    return {
+        "all_up": all(v["ok"] for v in vendors),
+        "vendor_count": sum(1 for v in vendors if v["ok"]),
+        "vendors": list(vendors),
+    }
+
+
 def _format_ml_anomaly_section(
     snapshot: dict[str, Any],
     splunk_snapshot: dict[str, Any] | None,
