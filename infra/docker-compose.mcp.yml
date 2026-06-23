@@ -1,6 +1,6 @@
 services:
   splunk:
-    image: splunk/splunk:latest
+    image: splunk/splunk:10.4.0
     container_name: aec-splunk
     ports:
       - "8001:8000"
@@ -9,7 +9,11 @@ services:
     environment:
       SPLUNK_START_ARGS: "--accept-license"
       SPLUNK_GENERAL_TERMS: "--accept-sgt-current-at-splunk-com"
-      SPLUNK_PASSWORD: "changeme123"
+      # Interpolated from the shell env (manage.sh/setup.sh source ~/.aec-config + .env).
+      # Must match the admin password persisted on the splunk-data volume, or the
+      # provisioning playbook's HEC-token step 401s and the container crash-loops.
+      # The changeme123 fallback is for first-time init only — never a rotated value.
+      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD:-changeme123}"
     volumes:
       - splunk-data:/opt/splunk/var
     restart: unless-stopped
