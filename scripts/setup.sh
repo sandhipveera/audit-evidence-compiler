@@ -226,7 +226,7 @@ else
   cat > "$REPO_DIR/infra/docker-compose.mcp.yml" << COMPOSE
 services:
   splunk:
-    image: splunk/splunk:latest
+    image: splunk/splunk:10.4.0
     container_name: aec-splunk
     ports:
       - "${SPLUNK_PORT_WEB}:8000"
@@ -235,7 +235,9 @@ services:
     environment:
       SPLUNK_START_ARGS: "--accept-license"
       SPLUNK_GENERAL_TERMS: "--accept-sgt-current-at-splunk-com"
-      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD}"
+      # Must match the admin password on the splunk-data volume, else the
+      # provisioning playbook's HEC-token step 401s and the container crash-loops.
+      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD:-changeme123}"
     volumes:
       - splunk-data:/opt/splunk/var
     restart: unless-stopped
@@ -257,6 +259,28 @@ COMPOSE
     | python3 -c "import sys,json; print(json.load(sys.stdin)['entry'][0]['content']['version'])" 2>/dev/null || echo "unknown")
   ok "Splunk ${SPLUNK_VER} started"
 fi
+
+# Cap Splunk's internal telemetry indexes so boot/restart churn can't fill the
+# disk and trip the 5000MB free-disk floor that blocks ALL searches. Persisted
+# on the /opt/splunk/etc volume; takes full effect on the next splunkd restart.
+docker exec -u splunk -i aec-splunk tee /opt/splunk/etc/system/local/indexes.conf >/dev/null << 'INDEXES'
+[_internal]
+maxTotalDataSizeMB = 3000
+frozenTimePeriodInSecs = 2592000
+
+[_introspection]
+maxTotalDataSizeMB = 1500
+frozenTimePeriodInSecs = 1209600
+
+[_metrics]
+maxTotalDataSizeMB = 1000
+
+[_telemetry]
+maxTotalDataSizeMB = 500
+INDEXES
+curl -sk -o /dev/null -u "admin:${SPLUNK_PASSWORD}" \
+  -X POST "https://localhost:${SPLUNK_PORT_MGMT}/services/data/indexes/_reload" 2>/dev/null || true
+ok "Internal-index size caps applied"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. Developer license
