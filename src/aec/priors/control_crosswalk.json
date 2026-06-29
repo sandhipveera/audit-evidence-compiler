@@ -83,5 +83,61 @@
       "NIST 800-53": "CP-9",
       "COBIT": "DSS04.07"
     }
+  },
+  "_mitre_meta": {
+    "purpose": "Per-control-family mapping to the MITRE ATT&CK (Enterprise) techniques the control is meant to prevent or detect. Lets the Foundation-Sec-8B Security Model persona — and the report — speak the SOC field's vocabulary: 'does this control actually stop the techniques attackers use?'",
+    "framework": "MITRE ATT&CK Enterprise v15",
+    "relationship": "mitigates/detects (control → technique)"
+  },
+  "mitre_attack": {
+    "Access Control Policy": [
+      {"id": "T1078", "name": "Valid Accounts"},
+      {"id": "T1110", "name": "Brute Force"},
+      {"id": "T1098", "name": "Account Manipulation"}
+    ],
+    "User Access Review": [
+      {"id": "T1078", "name": "Valid Accounts"},
+      {"id": "T1098", "name": "Account Manipulation"},
+      {"id": "T1136", "name": "Create Account"}
+    ],
+    "Patch Management": [
+      {"id": "T1190", "name": "Exploit Public-Facing Application"},
+      {"id": "T1203", "name": "Exploitation for Client Execution"},
+      {"id": "T1210", "name": "Exploitation of Remote Services"}
+    ],
+    "Logging & Monitoring": [
+      {"id": "T1562", "name": "Impair Defenses"},
+      {"id": "T1070", "name": "Indicator Removal"},
+      {"id": "T1654", "name": "Log Enumeration"}
+    ],
+    "Asset Inventory": [
+      {"id": "T1046", "name": "Network Service Discovery"},
+      {"id": "T1018", "name": "Remote System Discovery"},
+      {"id": "T1200", "name": "Hardware Additions"}
+    ],
+    "Encryption": [
+      {"id": "T1040", "name": "Network Sniffing"},
+      {"id": "T1557", "name": "Adversary-in-the-Middle"},
+      {"id": "T1552", "name": "Unsecured Credentials"}
+    ],
+    "Vendor Risk Management": [
+      {"id": "T1195", "name": "Supply Chain Compromise"},
+      {"id": "T1199", "name": "Trusted Relationship"}
+    ],
+    "Change Management": [
+      {"id": "T1505", "name": "Server Software Component"},
+      {"id": "T1546", "name": "Event Triggered Execution"},
+      {"id": "T1195", "name": "Supply Chain Compromise"}
+    ],
+    "Incident Response": [
+      {"id": "T1070", "name": "Indicator Removal"},
+      {"id": "T1485", "name": "Data Destruction"},
+      {"id": "T1486", "name": "Data Encrypted for Impact"}
+    ],
+    "Data Backup": [
+      {"id": "T1485", "name": "Data Destruction"},
+      {"id": "T1486", "name": "Data Encrypted for Impact"},
+      {"id": "T1490", "name": "Inhibit System Recovery"}
+    ]
   }
 }

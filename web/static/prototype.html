@@ -261,6 +261,24 @@ header.topbar{border-bottom:1px solid var(--border);background:rgba(8,8,13,.72);
 .verdict.INSUFFICIENT{background:rgba(176,140,224,.16);color:var(--insufficient);border:1px solid var(--insufficient)}
 .dissent{position:absolute;top:9px;right:9px;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--fail);background:rgba(224,88,79,.12);border:1px solid var(--fail);border-radius:5px;padding:2px 7px;opacity:0;transition:.3s}
 .dissent.show{opacity:1}
+/* dissent ledger + panel-agreement confidence on the consensus card */
+.agreement{margin-top:14px;display:none;flex-direction:column;gap:8px}
+.agreement.show{display:flex}
+.agreement .ag-hd{display:flex;justify-content:space-between;align-items:baseline;font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.agreement .ag-hd b{color:var(--text);font-size:12px}
+.agreement .ag-hd .lab{color:var(--brass)}
+.agreement .ag-bar{height:7px;border-radius:4px;background:var(--surface2);overflow:hidden;border:1px solid var(--border)}
+.agreement .ag-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brass2),var(--brass));transition:width .7s ease}
+.agreement .ag-rows{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.agreement .ag-chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border2);color:var(--muted)}
+.agreement .ag-chip.no{color:var(--fail);border-color:var(--fail);background:rgba(224,88,79,.1)}
+.agreement .ag-chip.ok{color:var(--pass);border-color:var(--pass);background:rgba(95,174,95,.08)}
+/* MITRE ATT&CK technique chips under the control header */
+.attck{margin-top:6px;display:none;flex-wrap:wrap;gap:5px;align-items:center}
+.attck.show{display:flex}
+.attck .at-lbl{font-family:'JetBrains Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--splunk)}
+.attck .at-chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--border2);color:var(--muted)}
+.attck .at-chip b{color:var(--text);font-weight:600}
 
 /* consensus + merkle */
 .trust{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;padding:2px 20px 22px}
@@ -552,7 +570,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
     </aside>
     <div class="workpanel" id="workpanel">
     <div class="console-head">
-      <div><div class="ctl serif" id="ctlName">SOC 2 · CC6.1 — Logical access / MFA enforcement</div><div class="meta" id="ctlMeta">Maps to ISO 27001:2022 A.5.15 · NIST CSF 2.0 PR.AA-01 · NIST 800-53 AC-1 · COBIT DSS05.04</div></div>
+      <div><div class="ctl serif" id="ctlName">SOC 2 · CC6.1 — Logical access / MFA enforcement</div><div class="meta" id="ctlMeta">Maps to ISO 27001:2022 A.5.15 · NIST CSF 2.0 PR.AA-01 · NIST 800-53 AC-1 · COBIT DSS05.04</div><div class="attck" id="attck"></div></div>
       <div class="impact"><span>Manual: <b>~40 hrs</b></span>→<span class="clk" id="clk">0:00</span></div>
       <div class="runrow">
         <button class="runbtn" id="runbtn" title="Replay a recorded run — no AI calls, instant">▷ Guided walkthrough</button>
@@ -591,10 +609,10 @@ html[data-theme="light"] .rt{color:#c01c7e}
     <div class="deliberating serif" id="delib">The tribunal is deliberating…</div>
 
     <div class="debate hidden" id="debate">
-      <div class="vendor" data-v="auditor"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-claude"/></svg></span><span class="nm">Auditor</span></div><div class="model">Claude Sonnet 4 · anthropic-cli</div><div class="org">Anthropic</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--auditor)"></i></div></div></div></div>
-      <div class="vendor" data-v="engineer"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-openai"/></svg></span><span class="nm">Engineer</span></div><div class="model">GPT-5.5 · codex-cli</div><div class="org">OpenAI</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--engineer)"></i></div></div></div></div>
+      <div class="vendor" data-v="auditor"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-claude"/></svg></span><span class="nm">Auditor</span></div><div class="model">Claude Sonnet 4 · anthropic-cli</div><div class="org">Anthropic</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--auditor)"></i></div></div><div class="dissent" data-dissent></div></div></div>
+      <div class="vendor" data-v="engineer"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-openai"/></svg></span><span class="nm">Engineer</span></div><div class="model">GPT-5.5 · codex-cli</div><div class="org">OpenAI</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--engineer)"></i></div></div><div class="dissent" data-dissent></div></div></div>
       <div class="vendor" data-v="adversary"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-gemini"/></svg></span><span class="nm">Adversary</span></div><div class="model">Gemini 2.5 Pro · gemini-cli</div><div class="org">Google</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--adversary)"></i></div></div><div class="dissent" data-dissent>↺ counter-search</div></div></div>
-      <div class="vendor" data-v="security"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-sec"/></svg></span><span class="nm">Security&nbsp;Model</span></div><div class="model">Foundation-Sec-8B · HF API</div><div class="org">Cisco / Splunk</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--security)"></i></div></div></div></div>
+      <div class="vendor" data-v="security"><div class="top"><div class="role"><span class="ic"><svg class="bi"><use href="#bi-sec"/></svg></span><span class="nm">Security&nbsp;Model</span></div><div class="model">Foundation-Sec-8B · HF API</div><div class="org">Cisco / Splunk</div></div><div class="body"><div class="vstatus" data-st>idle</div><div class="reason" data-reason></div><div class="verdict" data-verdict></div><div class="conf"><div class="lbl"><span>confidence</span><span data-cval>—</span></div><div class="bar"><i data-cbar style="background:var(--security)"></i></div></div><div class="dissent" data-dissent></div></div></div>
     </div>
 
     <div class="trust">
@@ -602,6 +620,7 @@ html[data-theme="light"] .rt{color:#c01c7e}
         <div class="rule">Mechanical consensus · lowest verdict wins · no LLM tiebreaker, fully reproducible</div>
         <div class="ladder"><span data-l="PASS">PASS</span><span class="lt">&lt;</span><span data-l="PARTIAL">PARTIAL</span><span class="lt">&lt;</span><span data-l="FAIL">FAIL</span><span class="lt">&lt;</span><span data-l="INSUFFICIENT">INSUFFICIENT</span></div>
         <div class="final FAIL serif" id="final">FAIL<small>Two of four returned FAIL. One dissent is enough to strike the verdict.</small></div>
+        <div class="agreement" id="agreement"></div>
       </div>
       <div class="panel-card merkle" id="merkle">
         <div class="rule"><span class="lock">🔒</span> Tamper-evident evidence chain</div>
@@ -792,12 +811,13 @@ function renderExec(scn){
 }
 /* fetch the sanitized priors, then render; fall back to inline data on failure */
 fetch('/static/exec_priors.json').then(r=>r.json()).then(j=>{EXEC=j.scenarios||j;renderExec(curScn);}).catch(()=>renderExec(curScn));
+renderAttck(attckFor((SCN[curScn]||{}).ctl));
 
-qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const s=SCN[b.dataset.scn];q('#ctlName').textContent=s.ctl;q('#ctlMeta').textContent=s.meta;q('.impact b').textContent=s.manual;q('#evCount').innerHTML=`<span class="mono">${s.ev}</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span>`;if(s.evq)q('#evqText').textContent=s.evq;curScn=b.dataset.scn;renderExec(curScn);reset();});
+qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const s=SCN[b.dataset.scn];q('#ctlName').textContent=s.ctl;q('#ctlMeta').textContent=s.meta;q('.impact b').textContent=s.manual;q('#evCount').innerHTML=`<span class="mono">${s.ev}</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span>`;if(s.evq)q('#evqText').textContent=s.evq;curScn=b.dataset.scn;renderAttck(attckFor(s.ctl));renderExec(curScn);reset();});
 function reset(){
   qa('.node,.arrow').forEach(n=>n.classList.remove('on'));
   qa('.vendor').forEach(c=>{c.classList.remove('active');q('[data-st]',c).textContent='idle';const r=q('[data-reason]',c);r.classList.remove('show');r.textContent='';const vd=q('[data-verdict]',c);vd.className='verdict';vd.textContent='';q('[data-cval]',c).textContent='—';q('[data-cbar]',c).style.width='0';const d=q('[data-dissent]',c);if(d)d.classList.remove('show')});
-  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');q('#debate').classList.add('hidden');if(q('#toexec'))q('#toexec').classList.remove('show');{const pb=q('[data-n="6"]');if(pb){pb.classList.remove('posted');const pv=q('.v',pb);if(pv)pv.innerHTML='verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span>';}}
+  q('#delib').classList.remove('show');q('#consensus').classList.remove('show');q('#merkle').classList.remove('show');q('#debate').classList.add('hidden');if(q('#toexec'))q('#toexec').classList.remove('show');{const ag=q('#agreement');if(ag){ag.classList.remove('show');ag.innerHTML=''}}{const pb=q('[data-n="6"]');if(pb){pb.classList.remove('posted');const pv=q('.v',pb);if(pv)pv.innerHTML='verdict + root<br><span class="mono" style="color:var(--muted)">HEC → aec_audit</span>';}}
   qa('.ladder span').forEach(s=>s.classList.remove('win'));q('#final').classList.remove('struck');
   q('#chain').innerHTML='';q('#clk').textContent='0:00';q('#runbtn').disabled=false;q('#runbtn').textContent='▷ Guided walkthrough';
   qa('.exec-dl a').forEach(a=>{a.classList.add('locked');a.title='Run the tribunal first'});  // exports gated until a run completes
@@ -832,6 +852,7 @@ async function run(){
   await W(350);q('#consensus').classList.add('show');focus(q('#consensus'));
   await W(700);q('[data-l="FAIL"]').classList.add('win');
   await W(500);q('#final').classList.add('struck');
+  const gWalk=agree(RUN,'FAIL');await W(250);renderAgreement(gWalk.conf,gWalk.agreement,gWalk.label,gWalk.dissenters,gWalk.total);
   await W(700);q('#merkle').classList.add('show');focus(q('#merkle'));
   const chain=q('#chain');
   for(let i=0;i<5;i++){const link=document.createElement('div');link.className='link';link.innerHTML=(i>0?'<div class="ln"></div>':'')+'<div class="blk">#'+(i+1)+'</div>';chain.appendChild(link);await W(120);link.classList.add('on');await W(340)}
@@ -840,12 +861,55 @@ async function run(){
   clearInterval(ti);clk.textContent='0:31';
   running=false;qa('.scn').forEach(b=>b.disabled=false);const _lb2=q('#runlivebtn');if(_lb2)_lb2.disabled=false;
   btn.disabled=false;btn.textContent='↻ Replay walkthrough';
-  qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk('FAIL');focusVerdict();  // verdict sealed → exports unlocked, posted to Splunk, scroll to it
+  qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');
+  postToSplunk('FAIL',{confidence:gWalk.conf,agreement:gWalk.agreement,panel:RUN.map(r=>({persona:r.v==='security'?'security_model':r.v,verdict:r.verdict,confidence:(r.conf||0)/100,agreed:r.verdict==='FAIL'}))});
+  focusVerdict();  // verdict sealed → exports unlocked, posted to Splunk, scroll to it
 }
-function postToSplunk(verdict){
+const PNAME={auditor:'Auditor',engineer:'Engineer',adversary:'Adversary',security:'Security',security_model:'Security'};
+// MITRE ATT&CK techniques per demo control (mirrors the catalog crosswalk) for the
+// guided walkthrough; the live run gets these straight from the backend snapshot.
+const ATTCK_BY_CTL={'CC6.1':[{id:'T1078',name:'Valid Accounts'},{id:'T1110',name:'Brute Force'},{id:'T1098',name:'Account Manipulation'}],'CC7.2':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'},{id:'T1654',name:'Log Enumeration'}],'CC4.1':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'}]};
+function attckFor(ctlStr){return ATTCK_BY_CTL[((ctlStr||'').match(/CC\d\.\d|A\.\d+\.\d+|A1\.\d+/)||[])[0]]||null}
+function renderAttck(list){
+  const el=q('#attck');if(!el)return;
+  if(!list||!list.length){el.classList.remove('show');el.innerHTML='';return}
+  el.innerHTML='<span class="at-lbl">stops ATT&CK</span>'+list.map(t=>'<span class="at-chip"><b>'+t.id+'</b> '+(t.name||'')+'</span>').join('');
+  el.classList.add('show');
+}
+// Derive panel-agreement confidence + dissenters from a list of {v/persona,verdict}.
+function agree(arr,fv){
+  const dis=arr.filter(r=>r.verdict!==fv).map(r=>({persona:r.persona||r.v,verdict:r.verdict}));
+  const n=arr.length,a=n-dis.length,c=n?a/n:0;
+  const label=c>=1?'unanimous':c>=0.75?'strong':c>=0.5?'split':'contested';
+  return {conf:c,agreement:a+'/'+n,label,dissenters:dis,total:n};
+}
+// Render the dissent ledger + panel-agreement confidence on the consensus card.
+// conf is 0–1; dissenters is [{persona,verdict}]; agreement like "2/4".
+function renderAgreement(conf,agreement,label,dissenters,total){
+  const el=q('#agreement');if(!el)return;
+  const pct=Math.round((conf||0)*100);
+  dissenters=dissenters||[];
+  const nAgree=total!=null?(total-dissenters.length):null;
+  const chips=dissenters.length
+    ? dissenters.map(d=>'<span class="ag-chip no">'+(PNAME[d.persona]||d.persona)+': '+d.verdict+'</span>').join('')
+    : '<span class="ag-chip ok">unanimous — all vendors agreed</span>';
+  el.innerHTML='<div class="ag-hd"><span>panel agreement <b>'+(agreement||'')+'</b></span><span class="lab">'+pct+'% · '+(label||'')+'</span></div>'
+    +'<div class="ag-bar"><i style="width:'+pct+'%"></i></div>'
+    +'<div class="ag-hd" style="margin-top:2px"><span>dissent ledger</span></div>'
+    +'<div class="ag-rows">'+chips+'</div>';
+  el.classList.add('show');
+  requestAnimationFrame(()=>{const i=q('.ag-bar i',el);if(i)i.style.width=pct+'%'});
+}
+function postToSplunk(verdict,extra){
+  extra=extra||{};
   const node=q('[data-n="6"]'),vEl=node&&q('.v',node);
-  fetch('/api/post-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({control:(SCN[curScn]&&SCN[curScn].ctl)||'',verdict:verdict||'',root:'a3f1c9…e7b2',source:curScn})})
-    .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' verdicts':'')+' ↗</a>'; } }).catch(()=>{});
+  const body={control:(SCN[curScn]&&SCN[curScn].ctl)||'',verdict:verdict||'',root:'a3f1c9…e7b2',source:curScn};
+  if(extra.panel)body.panel=extra.panel;
+  if(extra.confidence!=null)body.confidence=extra.confidence;
+  if(extra.agreement)body.agreement=extra.agreement;
+  if(extra.run_id)body.run_id=extra.run_id;
+  fetch('/api/post-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(j=>{ if(j&&j.ok&&vEl){ node.classList.add('posted'); vEl.innerHTML='✓ landed in Splunk<br><a class="mono" style="color:var(--splunk2)" href="https://splunk-aec.accessquint.com/en-US/app/search/search?q=search%20index%3Daec_audit%20%7C%20sort%20-_time&earliest=0&latest=now" target="_blank" rel="noopener">index=aec_audit'+(j.count?' · '+j.count+' events':'')+' ↗</a>'; } }).catch(()=>{});
 }
 function focusVerdict(){ const wp=q('#workpanel'); if(wp) setTimeout(()=>wp.scrollTo({top:wp.scrollHeight,behavior:'smooth'}),160); }
 q('#runbtn').onclick=run;
@@ -863,6 +927,7 @@ function runLive(){
   if(running)return;
   const token=((q('#runtoken')&&q('#runtoken').value)||new URLSearchParams(location.search).get('token')||'').trim();
   running=true;reset();let liveVerdict='FAIL';
+  let livePanel=[],liveConf=null,liveAgree='',liveRunId='';
   const wbtn=q('#runbtn'),lbtn=q('#runlivebtn');
   wbtn.disabled=true;lbtn.disabled=true;lbtn.textContent='● live…';
   qa('.scn').forEach(b=>b.disabled=true);
@@ -872,7 +937,7 @@ function runLive(){
   for(let i=0;i<2;i++){q(`[data-n="${i}"]`)&&q(`[data-n="${i}"]`).classList.add('on');const a=q(`[data-a="${i-1}"]`);if(a)a.classList.add('on');}
   scrollToEl(q('.workbench'));
   let liveTimer=0;
-  const finishUp=(ok)=>{clearInterval(ti);clearTimeout(liveTimer);running=false;qa('.scn').forEach(b=>b.disabled=false);wbtn.disabled=false;lbtn.disabled=false;lbtn.textContent='▶ Run live';if(ok){qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk(liveVerdict);focusVerdict();}};
+  const finishUp=(ok)=>{clearInterval(ti);clearTimeout(liveTimer);running=false;qa('.scn').forEach(b=>b.disabled=false);wbtn.disabled=false;lbtn.disabled=false;lbtn.textContent='▶ Run live';if(ok){qa('.exec-dl a').forEach(a=>{a.classList.remove('locked');a.removeAttribute('title')});q('#toexec').classList.add('show');postToSplunk(liveVerdict,{panel:livePanel,confidence:liveConf,agreement:liveAgree,run_id:liveRunId});focusVerdict();}};
   let ws;
   try{ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/run');}
   catch(e){q('#delib').textContent='⚠ Could not open a connection.';finishUp(false);return;}
@@ -881,7 +946,7 @@ function runLive(){
   ws.onmessage=async(ev)=>{
     let m;try{m=JSON.parse(ev.data)}catch(e){return}
     if(m.type==='error'){q('#delib').classList.add('show');q('#delib').textContent='⚠ '+m.message;finishUp(false);try{ws.close()}catch(e){}return}
-    if(m.type==='phase'&&m.name==='snapshot_fetch'&&m.status==='done'){q('[data-n="2"]')&&q('[data-n="2"]').classList.add('on');q('[data-a="1"]')&&q('[data-a="1"]').classList.add('on');q('[data-n="3"]')&&q('[data-n="3"]').classList.add('on');q('[data-a="2"]')&&q('[data-a="2"]').classList.add('on');if(m.event_count)q('#evCount').innerHTML='<span class="mono">'+Number(m.event_count).toLocaleString()+' events</span><br><span class="mono" style="color:var(--muted)">live snapshot</span>';q('#delib').textContent='The tribunal is deliberating…'}
+    if(m.type==='phase'&&m.name==='snapshot_fetch'&&m.status==='done'){q('[data-n="2"]')&&q('[data-n="2"]').classList.add('on');q('[data-a="1"]')&&q('[data-a="1"]').classList.add('on');q('[data-n="3"]')&&q('[data-n="3"]').classList.add('on');q('[data-a="2"]')&&q('[data-a="2"]').classList.add('on');if(m.event_count)q('#evCount').innerHTML='<span class="mono">'+Number(m.event_count).toLocaleString()+' events</span><br><span class="mono" style="color:var(--muted)">live snapshot</span>';if(m.mitre_attack&&m.mitre_attack.length)renderAttck(m.mitre_attack);q('#delib').textContent='The tribunal is deliberating…'}
     if(m.type==='panel'){
       const c=cards[PERSONA2V[m.persona]||m.persona];if(!c)return;
       q('[data-n="4"]')&&q('[data-n="4"]').classList.add('on');q('[data-a="3"]')&&q('[data-a="3"]').classList.add('on');
@@ -892,6 +957,8 @@ function runLive(){
         const vd=q('[data-verdict]',c);vd.className='verdict';if(m.verdict){vd.textContent=m.verdict;vd.classList.add(m.verdict,'show')}
         const cf=Math.round((m.confidence||0)*100);q('[data-cval]',c).textContent=cf+'%';q('[data-cbar]',c).style.width=cf+'%';
         if(m.model)q('.model',c).textContent=m.model;
+        if(m.agreed===false){const d=q('[data-dissent]',c);if(d){d.textContent='✕ dissent';d.classList.add('show')}}
+        livePanel.push({persona:m.persona,verdict:m.verdict,confidence:m.confidence,model:m.model,latency_ms:m.latency_ms,fallback_used:m.fallback_used,agreed:m.agreed});
         c.classList.remove('active');
       }
     }
@@ -900,10 +967,12 @@ function runLive(){
       q('#consensus').classList.add('show');focus(q('#consensus'));
       const v=m.verdict;liveVerdict=v;const w=q('[data-l="'+v+'"]');if(w)w.classList.add('win');
       const fin=q('#final');fin.className='final '+v+' serif';fin.innerHTML=v+'<small>'+(m.degraded?'Degraded — not all vendors responded. ':'')+'Mechanical consensus · '+(m.method||'lowest-of-four')+' · live.</small>';fin.classList.add('struck');
+      liveConf=(m.confidence!=null?m.confidence:null);liveAgree=m.agreement||'';
+      if(m.confidence!=null||m.agreement)renderAgreement(m.confidence,m.agreement,m.confidence_label,m.dissenters,null);
       await sealAnim();
       q('[data-a="5"]')&&q('[data-a="5"]').classList.add('on');q('[data-n="6"]')&&q('[data-n="6"]').classList.add('on');
     }
-    if(m.type==='done'){finishUp(true);try{ws.close()}catch(e){}}
+    if(m.type==='done'){liveRunId=m.run_id||'';finishUp(true);try{ws.close()}catch(e){}}
   };
   // safety net: real four-vendor runs take ~1–3 min; never let the UI hang forever
   liveTimer=setTimeout(()=>{if(running){q('#delib').classList.add('show');q('#delib').textContent='⚠ The live run is taking longer than usual (real AI latency / a slow vendor). Try the guided walkthrough, or watch the recorded CLI run.';finishUp(false);try{ws.close()}catch(e){}}},210000);

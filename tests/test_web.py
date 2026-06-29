@@ -71,6 +71,30 @@ class TestControlsEndpoint:
 class TestWebSocketMessageShape:
     """Verify WebSocket message shapes by testing the pipeline with mocked panel."""
 
+    @pytest.fixture(autouse=True)
+    def fast_panel(self, monkeypatch):
+        """Stub run_panel so the debate is instant and deterministic.
+
+        Without this, the real panel probes (unavailable) vendors on a
+        background task that outlives the test's WebSocket close, racing with
+        TestClient teardown and intermittently surfacing a CancelledError.
+        """
+        from aec.agent.models import Critique, PanelResult
+
+        result = PanelResult(
+            critiques=[
+                Critique(persona="auditor", model="m", transport="anthropic-cli",
+                         verdict="PASS", confidence=0.9, rationale="r"),
+            ],
+            final_verdict="PASS",
+            consensus_method="lowest_of_one",
+        )
+
+        async def _fake_run_panel(*args, **kwargs):
+            return result
+
+        monkeypatch.setattr("aec.agent.panel.run_panel", _fake_run_panel)
+
     @pytest.fixture
     def client(self):
         from starlette.testclient import TestClient

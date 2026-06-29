@@ -26,6 +26,8 @@ class ControlMatch(BaseModel):
     spl_hint: str = ""
     control_family: str = ""
     framework_control_ids: dict[str, str] = Field(default_factory=dict)
+    # MITRE ATT&CK techniques this control mitigates/detects: [{id, name}, ...]
+    mitre_attack: list[dict[str, str]] = Field(default_factory=list)
 
 
 class EvidenceSnapshot(BaseModel):

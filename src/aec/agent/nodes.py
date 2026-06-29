@@ -65,6 +65,7 @@ def control_mapper(state: dict) -> dict:
         spl_hint=spl_hint,
         control_family=resolved.get("control_family", ""),
         framework_control_ids=resolved.get("framework_control_ids", {}),
+        mitre_attack=resolved.get("mitre_attack", []),
     )
     elapsed = int((time.monotonic() - t0) * 1000)
     console.print(

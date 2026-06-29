@@ -119,7 +119,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-002",
@@ -149,7 +163,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-003",
@@ -180,7 +208,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-004",
@@ -210,7 +252,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-005",
@@ -240,7 +296,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-006",
@@ -270,7 +340,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-007",
@@ -300,7 +384,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-008",
@@ -330,7 +428,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-009",
@@ -360,7 +472,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-010",
@@ -390,7 +516,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-011",
@@ -420,7 +560,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-012",
@@ -450,7 +604,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-013",
@@ -480,7 +648,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-014",
@@ -510,7 +692,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-015",
@@ -540,7 +736,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-016",
@@ -570,7 +780,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-017",
@@ -599,7 +823,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-018",
@@ -629,7 +863,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-019",
@@ -658,7 +906,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-020",
@@ -689,7 +947,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-021",
@@ -720,7 +992,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-022",
@@ -749,7 +1035,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-023",
@@ -780,7 +1076,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-024",
@@ -811,7 +1121,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-025",
@@ -833,7 +1157,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-026",
@@ -855,7 +1193,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-027",
@@ -877,7 +1229,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-028",
@@ -899,7 +1265,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-029",
@@ -921,7 +1301,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-030",
@@ -943,7 +1337,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-031",
@@ -965,7 +1373,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-032",
@@ -987,7 +1409,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-033",
@@ -1009,7 +1445,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-034",
@@ -1031,7 +1481,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-035",
@@ -1053,7 +1517,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     {
       "internal_id": "CTRL-036",
@@ -1075,7 +1553,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     }
   ],
   "framework_index": {
@@ -1462,7 +1954,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     "A.5.15": {
       "control_id": "A.5.15",
@@ -1477,7 +1983,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     "PR.AA-01": {
       "control_id": "PR.AA-01",
@@ -1492,7 +2012,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     "AC-1": {
       "control_id": "AC-1",
@@ -1507,7 +2041,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     "DSS05.04": {
       "control_id": "DSS05.04",
@@ -1522,7 +2070,21 @@
         "NIST CSF": "PR.AA-01",
         "NIST 800-53": "AC-1",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        }
+      ]
     },
     "CC6.3": {
       "control_id": "CC6.3",
@@ -1537,7 +2099,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     "A.5.18": {
       "control_id": "A.5.18",
@@ -1552,7 +2128,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     "PR.AA-05": {
       "control_id": "PR.AA-05",
@@ -1567,7 +2157,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     "AC-2": {
       "control_id": "AC-2",
@@ -1582,7 +2186,21 @@
         "NIST CSF": "PR.AA-05",
         "NIST 800-53": "AC-2",
         "COBIT": "DSS05.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts"
+        },
+        {
+          "id": "T1098",
+          "name": "Account Manipulation"
+        },
+        {
+          "id": "T1136",
+          "name": "Create Account"
+        }
+      ]
     },
     "CC7.1": {
       "control_id": "CC7.1",
@@ -1597,7 +2215,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     "A.8.8": {
       "control_id": "A.8.8",
@@ -1612,7 +2244,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     "ID.RA-01": {
       "control_id": "ID.RA-01",
@@ -1627,7 +2273,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     "SI-2": {
       "control_id": "SI-2",
@@ -1642,7 +2302,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     "DSS05.07": {
       "control_id": "DSS05.07",
@@ -1657,7 +2331,21 @@
         "NIST CSF": "ID.RA-01",
         "NIST 800-53": "SI-2",
         "COBIT": "DSS05.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application"
+        },
+        {
+          "id": "T1203",
+          "name": "Exploitation for Client Execution"
+        },
+        {
+          "id": "T1210",
+          "name": "Exploitation of Remote Services"
+        }
+      ]
     },
     "A.5.9": {
       "control_id": "A.5.9",
@@ -1672,7 +2360,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     "ID.AM-01": {
       "control_id": "ID.AM-01",
@@ -1687,7 +2389,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     "CM-8": {
       "control_id": "CM-8",
@@ -1702,7 +2418,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     "BAI09.01": {
       "control_id": "BAI09.01",
@@ -1717,7 +2447,21 @@
         "NIST CSF": "ID.AM-01",
         "NIST 800-53": "CM-8",
         "COBIT": "BAI09.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1046",
+          "name": "Network Service Discovery"
+        },
+        {
+          "id": "T1018",
+          "name": "Remote System Discovery"
+        },
+        {
+          "id": "T1200",
+          "name": "Hardware Additions"
+        }
+      ]
     },
     "CC6.7": {
       "control_id": "CC6.7",
@@ -1732,7 +2476,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     "A.8.24": {
       "control_id": "A.8.24",
@@ -1747,7 +2505,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     "PR.DS-01": {
       "control_id": "PR.DS-01",
@@ -1762,7 +2534,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     "SC-13": {
       "control_id": "SC-13",
@@ -1777,7 +2563,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     "DSS05.02": {
       "control_id": "DSS05.02",
@@ -1792,7 +2592,21 @@
         "NIST CSF": "PR.DS-01",
         "NIST 800-53": "SC-13",
         "COBIT": "DSS05.02"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1040",
+          "name": "Network Sniffing"
+        },
+        {
+          "id": "T1557",
+          "name": "Adversary-in-the-Middle"
+        },
+        {
+          "id": "T1552",
+          "name": "Unsecured Credentials"
+        }
+      ]
     },
     "CC7.2": {
       "control_id": "CC7.2",
@@ -1807,7 +2621,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     "A.8.15": {
       "control_id": "A.8.15",
@@ -1822,7 +2650,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     "DE.CM-01": {
       "control_id": "DE.CM-01",
@@ -1837,7 +2679,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     "AU-6": {
       "control_id": "AU-6",
@@ -1852,7 +2708,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     "DSS01.03": {
       "control_id": "DSS01.03",
@@ -1867,7 +2737,21 @@
         "NIST CSF": "DE.CM-01",
         "NIST 800-53": "AU-6",
         "COBIT": "DSS01.03"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1562",
+          "name": "Impair Defenses"
+        },
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1654",
+          "name": "Log Enumeration"
+        }
+      ]
     },
     "CC9.2": {
       "control_id": "CC9.2",
@@ -1882,7 +2766,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     "A.5.19": {
       "control_id": "A.5.19",
@@ -1897,7 +2791,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     "GV.SC-01": {
       "control_id": "GV.SC-01",
@@ -1912,7 +2816,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     "SR-3": {
       "control_id": "SR-3",
@@ -1927,7 +2841,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     "APO10.04": {
       "control_id": "APO10.04",
@@ -1942,7 +2866,17 @@
         "NIST CSF": "GV.SC-01",
         "NIST 800-53": "SR-3",
         "COBIT": "APO10.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        },
+        {
+          "id": "T1199",
+          "name": "Trusted Relationship"
+        }
+      ]
     },
     "CC7.4": {
       "control_id": "CC7.4",
@@ -1957,7 +2891,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     "A.5.26": {
       "control_id": "A.5.26",
@@ -1972,7 +2920,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     "RS.MA-01": {
       "control_id": "RS.MA-01",
@@ -1987,7 +2949,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     "IR-4": {
       "control_id": "IR-4",
@@ -2002,7 +2978,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     "DSS02.04": {
       "control_id": "DSS02.04",
@@ -2017,7 +3007,21 @@
         "NIST CSF": "RS.MA-01",
         "NIST 800-53": "IR-4",
         "COBIT": "DSS02.04"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1070",
+          "name": "Indicator Removal"
+        },
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        }
+      ]
     },
     "CC8.1": {
       "control_id": "CC8.1",
@@ -2032,7 +3036,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     "A.8.32": {
       "control_id": "A.8.32",
@@ -2047,7 +3065,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     "PR.PS-01": {
       "control_id": "PR.PS-01",
@@ -2062,7 +3094,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     "CM-3": {
       "control_id": "CM-3",
@@ -2077,7 +3123,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     "BAI06.01": {
       "control_id": "BAI06.01",
@@ -2092,7 +3152,21 @@
         "NIST CSF": "PR.PS-01",
         "NIST 800-53": "CM-3",
         "COBIT": "BAI06.01"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1505",
+          "name": "Server Software Component"
+        },
+        {
+          "id": "T1546",
+          "name": "Event Triggered Execution"
+        },
+        {
+          "id": "T1195",
+          "name": "Supply Chain Compromise"
+        }
+      ]
     },
     "A1.2": {
       "control_id": "A1.2",
@@ -2107,7 +3181,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     "A.8.13": {
       "control_id": "A.8.13",
@@ -2122,7 +3210,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     "PR.DS-11": {
       "control_id": "PR.DS-11",
@@ -2137,7 +3239,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     "CP-9": {
       "control_id": "CP-9",
@@ -2152,7 +3268,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     },
     "DSS04.07": {
       "control_id": "DSS04.07",
@@ -2167,7 +3297,21 @@
         "NIST CSF": "PR.DS-11",
         "NIST 800-53": "CP-9",
         "COBIT": "DSS04.07"
-      }
+      },
+      "mitre_attack": [
+        {
+          "id": "T1485",
+          "name": "Data Destruction"
+        },
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact"
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery"
+        }
+      ]
     }
   }
 }
