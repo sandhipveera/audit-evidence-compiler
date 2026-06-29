@@ -212,7 +212,10 @@ async def run_debate(ws: WebSocket):
 
     try:
         await _run_debate_pipeline(ws, sample_name, run_id)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, asyncio.CancelledError):
+        # Client closed mid-run (or the task was cancelled on disconnect) — the
+        # background debate has nothing left to deliver, so end cleanly rather
+        # than letting CancelledError (a BaseException) escape the handler.
         return
     except Exception as exc:
         try:
