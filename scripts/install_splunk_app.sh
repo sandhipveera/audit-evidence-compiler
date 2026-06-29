@@ -46,7 +46,10 @@ fi
 
 # 2. App into the container -------------------------------------------------
 info "copying app → ${CONTAINER}:/opt/splunk/etc/apps/auditcompiler"
-docker exec "$CONTAINER" rm -rf /opt/splunk/etc/apps/auditcompiler 2>/dev/null || true
+# Remove as root: the app dir is splunk-owned but a non-root rm can silently
+# fail, leaving the dir in place so `docker cp` nests (…/auditcompiler/
+# auditcompiler/…) and new views/nav never register. Root rm is reliable.
+docker exec -u root "$CONTAINER" rm -rf /opt/splunk/etc/apps/auditcompiler 2>/dev/null || true
 docker cp "$REPO_DIR/splunk-app/auditcompiler" "${CONTAINER}:/opt/splunk/etc/apps/auditcompiler"
 docker exec -u root "$CONTAINER" rm -rf /opt/splunk/etc/apps/auditcompiler/bin/__pycache__ 2>/dev/null || true
 docker exec -u root "$CONTAINER" chown -R splunk:splunk /opt/splunk/etc/apps/auditcompiler
