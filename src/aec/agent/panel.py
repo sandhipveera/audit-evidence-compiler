@@ -22,6 +22,8 @@ from aec.agent.models import (
     PersonaSpec,
     TransportSpec,
     VERDICT_SEVERITY,
+    build_dissent_ledger,
+    build_verdict_changes,
 )
 
 log = logging.getLogger(__name__)
@@ -484,6 +486,7 @@ async def run_panel(
 
     transcript = _render_transcript(critiques, final_verdict, splunk_snapshot, followups)
     consensus_method = _consensus_method_for(critiques)
+    consensus_confidence, dissent_ledger = build_dissent_ledger(critiques, final_verdict)
 
     panel_result = PanelResult(
         critiques=critiques,
@@ -494,6 +497,8 @@ async def run_panel(
         mode=mode,
         splunk_snapshot=splunk_snapshot,
         adversary_followups=followups,
+        consensus_confidence=consensus_confidence,
+        dissent_ledger=dissent_ledger,
     )
 
     if view:
@@ -714,6 +719,7 @@ async def run_panel_with_recurrence(
         final_consensus_round=2,
         transcript=transcript,
         iteration_count=2,
+        verdict_changes=build_verdict_changes(round_1, round_2),
     )
 
 

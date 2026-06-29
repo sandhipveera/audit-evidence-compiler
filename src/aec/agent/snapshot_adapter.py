@@ -46,6 +46,8 @@ def panel_result_to_snapshots(
         "panel_verdict": result.final_verdict,
         "persona": "consensus",
         "consensus_method": result.consensus_method,
+        "consensus_confidence": result.consensus_confidence,
+        "dissent_count": sum(1 for d in result.dissent_ledger if not d.get("agreed")),
         "panel_transcript_hash": _text_hash(result.transcript),
     })
 
@@ -116,6 +118,7 @@ def recurrence_result_to_snapshots(
             snap["iteration"] = 2
             snapshots.append(snap)
 
+    final_round = result.round_2 or result.round_1
     snapshots.append({
         "control_id": control_id,
         "snapshot_id": f"{control_id}-final",
@@ -125,6 +128,10 @@ def recurrence_result_to_snapshots(
         "persona": "final",
         "final_consensus_round": result.final_consensus_round,
         "counter_searches_count": len(result.counter_searches),
+        "consensus_confidence": final_round.consensus_confidence,
+        "verdict_changes_count": sum(
+            1 for v in result.verdict_changes if v.get("changed")
+        ),
         "panel_transcript_hash": _text_hash(result.transcript),
     })
 

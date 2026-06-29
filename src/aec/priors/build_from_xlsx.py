@@ -178,6 +178,7 @@ def build_catalog(source: Path) -> dict:
     # index (real control ID → control) so the engine can bind e.g. "CC6.1".
     crosswalk = _load_crosswalk()
     families = crosswalk.get("families", {})
+    mitre_by_family = crosswalk.get("mitre_attack", {})
     control_id_index: dict[str, dict] = {}
     # Access-control families claim their IDs first so a shared ID (e.g. CC6.1,
     # an AICPA point of focus for both access *and* asset inventory) resolves to
@@ -189,6 +190,8 @@ def build_catalog(source: Path) -> dict:
         # Crosswalk membership supersedes the sheet's Yes/No flags for mapped frameworks
         for fw in ctrl["framework_control_ids"]:
             ctrl["frameworks"][fw] = True
+        # MITRE ATT&CK techniques the control mitigates/detects (from the overlay)
+        ctrl["mitre_attack"] = list(mitre_by_family.get(ctrl["control_family"], []))
     for ctrl in ordered:
         fam_ids = families.get(ctrl["control_family"], {})
         for fw, cid in fam_ids.items():
@@ -200,6 +203,7 @@ def build_catalog(source: Path) -> dict:
                 "category": ctrl.get("category"),
                 "splunk_hint_category": ctrl.get("splunk_hint_category"),
                 "framework_control_ids": dict(fam_ids),
+                "mitre_attack": list(mitre_by_family.get(ctrl["control_family"], [])),
             })
 
     return {

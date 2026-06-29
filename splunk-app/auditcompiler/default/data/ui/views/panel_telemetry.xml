@@ -1,0 +1,183 @@
+<dashboard version="2" theme="light">
+  <label>Panel Observability</label>
+  <description>Per-vendor telemetry for the four-vendor AI panel — latency, verdict spread, panel-agreement confidence, dissent and fallback rates — streamed to index=aec_audit by the AEC web app on every run (sourcetypes aec:verdict and aec:vendor).</description>
+  <definition><![CDATA[
+{
+  "title": "Panel Observability",
+  "description": "Per-vendor telemetry for the four-vendor AI panel — latency, verdict spread, panel-agreement confidence, dissent and fallback rates — streamed to index=aec_audit by the AEC web app (sourcetypes aec:verdict and aec:vendor).",
+  "version": 2,
+  "dataSources": {
+    "ds_avg_confidence": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:verdict | stats latest(consensus_confidence) as conf by run_id | stats avg(conf) as avg_conf | eval avg_conf=round(avg_conf*100,0)",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_avg_latency": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:vendor | stats avg(latency_ms) as ms | eval ms=round(ms,0)",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_dissent_rate": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:vendor | stats count as total, count(eval(agreed==\"false\" OR agreed==0 OR agreed==\"False\")) as dissent | eval pct=round(dissent/total*100,0)",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_fallback_rate": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:vendor | stats count as total, count(eval(fallback_used==\"true\" OR fallback_used==1 OR fallback_used==\"True\")) as fb | eval pct=round(fb/total*100,0)",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_latency_by_persona": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:vendor | stats avg(latency_ms) as avg_latency_ms by persona | eval avg_latency_ms=round(avg_latency_ms,0) | sort -avg_latency_ms",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_verdict_by_persona": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:vendor | stats count by persona, verdict",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_confidence_trend": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:verdict | timechart span=1d avg(consensus_confidence) as agreement_confidence | eval agreement_confidence=round(agreement_confidence*100,0)",
+        "queryParameters": { "earliest": "-30d", "latest": "now" }
+      }
+    },
+    "ds_recent_runs": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=aec_audit sourcetype=aec:verdict | sort -_time | head 25 | eval when=strftime(_time,\"%m/%d %H:%M\"), confidence=round(consensus_confidence*100,0).\"%\" | table when, control_id, verdict, confidence, agreement, mode, merkle_root",
+        "queryParameters": { "earliest": "-7d", "latest": "now" }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_avg_confidence": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_avg_confidence" },
+      "title": "Avg Panel Agreement",
+      "options": {
+        "majorColor": "#dab36a",
+        "backgroundColor": "#fdf9f0",
+        "unit": "%",
+        "unitPosition": "after",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_avg_latency": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_avg_latency" },
+      "title": "Avg Vendor Latency",
+      "options": {
+        "majorColor": "#3b82f6",
+        "backgroundColor": "#eff6ff",
+        "unit": "ms",
+        "unitPosition": "after",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_dissent_rate": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_dissent_rate" },
+      "title": "Vendor Dissent Rate",
+      "options": {
+        "majorColor": "#ef4444",
+        "backgroundColor": "#fef2f2",
+        "unit": "%",
+        "unitPosition": "after",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "numberPrecision": "0"
+      }
+    },
+    "viz_fallback_rate": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_fallback_rate" },
+      "title": "Single-Vendor Fallback Rate",
+      "options": {
+        "majorColor": "#8b5cf6",
+        "backgroundColor": "#faf5ff",
+        "unit": "%",
+        "unitPosition": "after",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      }
+    },
+    "viz_latency_by_persona": {
+      "type": "splunk.column",
+      "dataSources": { "primary": "ds_latency_by_persona" },
+      "title": "Latency by Vendor (avg ms)",
+      "options": {
+        "xAxisVisibility": "show",
+        "yAxisVisibility": "show",
+        "legendDisplay": "off"
+      }
+    },
+    "viz_verdict_by_persona": {
+      "type": "splunk.bar",
+      "dataSources": { "primary": "ds_verdict_by_persona" },
+      "title": "Verdict Spread by Vendor",
+      "options": {
+        "legendDisplay": "bottom",
+        "stackMode": "stacked"
+      }
+    },
+    "viz_confidence_trend": {
+      "type": "splunk.line",
+      "dataSources": { "primary": "ds_confidence_trend" },
+      "title": "Panel-Agreement Confidence Over Time (%)",
+      "options": {
+        "xAxisVisibility": "show",
+        "yAxisVisibility": "show",
+        "legendDisplay": "off"
+      }
+    },
+    "viz_recent_runs": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_recent_runs" },
+      "title": "Recent Sealed Verdicts",
+      "options": {
+        "fields": ["when", "control_id", "verdict", "confidence", "agreement", "mode", "merkle_root"],
+        "count": 25,
+        "columnFormat": {
+          "verdict": {
+            "data": "> table | seriesByName('verdict')",
+            "render": "text"
+          }
+        }
+      }
+    }
+  },
+  "layout": {
+    "type": "absolute",
+    "options": { "width": 1440, "height": 960, "display": "auto-scale" },
+    "structure": [
+      { "item": "viz_avg_confidence",   "type": "block", "position": { "x": 0,    "y": 0,   "w": 340, "h": 130 } },
+      { "item": "viz_avg_latency",      "type": "block", "position": { "x": 360,  "y": 0,   "w": 340, "h": 130 } },
+      { "item": "viz_dissent_rate",     "type": "block", "position": { "x": 720,  "y": 0,   "w": 340, "h": 130 } },
+      { "item": "viz_fallback_rate",    "type": "block", "position": { "x": 1080, "y": 0,   "w": 340, "h": 130 } },
+      { "item": "viz_latency_by_persona","type": "block","position": { "x": 0,    "y": 150, "w": 700, "h": 300 } },
+      { "item": "viz_verdict_by_persona","type": "block","position": { "x": 720,  "y": 150, "w": 700, "h": 300 } },
+      { "item": "viz_confidence_trend", "type": "block", "position": { "x": 0,    "y": 470, "w": 1420,"h": 220 } },
+      { "item": "viz_recent_runs",      "type": "block", "position": { "x": 0,    "y": 710, "w": 1420,"h": 250 } }
+    ],
+    "globalInputs": []
+  }
+}
+  ]]></definition>
+</dashboard>

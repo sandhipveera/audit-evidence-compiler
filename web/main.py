@@ -13,6 +13,7 @@ import time
 import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisconnect
@@ -220,6 +221,22 @@ async def run_debate(ws: WebSocket):
             pass
 
 
+@lru_cache(maxsize=1)
+def _catalog() -> dict:
+    """Load the control catalog (Excel-derived + crosswalk overlay). Cached."""
+    try:
+        from importlib.resources import files
+        return json.loads((files("aec.priors") / "catalog.json").read_text())
+    except Exception:
+        return {}
+
+
+def _resolve_mitre(control_id: str) -> list[dict]:
+    """MITRE ATT&CK techniques mapped to a control id, via the catalog crosswalk."""
+    entry = (_catalog().get("control_id_index") or {}).get(control_id, {})
+    return entry.get("mitre_attack", []) or []
+
+
 async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> None:
     """Run the panel debate pipeline and stream JSON events over WebSocket."""
     await ws.send_json({"type": "phase", "name": "snapshot_fetch", "status": "start"})
@@ -239,6 +256,7 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
         "control_id": control_id,
         "event_count": snapshot.get("event_count", 0),
         "framework": snapshot.get("framework", ""),
+        "mitre_attack": _resolve_mitre(control_id),
     })
 
     control_texts = {
@@ -262,7 +280,7 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
 
     try:
         from aec.agent.panel import run_panel
-        from aec.agent.models import PanelResult
+        from aec.agent.models import PanelResult, confidence_label
 
         class WebSocketPanelView:
             """A panel view that sends updates over WebSocket instead of Rich TUI."""
@@ -327,14 +345,26 @@ async def _run_debate_pipeline(ws: WebSocket, sample_name: str, run_id: str) -> 
                 "concerns": critique.concerns,
                 "model": critique.model,
                 "latency_ms": critique.latency_ms,
+                "fallback_used": critique.fallback_used,
+                "agreed": critique.verdict == panel_result.final_verdict,
             })
 
+        dissenters = [
+            d for d in panel_result.dissent_ledger if not d.get("agreed")
+        ]
         await ws.send_json({
             "type": "consensus",
             "verdict": panel_result.final_verdict,
             "method": panel_result.consensus_method,
             "mode": panel_result.mode,
             "degraded": panel_result.degraded,
+            "confidence": panel_result.consensus_confidence,
+            "agreement": f"{len(panel_result.critiques) - len(dissenters)}/"
+                         f"{len(panel_result.critiques)}",
+            "confidence_label": confidence_label(panel_result.consensus_confidence),
+            "dissenters": [
+                {"persona": d["persona"], "verdict": d["verdict"]} for d in dissenters
+            ],
         })
 
     except Exception as exc:
@@ -649,21 +679,72 @@ def _splunk_post_verdict(payload: dict) -> dict:
         return {"ok": False, "error": "HEC not configured"}
 
     ctx = _ssl._create_unverified_context()
-    event = {
-        "time": time.time(),
+    now = time.time()
+    control_id = str(payload.get("control", ""))[:120]
+    verdict = str(payload.get("verdict", ""))[:24]
+    mode = str(payload.get("source", "web"))[:24]
+    run_id = str(payload.get("run_id", ""))[:64]
+
+    # Headline verdict event, enriched with panel-agreement telemetry.
+    verdict_event = {
+        "control_id": control_id,
+        "verdict": verdict,
+        "merkle_root": str(payload.get("root", ""))[:96],
+        "models": payload.get("models") or ["claude", "gpt", "gemini", "foundation-sec"],
+        "mode": mode,
+    }
+    if run_id:
+        verdict_event["run_id"] = run_id
+    if isinstance(payload.get("confidence"), (int, float)):
+        verdict_event["consensus_confidence"] = round(float(payload["confidence"]), 4)
+    if payload.get("agreement"):
+        verdict_event["agreement"] = str(payload["agreement"])[:12]
+    if isinstance(payload.get("mltk_anomalies"), int):
+        verdict_event["mltk_anomalies"] = payload["mltk_anomalies"]
+
+    events = [{
+        "time": now,
         "index": AUDIT_INDEX,
         "sourcetype": "aec:verdict",
-        "event": {
-            "control_id": str(payload.get("control", ""))[:120],
-            "verdict": str(payload.get("verdict", ""))[:24],
-            "merkle_root": str(payload.get("root", ""))[:96],
-            "models": payload.get("models") or ["claude", "gpt", "gemini", "foundation-sec"],
-            "mode": str(payload.get("source", "web"))[:24],
-        },
-    }
+        "event": verdict_event,
+    }]
+
+    # Per-vendor telemetry — one event each so panel latency / cost / dissent
+    # are searchable in Splunk (rides the agent-observability theme).
+    panel = payload.get("panel")
+    if isinstance(panel, list):
+        for v in panel[:8]:
+            if not isinstance(v, dict):
+                continue
+            vendor_event = {
+                "control_id": control_id,
+                "persona": str(v.get("persona", ""))[:32],
+                "verdict": str(v.get("verdict", ""))[:24],
+                "model": str(v.get("model", ""))[:80],
+                "transport": str(v.get("transport", ""))[:48],
+                "mode": mode,
+                "agreed": bool(v.get("agreed")),
+            }
+            if run_id:
+                vendor_event["run_id"] = run_id
+            if isinstance(v.get("confidence"), (int, float)):
+                vendor_event["confidence"] = round(float(v["confidence"]), 4)
+            if isinstance(v.get("latency_ms"), int):
+                vendor_event["latency_ms"] = v["latency_ms"]
+            if "fallback_used" in v:
+                vendor_event["fallback_used"] = bool(v["fallback_used"])
+            events.append({
+                "time": now,
+                "index": AUDIT_INDEX,
+                "sourcetype": "aec:vendor",
+                "event": vendor_event,
+            })
+
+    # HEC accepts a batch as concatenated JSON objects in one request body.
+    batch = "".join(json.dumps(e) for e in events).encode()
     req = _ur.Request(
         f"{hec_url}/services/collector/event",
-        data=json.dumps(event).encode(),
+        data=batch,
         headers={"Authorization": f"Splunk {hec_token}"},
         method="POST",
     )

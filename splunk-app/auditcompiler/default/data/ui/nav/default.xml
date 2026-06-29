@@ -1,6 +1,7 @@
 <nav search_view="search" color="#4F46E5">
   <view name="search" default="true" />
   <view name="posture" label="Compliance Posture" />
+  <view name="panel_telemetry" label="Panel Observability" />
   <collection label="Docs">
     <a href="https://github.com/sandhipveera/audit-evidence-compiler" target="_blank">GitHub</a>
     <a href="https://aec3.accessquint.com" target="_blank">Live Dashboard</a>
