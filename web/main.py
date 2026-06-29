@@ -92,6 +92,14 @@ def root():
     return FileResponse(str(STATIC_DIR / "prototype.html"))
 
 
+@app.get("/og.png", include_in_schema=False)
+def og_image():
+    # Social preview card at the canonical root path (og:image / twitter:image
+    # point here). The file lives in the static dir; serve it from / so link
+    # unfurlers resolve https://<host>/og.png directly.
+    return FileResponse(str(STATIC_DIR / "og.png"), media_type="image/png")
+
+
 @app.get("/api/controls")
 def list_controls():
     """Return available demo controls from samples/."""
