@@ -60,6 +60,8 @@ The way I think about it:
 
 AI compliance evidence you can hand straight to an auditor, because every claim is *provable.*
 
+Since submitting I've gone deeper: you can now watch *exactly* where the four models disagree — a live dissent ledger with a panel-agreement confidence score — while every vendor's verdict, latency and dissent streams back into Splunk as searchable evidence, now mapped to MITRE ATT&CK.
+
 🔗 https://devpost.com/software/tessera-audit-evidence-auto-compiler
 
 Winners announced July 17, 2pm PT. 🤞
