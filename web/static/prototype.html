@@ -811,6 +811,12 @@ function renderExec(scn){
 }
 /* fetch the sanitized priors, then render; fall back to inline data on failure */
 fetch('/static/exec_priors.json').then(r=>r.json()).then(j=>{EXEC=j.scenarios||j;renderExec(curScn);}).catch(()=>renderExec(curScn));
+// MITRE ATT&CK techniques per demo control (mirrors the catalog crosswalk) for the
+// guided walkthrough; the live run gets these straight from the backend snapshot.
+// NOTE: declared here (not below) so it is initialized before the load-time call
+// on the next line — a `const` used before its declaration throws (TDZ) and would
+// abort the whole script, leaving every .reveal panel stuck at opacity:0.
+const ATTCK_BY_CTL={'CC6.1':[{id:'T1078',name:'Valid Accounts'},{id:'T1110',name:'Brute Force'},{id:'T1098',name:'Account Manipulation'}],'CC7.2':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'},{id:'T1654',name:'Log Enumeration'}],'CC4.1':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'}]};
 renderAttck(attckFor((SCN[curScn]||{}).ctl));
 
 qa('.scn').forEach(b=>b.onclick=()=>{if(running)return;qa('.scn').forEach(x=>x.classList.remove('active'));b.classList.add('active');const s=SCN[b.dataset.scn];q('#ctlName').textContent=s.ctl;q('#ctlMeta').textContent=s.meta;q('.impact b').textContent=s.manual;q('#evCount').innerHTML=`<span class="mono">${s.ev}</span><br><span class="mono" style="color:var(--muted)">2018-08 → 09</span>`;if(s.evq)q('#evqText').textContent=s.evq;curScn=b.dataset.scn;renderAttck(attckFor(s.ctl));renderExec(curScn);reset();});
@@ -866,9 +872,7 @@ async function run(){
   focusVerdict();  // verdict sealed → exports unlocked, posted to Splunk, scroll to it
 }
 const PNAME={auditor:'Auditor',engineer:'Engineer',adversary:'Adversary',security:'Security',security_model:'Security'};
-// MITRE ATT&CK techniques per demo control (mirrors the catalog crosswalk) for the
-// guided walkthrough; the live run gets these straight from the backend snapshot.
-const ATTCK_BY_CTL={'CC6.1':[{id:'T1078',name:'Valid Accounts'},{id:'T1110',name:'Brute Force'},{id:'T1098',name:'Account Manipulation'}],'CC7.2':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'},{id:'T1654',name:'Log Enumeration'}],'CC4.1':[{id:'T1562',name:'Impair Defenses'},{id:'T1070',name:'Indicator Removal'}]};
+// ATTCK_BY_CTL is declared earlier (near the load-time render call) to avoid a TDZ crash.
 function attckFor(ctlStr){return ATTCK_BY_CTL[((ctlStr||'').match(/CC\d\.\d|A\.\d+\.\d+|A1\.\d+/)||[])[0]]||null}
 function renderAttck(list){
   const el=q('#attck');if(!el)return;
